@@ -6,41 +6,34 @@
 // To modify the wheel, just edit this array!
 // =====================================================
 
+// 8 equal-sized slices (45° each). Interleaved so no two same types
+// are adjacent. Counts: 3 investment, 3 decision, 2 fate → probabilities
+// 37.5% / 37.5% / 25%.
 const wheelConfig = [
-    { 
-        type: "investment", 
-        label: "🏗️ Investment",
-        color: "#2e5a1c",
-        probability: 0.4  // 40%
-    },
-    { 
-        type: "decision", 
-        label: "⚖️ Decision",
-        color: "#b8860b",
-        probability: 0.4  // 40%
-    },
-    { 
-        type: "fate", 
-        label: "🎲 Fate",
-        color: "#8b1a1a",
-        probability: 0.2  // 20%
-    }
+    { type: "investment", label: "🏗️ Investment", color: "#2e5a1c" },
+    { type: "decision",   label: "⚖️ Decision",   color: "#b8860b" },
+    { type: "fate",       label: "🎲 Fate",       color: "#8b1a1a" },
+    { type: "investment", label: "🏗️ Investment", color: "#2e5a1c" },
+    { type: "decision",   label: "⚖️ Decision",   color: "#b8860b" },
+    { type: "fate",       label: "🎲 Fate",       color: "#8b1a1a" },
+    { type: "investment", label: "🏗️ Investment", color: "#2e5a1c" },
+    { type: "decision",   label: "⚖️ Decision",   color: "#b8860b" },
 ];
 
 // =====================================================
 // CALCULATED SEGMENTS (from config)
 // =====================================================
-// Segments are calculated automatically from probabilities.
+// Segments are equal-sized slices of 360°/N.
 // In CSS conic-gradient, 0° is at 12 o'clock (top).
 
 let wheelSegments = [];
 
 function calculateSegments() {
     wheelSegments = [];
+    const angleDegrees = 360 / wheelConfig.length;
     let currentAngle = 0;
-    
+
     for (const config of wheelConfig) {
-        const angleDegrees = config.probability * 360;
         wheelSegments.push({
             type: config.type,
             label: config.label,
@@ -50,8 +43,7 @@ function calculateSegments() {
         });
         currentAngle += angleDegrees;
     }
-    
-    // Log for debugging
+
     console.log("Wheel segments calculated:", wheelSegments);
 }
 
@@ -190,21 +182,26 @@ function symbolFor(resource) {
 function testWheelProbabilities(iterations = 1000) {
     const counts = {};
     wheelSegments.forEach(s => counts[s.type] = 0);
-    
+
     const savedRotation = currentRotation;
-    
+
     for (let i = 0; i < iterations; i++) {
         const result = spinWheel();
         counts[result]++;
     }
-    
+
     currentRotation = savedRotation;
-    
+
+    const segmentsPerType = {};
+    wheelSegments.forEach(s => {
+        segmentsPerType[s.type] = (segmentsPerType[s.type] || 0) + 1;
+    });
+
     console.log(`\n=== Wheel Probability Test (${iterations} spins) ===`);
-    for (const segment of wheelSegments) {
-        const actual = (counts[segment.type] / iterations * 100).toFixed(1);
-        const expected = (segment.probability * 100).toFixed(1);
-        console.log(`${segment.label}: ${actual}% (expected: ${expected}%)`);
+    for (const type of Object.keys(counts)) {
+        const actual = (counts[type] / iterations * 100).toFixed(1);
+        const expected = (segmentsPerType[type] / wheelSegments.length * 100).toFixed(1);
+        console.log(`${type}: ${actual}% (expected: ${expected}%)`);
     }
 }
 

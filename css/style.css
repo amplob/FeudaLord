@@ -168,8 +168,8 @@ body {
     border-radius: 50%;
     background: repeating-conic-gradient(
         from 0deg,
-        transparent 0deg 36deg,
-        rgba(255,255,255,0.03) 36deg 72deg
+        transparent 0deg 45deg,
+        rgba(255,255,255,0.03) 45deg 90deg
     );
 }
 
