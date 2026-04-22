@@ -10,14 +10,14 @@
 // are adjacent. Counts: 3 investment, 3 decision, 2 fate → probabilities
 // 37.5% / 37.5% / 25%.
 const wheelConfig = [
-    { type: "investment", label: "🏗️ Investment", color: "#2e5a1c" },
-    { type: "decision",   label: "⚖️ Decision",   color: "#b8860b" },
-    { type: "fate",       label: "🎲 Fate",       color: "#8b1a1a" },
-    { type: "investment", label: "🏗️ Investment", color: "#2e5a1c" },
-    { type: "decision",   label: "⚖️ Decision",   color: "#b8860b" },
-    { type: "fate",       label: "🎲 Fate",       color: "#8b1a1a" },
-    { type: "investment", label: "🏗️ Investment", color: "#2e5a1c" },
-    { type: "decision",   label: "⚖️ Decision",   color: "#b8860b" },
+    { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
+    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
+    { type: "fate",       label: "🎲 Fate",       icon: "🎲", color: "#8b1a1a" },
+    { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
+    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
+    { type: "fate",       label: "🎲 Fate",       icon: "🎲", color: "#8b1a1a" },
+    { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
+    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
 ];
 
 // =====================================================
@@ -37,6 +37,7 @@ function calculateSegments() {
         wheelSegments.push({
             type: config.type,
             label: config.label,
+            icon: config.icon,
             color: config.color,
             startAngle: currentAngle,
             endAngle: currentAngle + angleDegrees
@@ -61,9 +62,34 @@ function generateWheelGradient() {
 function applyWheelStyle() {
     const wheel = document.getElementById("wheel");
     if (!wheel) return;
-    
+
     wheel.style.background = generateWheelGradient();
+    renderWheelIcons(wheel);
     console.log("Wheel gradient applied:", generateWheelGradient());
+}
+
+// Place an emoji icon at the visual center of each segment.
+// Icons are appended to the wheel so they rotate with it.
+function renderWheelIcons(wheel) {
+    wheel.querySelectorAll(".wheel-icon").forEach(el => el.remove());
+
+    // Icon center sits at 66% of the wheel radius (33% of wheel width from center).
+    const radiusPct = 33;
+
+    for (const segment of wheelSegments) {
+        if (!segment.icon) continue;
+        const centerDeg = (segment.startAngle + segment.endAngle) / 2;
+        const rad = (centerDeg * Math.PI) / 180;
+        const x = radiusPct * Math.sin(rad);
+        const y = -radiusPct * Math.cos(rad);
+
+        const icon = document.createElement("span");
+        icon.className = "wheel-icon";
+        icon.textContent = segment.icon;
+        icon.style.left = `calc(50% + ${x}%)`;
+        icon.style.top = `calc(50% + ${y}%)`;
+        wheel.appendChild(icon);
+    }
 }
 
 // =====================================================
