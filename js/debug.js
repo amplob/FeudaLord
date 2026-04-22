@@ -187,6 +187,7 @@ function showSimResults({ stats, allRuns, runs, turns }) {
         overlay = document.createElement("div");
         overlay.id = "simResultsOverlay";
         overlay.className = "overlay";
+        overlay.style.zIndex = "400"; // above header (250), toast (300), and other overlays
         overlay.innerHTML = `
             <div class="overlay-content" style="max-width: 520px;">
                 <div class="overlay-header">
