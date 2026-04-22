@@ -151,7 +151,68 @@ function selectCard(category, state) {
 }
 
 // =====================================================
-// RANDOMIZATION
+// FORMULA MOTOR
+// =====================================================
+// Canonical gold-equivalent values per unit. Conversions and
+// fate-card sizing are derived from this table.
+
+const RESOURCE_VALUE = { gold: 1, food: 0.5, manpower: 3, favor: 2 };
+
+function canonicalRate(from, to) {
+    return RESOURCE_VALUE[from] / RESOURCE_VALUE[to];
+}
+
+function rollBulk() {
+    return 0.5 + Math.random() * 1.5;
+}
+
+function rollVariance() {
+    return 0.85 + Math.random() * 0.30;
+}
+
+function round2(n) {
+    return Math.round(n * 100) / 100;
+}
+
+// Evaluate tierBoosts against active cards; pick the best multiplier
+// among entries whose prereqs (typeIds) are all active. Default 1.0.
+function evalTierMultiplier(tierBoosts) {
+    if (!tierBoosts || tierBoosts.length === 0) return 1.0;
+    let best = 1.0;
+    for (const boost of tierBoosts) {
+        const prereqs = boost.if || [];
+        if (prereqs.every(id => hasActiveCard(id)) && boost.multiplier > best) {
+            best = boost.multiplier;
+        }
+    }
+    return best;
+}
+
+// Trade-style formula: convert inputRes → outputRes.
+// inputAmount  = inputBase × bulkRoll
+// outputAmount = inputAmount × canonicalRate × qualityFactor × varianceRoll × tierMultiplier
+function applyTradeFormula({ inputRes, outputRes, inputBase, qualityFactor = 1, tierMultiplier = 1 }) {
+    const bulk = rollBulk();
+    const variance = rollVariance();
+    const inputAmount = round2(inputBase * bulk);
+    const outputAmount = round2(
+        inputAmount * canonicalRate(inputRes, outputRes) * qualityFactor * variance * tierMultiplier
+    );
+    return { inputAmount, outputAmount };
+}
+
+// Fate-style formula: no input, size is eventBase in gold-equivalent.
+// output = eventBase × (1/valueOfTargetResource) × qualityFactor × varianceRoll × tierMultiplier
+function applyFateFormula({ outputRes, eventBase, qualityFactor = 1, tierMultiplier = 1 }) {
+    const variance = rollVariance();
+    const outputAmount = round2(
+        eventBase * (1 / RESOURCE_VALUE[outputRes]) * qualityFactor * variance * tierMultiplier
+    );
+    return { outputAmount };
+}
+
+// =====================================================
+// RANDOMIZATION (legacy)
 // =====================================================
 
 /**
@@ -168,7 +229,7 @@ function applyVariance(baseValue, variance) {
  */
 function randomizeEffects(effects, variance) {
     if (!effects) return {};
-    
+
     const randomized = {};
     for (const [resource, amount] of Object.entries(effects)) {
         randomized[resource] = applyVariance(amount, variance);
@@ -206,19 +267,50 @@ function createCardInstance(card) {
         _cardDef: card,
     };
     
-    // For decisions, randomize option effects
+    // For decisions: new schema options use the trade formula; legacy fall through.
     if (card.options) {
-        instance.options = card.options.map(opt => ({
-            label: opt.label,
-            effects: randomizeEffects(opt.effects || {}, opt.effectsVariance || 0),
-            perTurnEffects: opt.perTurnEffects 
-                ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
-                : null,
-        }));
+        instance.options = card.options.map(opt => {
+            if (opt.inputRes && opt.outputRes && typeof opt.inputBase === "number") {
+                const tierMultiplier = evalTierMultiplier(opt.tierBoosts);
+                const { inputAmount, outputAmount } = applyTradeFormula({
+                    inputRes: opt.inputRes,
+                    outputRes: opt.outputRes,
+                    inputBase: opt.inputBase,
+                    qualityFactor: opt.qualityFactor || 1,
+                    tierMultiplier,
+                });
+                return {
+                    label: opt.label,
+                    effects: {
+                        [opt.inputRes]: -inputAmount,
+                        [opt.outputRes]: outputAmount,
+                    },
+                    perTurnEffects: opt.perTurnEffects
+                        ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
+                        : null,
+                };
+            }
+            return {
+                label: opt.label,
+                effects: randomizeEffects(opt.effects || {}, opt.effectsVariance || 0),
+                perTurnEffects: opt.perTurnEffects
+                    ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
+                    : null,
+            };
+        });
     }
-    
-    // For fate cards, randomize immediate effects
-    if (card.effects) {
+
+    // For fate cards: new schema uses fate formula; legacy effects fall through.
+    if (card.outputRes && typeof card.eventBase === "number") {
+        const tierMultiplier = evalTierMultiplier(card.tierBoosts);
+        const { outputAmount } = applyFateFormula({
+            outputRes: card.outputRes,
+            eventBase: card.eventBase,
+            qualityFactor: card.qualityFactor || 1,
+            tierMultiplier,
+        });
+        instance.effects = { [card.outputRes]: outputAmount };
+    } else if (card.effects) {
         instance.effects = randomizeEffects(card.effects, card.effectsVariance || 0);
     }
     
