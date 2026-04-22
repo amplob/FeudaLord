@@ -318,6 +318,7 @@ function createCardInstance(card) {
                     perTurnEffects: opt.perTurnEffects
                         ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
                         : null,
+                    triggersEvent: opt.triggersEvent || null,
                 };
             }
             return {
@@ -326,6 +327,7 @@ function createCardInstance(card) {
                 perTurnEffects: opt.perTurnEffects
                     ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
                     : null,
+                triggersEvent: opt.triggersEvent || null,
             };
         });
     }

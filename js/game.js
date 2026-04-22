@@ -372,7 +372,20 @@ function handleDecisionChoice(cardInstance, optionIndex) {
         activateCard(eventInstance);
         showToast(`Ongoing: ${formatEffects(option.perTurnEffects)}/turn`);
     }
-    
+
+    // If this option triggers an event card, activate it now
+    if (option.triggersEvent) {
+        const eventCard = allCards.find(c => c.typeId === option.triggersEvent);
+        if (eventCard) {
+            const eventInstance = createCardInstance(eventCard);
+            if (eventInstance.onActivate) {
+                applyResourceChange(eventInstance.onActivate, `${eventInstance.name} begins!`);
+            }
+            activateCard(eventInstance);
+            showToast(`${eventInstance.icon} ${eventInstance.name} triggered!`);
+        }
+    }
+
     gameState.pending = null;
     hideAuguryOverlay();
     renderProperties();

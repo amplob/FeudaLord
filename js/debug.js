@@ -137,6 +137,14 @@ function simulateSingleRun(numTurns) {
                             turnsRemaining: null,
                         });
                     }
+                    if (opt.triggersEvent) {
+                        const eventCard = allCards.find(c => c.typeId === opt.triggersEvent);
+                        if (eventCard) {
+                            const eventInstance = createCardInstance(eventCard);
+                            if (eventInstance.onActivate) addResourcesQuiet(eventInstance.onActivate);
+                            activateCard(eventInstance);
+                        }
+                    }
                 } else if (wheelResult === "fate") {
                     addResourcesQuiet(instance.effects);
                 }

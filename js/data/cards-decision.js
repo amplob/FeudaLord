@@ -1,363 +1,224 @@
 // =====================================================
 // DECISION CARDS
 // =====================================================
-// Events that require player choice between options.
+// Each option is a zero-sum trade (input gold-equivalent ≈ output
+// gold-equivalent when qualityFactor = 1). The formula motor applies
+// bulkRoll (size of opportunity) and varianceRoll (quality) per instance.
+// Some options can also `triggersEvent` to activate an event card.
+// Canonical values: gold=1, food=0.5, manpower=3, favor=2.
 // =====================================================
 
 const decisionCards = [
-    // ===== PEOPLE & VISITORS =====
     {
-        typeId: "knightOffers",
-        category: "decision",
-        name: "A Knight's Offer",
-        description: "A wandering knight offers to serve your lands.",
-        icon: "⚔️",
-        
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 2,
-        requiresResource: { food: 15 },
-        
-        weight: 10,
-        absoluteChance: null,
-        
-        options: [
-            {
-                label: "Accept his service",
-                effects: { manpower: 20 },
-                perTurnEffects: { food: -5 },
-                effectsVariance: 0.2,
-            },
-            {
-                label: "Decline politely",
-                effects: { favor: 5 },
-                effectsVariance: 0.1,
-            }
-        ]
-    },
-    {
-        typeId: "merchantsSettle",
-        category: "decision",
-        name: "Merchant Guild Request",
-        description: "Wealthy merchants want to establish a guild in your lands.",
-        icon: "💼",
-        
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 3,
-        requiresResource: null,
-        
-        weight: 10,
-        absoluteChance: null,
-        
-        options: [
-            {
-                label: "Welcome them",
-                effects: { gold: 30 },
-                perTurnEffects: { gold: 3 },
-                effectsVariance: 0.2,
-            },
-            {
-                label: "Reject (protect local traders)",
-                effects: { favor: 15 },
-                effectsVariance: 0.15,
-            }
-        ]
-    },
-    {
-        typeId: "churchDonation",
-        category: "decision",
-        name: "Church Asks for Donation",
-        description: "The bishop requests gold to build a new chapel.",
-        icon: "✝️",
-        
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 1,
-        requiresResource: null,
-        
-        weight: 12,
-        absoluteChance: null,
-        
-        options: [
-            {
-                label: "Donate generously",
-                effects: { gold: -25, favor: 15 },
-                effectsVariance: 0.15,
-            },
-            {
-                label: "Refuse",
-                effects: { favor: -10 },
-                effectsVariance: 0.2,
-            }
-        ]
-    },
-    {
-        typeId: "peasantTaxes",
-        category: "decision",
-        name: "Peasants Demand Lower Taxes",
-        description: "A delegation of peasants pleads for tax relief.",
-        icon: "👨‍🌾",
-        
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 1,
-        requiresResource: null,
-        
-        weight: 12,
-        absoluteChance: null,
-        
-        options: [
-            {
-                label: "Grant tax relief",
-                effects: { favor: 20 },
-                perTurnEffects: { gold: -3 },
-                effectsVariance: 0.15,
-            },
-            {
-                label: "Maintain current taxes",
-                effects: { favor: -15 },
-                effectsVariance: 0.2,
-            }
-        ]
-    },
-    {
-        typeId: "nobleMarriage",
-        category: "decision",
-        name: "Marriage Alliance Proposal",
-        description: "A neighboring noble offers a marriage alliance.",
-        icon: "💍",
-        
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: 2,
-        minTurn: 5,
-        requiresResource: { favor: 20 },
-        
-        weight: 6,
-        absoluteChance: null,
-        
-        options: [
-            {
-                label: "Accept the alliance",
-                effects: { gold: 50, favor: 20 },
-                perTurnEffects: { food: -5 },
-                effectsVariance: 0.2,
-            },
-            {
-                label: "Decline respectfully",
-                effects: { favor: -5 },
-                effectsVariance: 0.1,
-            }
-        ]
-    },
-    {
-        typeId: "banditsOffer",
-        category: "decision",
-        name: "Bandits Seek Employment",
-        description: "A group of outlaws offers to work as your 'enforcers'.",
-        icon: "🗡️",
-        
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 2,
-        requiresResource: null,
-        
-        weight: 8,
-        absoluteChance: null,
-        
-        options: [
-            {
-                label: "Hire them",
-                effects: { manpower: 15 },
-                perTurnEffects: { favor: -2 },
-                effectsVariance: 0.2,
-            },
-            {
-                label: "Send them away",
-                effects: {},
-                effectsVariance: 0,
-            }
-        ]
-    },
-    {
-        typeId: "refugeesArrive",
+        typeId: "refugees",
         category: "decision",
         name: "Refugees at the Gates",
-        description: "Foreign refugees seek shelter in your lands.",
+        description: "A band of displaced folk asks for shelter.",
         icon: "🚶",
-        
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: false,
+        maxInstances: null,
+        minTurn: 2,
+        requiresResource: null,
+
+        weight: 10,
+        absoluteChance: null,
+
+        options: [
+            {
+                label: "Welcome them (feed & shelter)",
+                inputRes: "food",
+                outputRes: "manpower",
+                inputBase: 30,
+                qualityFactor: 1,
+            },
+            {
+                label: "Provide charitable relief",
+                inputRes: "food",
+                outputRes: "favor",
+                inputBase: 30,
+                qualityFactor: 1,
+            },
+        ],
+    },
+    {
+        typeId: "bishopsRequest",
+        category: "decision",
+        name: "The Bishop's Request",
+        description: "The bishop seeks aid for a new chapel.",
+        icon: "⛪",
+
         dependencies: [],
         blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 1,
-        requiresResource: { food: 20 },
-        
+        requiresResource: null,
+
         weight: 10,
         absoluteChance: null,
-        
+
         options: [
             {
-                label: "Welcome them",
-                effects: { manpower: 25, food: -20 },
-                effectsVariance: 0.2,
+                label: "Gift gold",
+                inputRes: "gold",
+                outputRes: "favor",
+                inputBase: 20,
+                qualityFactor: 1,
             },
             {
-                label: "Turn them away",
-                effects: { favor: -5 },
-                effectsVariance: 0.15,
-            }
-        ]
+                label: "Send grain",
+                inputRes: "food",
+                outputRes: "favor",
+                inputBase: 30,
+                qualityFactor: 1,
+            },
+            {
+                label: "Send laborers",
+                inputRes: "manpower",
+                outputRes: "favor",
+                inputBase: 5,
+                qualityFactor: 1,
+            },
+        ],
     },
     {
-        typeId: "festivalProposal",
+        typeId: "knightsOffer",
         category: "decision",
-        name: "Festival Proposal",
-        description: "Your advisor suggests hosting a grand festival.",
-        icon: "🎉",
-        
+        name: "A Knight's Offer",
+        description: "A wandering knight and his retinue seek a lord to serve.",
+        icon: "⚔️",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: false,
+        maxInstances: null,
+        minTurn: 2,
+        requiresResource: null,
+
+        weight: 10,
+        absoluteChance: null,
+
+        options: [
+            {
+                label: "Accept his service (feed his men)",
+                inputRes: "food",
+                outputRes: "manpower",
+                inputBase: 30,
+                qualityFactor: 1,
+            },
+            {
+                label: "Buy his whole retinue",
+                inputRes: "gold",
+                outputRes: "manpower",
+                inputBase: 20,
+                qualityFactor: 1,
+            },
+        ],
+    },
+    {
+        typeId: "merchantGuild",
+        category: "decision",
+        name: "Merchant Guild Request",
+        description: "Foreign traders want to establish a guild in your lands.",
+        icon: "💼",
+
         dependencies: [],
         blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 3,
-        requiresResource: { gold: 30, food: 30 },
-        
+        requiresResource: null,
+
+        weight: 10,
+        absoluteChance: null,
+
+        options: [
+            {
+                label: "Let them trade grain (tax heavily)",
+                inputRes: "food",
+                outputRes: "gold",
+                inputBase: 30,
+                qualityFactor: 1,
+                triggersEvent: "tradeBoom",
+            },
+            {
+                label: "Put workers at their disposal",
+                inputRes: "manpower",
+                outputRes: "gold",
+                inputBase: 5,
+                qualityFactor: 1,
+            },
+        ],
+    },
+    {
+        typeId: "warPreparations",
+        category: "decision",
+        name: "War in Neighboring Lands",
+        description: "Tensions rise. You must raise forces — quickly.",
+        icon: "🏰",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: false,
+        maxInstances: null,
+        minTurn: 6,
+        requiresResource: null,
+
         weight: 8,
         absoluteChance: null,
-        
-        options: [
-            {
-                label: "Host the festival!",
-                effects: { gold: -30, food: -20, favor: 35 },
-                effectsVariance: 0.2,
-            },
-            {
-                label: "Too expensive",
-                effects: { favor: -5 },
-                effectsVariance: 0.1,
-            }
-        ]
-    },
 
-    // ===== SPECIAL DECISIONS (with dependencies) =====
+        options: [
+            {
+                label: "Hire mercenaries",
+                inputRes: "gold",
+                outputRes: "manpower",
+                inputBase: 20,
+                qualityFactor: 1,
+            },
+            {
+                label: "Conscript your own (they resent you)",
+                inputRes: "favor",
+                outputRes: "manpower",
+                inputBase: 10,
+                qualityFactor: 1,
+            },
+        ],
+    },
     {
-        typeId: "tavernBrawl",
+        typeId: "ruralPetition",
         category: "decision",
-        name: "Tavern Brawl!",
-        description: "A massive fight broke out in your tavern!",
-        icon: "🍺💥",
-        
-        dependencies: ["openTavern"],
+        name: "Rural Petition",
+        description: "The farmers plead for help with a failing harvest.",
+        icon: "🏞️",
+
+        dependencies: [],
         blockedBy: [],
         isUnique: false,
         maxInstances: null,
-        minTurn: 1,
+        minTurn: 3,
         requiresResource: null,
-        
-        weight: 15,
-        absoluteChance: null,
-        
-        options: [
-            {
-                label: "Let them fight it out",
-                effects: { manpower: -5, favor: -5 },
-                effectsVariance: 0.3,
-            },
-            {
-                label: "Pay for damages",
-                effects: { gold: -20, favor: 10 },
-                effectsVariance: 0.2,
-            },
-            {
-                label: "Free ale for everyone!",
-                effects: { gold: -15, food: -10, favor: 20 },
-                effectsVariance: 0.15,
-            }
-        ]
-    },
-    {
-        typeId: "horseThief",
-        category: "decision",
-        name: "Horse Thief Caught!",
-        description: "Guards caught someone trying to steal from your stables.",
-        icon: "🐴🚨",
-        
-        dependencies: ["buildStables"],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 1,
-        requiresResource: null,
-        
-        weight: 12,
-        absoluteChance: null,
-        
-        options: [
-            {
-                label: "Execute him publicly",
-                effects: { favor: -10, manpower: -1 },
-                effectsVariance: 0.1,
-            },
-            {
-                label: "Show mercy, put him to work",
-                effects: { manpower: 5, favor: 10 },
-                effectsVariance: 0.15,
-            },
-            {
-                label: "Fine him heavily",
-                effects: { gold: 15 },
-                effectsVariance: 0.3,
-            }
-        ]
-    },
-    {
-        typeId: "churchMiracle",
-        category: "decision",
-        name: "Miracle at the Church!",
-        description: "Pilgrims claim a miracle occurred at your church!",
-        icon: "⛪✨",
-        
-        dependencies: ["buildChurch"],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: 2,
-        minTurn: 1,
-        requiresResource: null,
-        
+
         weight: 10,
-        absoluteChance: 30, // 30% chance when eligible - it's special!
-        
+        absoluteChance: null,
+
         options: [
             {
-                label: "Proclaim it loudly",
-                effects: { favor: 30 },
-                perTurnEffects: { favor: 2 },
-                effectsVariance: 0.2,
+                label: "Fund irrigation supplies",
+                inputRes: "gold",
+                outputRes: "food",
+                inputBase: 15,
+                qualityFactor: 1,
             },
             {
-                label: "Investigate quietly",
-                effects: { favor: 10 },
-                effectsVariance: 0.1,
+                label: "Send laborers to the fields",
+                inputRes: "manpower",
+                outputRes: "food",
+                inputBase: 3,
+                qualityFactor: 1,
             },
-            {
-                label: "Charge pilgrims to see it",
-                effects: { gold: 40, favor: -15 },
-                effectsVariance: 0.25,
-            }
-        ]
+        ],
     },
 ];
-
