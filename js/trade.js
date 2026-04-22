@@ -2,41 +2,44 @@ const tradeConfig = {
     baseAmount: 10
 };
 
+// Trade sector rates = 0.5 × canonical (intentionally harsh to incentivize
+// resource conversion through cards). Canonical values: gold=1, food=0.5,
+// manpower=3, favor=2.
 const tradeOptions = {
     gold: {
         icon: '💰',
         label: 'I need Gold',
         trades: [
-            { id: 'sellHarvest',   from: 'food',     icon: '🌾', name: 'Sell Harvest',     rate: 0.4 },
-            { id: 'sellLabor',     from: 'manpower', icon: '👥', name: 'Sell Labor',       rate: 3.0 },
-            { id: 'taxTheLoyal',   from: 'favor',    icon: '👑', name: 'Tax the Loyal',    rate: 1.5 }
+            { id: 'sellHarvest',   from: 'food',     icon: '🌾', name: 'Sell Harvest',     rate: 0.25 },
+            { id: 'sellLabor',     from: 'manpower', icon: '👥', name: 'Sell Labor',       rate: 1.5  },
+            { id: 'taxTheLoyal',   from: 'favor',    icon: '👑', name: 'Tax the Loyal',    rate: 1.0  }
         ]
     },
     food: {
         icon: '🌾',
         label: 'I need Food',
         trades: [
-            { id: 'buyProvisions',   from: 'gold',     icon: '💰', name: 'Buy Provisions',     rate: 2.0 },
-            { id: 'workforceFarming', from: 'manpower', icon: '👥', name: 'Workforce Farming',  rate: 4.0 },
-            { id: 'mandatoryDiet',   from: 'favor',    icon: '👑', name: 'Mandatory Diet',     rate: 2.0 }
+            { id: 'buyProvisions',    from: 'gold',     icon: '💰', name: 'Buy Provisions',    rate: 1.0 },
+            { id: 'workforceFarming', from: 'manpower', icon: '👥', name: 'Workforce Farming', rate: 3.0 },
+            { id: 'mandatoryDiet',    from: 'favor',    icon: '👑', name: 'Mandatory Diet',    rate: 2.0 }
         ]
     },
     manpower: {
         icon: '👥',
         label: 'I need Manpower',
         trades: [
-            { id: 'hireWorkers',     from: 'gold',  icon: '💰', name: 'Hire Workers',      rate: 0.4 },
-            { id: 'attractSettlers', from: 'food',  icon: '🌾', name: 'Attract Settlers',  rate: 0.3 },
-            { id: 'conscription',    from: 'favor', icon: '👑', name: 'Conscription',      rate: 0.5 }
+            { id: 'hireWorkers',     from: 'gold',  icon: '💰', name: 'Hire Workers',      rate: 0.167 },
+            { id: 'attractSettlers', from: 'food',  icon: '🌾', name: 'Attract Settlers',  rate: 0.083 },
+            { id: 'conscription',    from: 'favor', icon: '👑', name: 'Conscription',      rate: 0.333 }
         ]
     },
     favor: {
         icon: '👑',
         label: 'I need Favor',
         trades: [
-            { id: 'royalGift',      from: 'gold',     icon: '💰', name: 'Royal Gift',       rate: 0.5 },
-            { id: 'feedPeople',     from: 'food',     icon: '🌾', name: 'Feed the People',  rate: 0.8 },
-            { id: 'humanSacrifice', from: 'manpower', icon: '👥', name: 'Human Sacrifice',  rate: 2.0 }
+            { id: 'royalGift',      from: 'gold',     icon: '💰', name: 'Royal Gift',       rate: 0.25  },
+            { id: 'feedPeople',     from: 'food',     icon: '🌾', name: 'Feed the People',  rate: 0.125 },
+            { id: 'humanSacrifice', from: 'manpower', icon: '👥', name: 'Human Sacrifice',  rate: 0.75  }
         ]
     }
 };
@@ -102,13 +105,13 @@ function initTradeUI(handler) {
         options.className = "trade-options";
         
         data.trades.forEach((trade) => {
-            const toAmount = Math.round(tradeConfig.baseAmount * trade.rate);
+            const toAmount = tradeConfig.baseAmount * trade.rate;
             const row = document.createElement("div");
             row.className = "trade-row";
             row.innerHTML = `
                 <div class="info">
                     <span class="name">${trade.name}</span>
-                    <span class="rate">${tradeConfig.baseAmount}${trade.icon} → ${toAmount}${data.icon}</span>
+                    <span class="rate">${tradeConfig.baseAmount}${trade.icon} → ${fmtNum(toAmount)}${data.icon}</span>
                 </div>
                 <button data-trade="${trade.id}" data-from="${trade.from}" data-to="${targetResource}" data-rate="${trade.rate}">Trade</button>
             `;

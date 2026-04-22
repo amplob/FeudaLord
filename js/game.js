@@ -382,7 +382,7 @@ function handleDecisionChoice(cardInstance, optionIndex) {
 
 function handleTrade(tradeId, from, to, rate) {
     const fromAmount = tradeConfig.baseAmount;
-    const toAmount = Math.round(tradeConfig.baseAmount * rate);
+    const toAmount = tradeConfig.baseAmount * rate;
     
     if (gameState.resources[from] < fromAmount) {
         showToast("Not enough resources to trade.");

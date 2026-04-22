@@ -2,30 +2,36 @@
 // UI - Resource Bar Updates
 // =====================================================
 
+// Format numbers: integers as-is, fractional with 2 decimals
+function fmtNum(n) {
+    if (typeof n !== "number" || !Number.isFinite(n)) return String(n);
+    return Number.isInteger(n) ? String(n) : n.toFixed(2);
+}
+
 function updateResourceBar(state) {
-    document.getElementById("goldValue").textContent = state.resources.gold;
-    document.getElementById("foodValue").textContent = state.resources.food;
-    document.getElementById("manpowerValue").textContent = state.resources.manpower;
-    document.getElementById("favorValue").textContent = state.resources.favor;
+    document.getElementById("goldValue").textContent = fmtNum(state.resources.gold);
+    document.getElementById("foodValue").textContent = fmtNum(state.resources.food);
+    document.getElementById("manpowerValue").textContent = fmtNum(state.resources.manpower);
+    document.getElementById("favorValue").textContent = fmtNum(state.resources.favor);
     document.getElementById("turnValue").textContent = state.turn;
-    
+
     updateIncomeIndicators();
 }
 
 function updateIncomeIndicators() {
     const net = calculateTotalPassiveIncome();
-    
+
     const resources = ['gold', 'food', 'manpower', 'favor'];
     resources.forEach(resource => {
         const indicator = document.getElementById(`${resource}Income`);
         if (!indicator) return;
-        
+
         const value = net[resource];
         if (value === 0) {
             indicator.textContent = '';
             indicator.className = 'income-indicator';
         } else {
-            indicator.textContent = value > 0 ? `+${value}` : `${value}`;
+            indicator.textContent = value > 0 ? `+${fmtNum(value)}` : fmtNum(value);
             indicator.className = `income-indicator ${value > 0 ? 'positive' : 'negative'}`;
         }
     });
@@ -354,7 +360,7 @@ function showFloating(resource, amount) {
 
     const floatEl = document.createElement("span");
     floatEl.className = `floating ${amount >= 0 ? "positive" : "negative"}`;
-    floatEl.textContent = `${amount >= 0 ? "+" : ""}${amount}`;
+    floatEl.textContent = `${amount >= 0 ? "+" : ""}${fmtNum(amount)}`;
     resourceEl.appendChild(floatEl);
 
     setTimeout(() => {
@@ -373,9 +379,9 @@ function formatEffects(effects, showPlus = true) {
     return entries
         .map(([key, value]) => {
             if (showPlus) {
-                return `${value >= 0 ? "+" : ""}${value}${symbolFor(key)}`;
+                return `${value >= 0 ? "+" : ""}${fmtNum(value)}${symbolFor(key)}`;
             } else {
-                return `${value}${symbolFor(key)}`;
+                return `${fmtNum(value)}${symbolFor(key)}`;
             }
         })
         .join(" ");
@@ -386,7 +392,7 @@ function formatCost(cost) {
     const entries = Object.entries(cost);
     if (entries.length === 0) return "Free";
     return entries
-        .map(([key, value]) => `${value}${symbolFor(key)}`)
+        .map(([key, value]) => `${fmtNum(value)}${symbolFor(key)}`)
         .join(" ");
 }
 
@@ -395,6 +401,6 @@ function formatPerTurn(perTurn) {
     const entries = Object.entries(perTurn);
     if (entries.length === 0) return "";
     return entries
-        .map(([key, value]) => `${value >= 0 ? "+" : ""}${value}${symbolFor(key)}/turn`)
+        .map(([key, value]) => `${value >= 0 ? "+" : ""}${fmtNum(value)}${symbolFor(key)}/turn`)
         .join(" ");
 }
