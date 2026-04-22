@@ -211,6 +211,27 @@ function applyFateFormula({ outputRes, eventBase, qualityFactor = 1, tierMultipl
     return { outputAmount };
 }
 
+// Scale every resource amount in an effects object by `factor`.
+function scaleEffects(effects, factor) {
+    if (!effects) return {};
+    const scaled = {};
+    for (const [resource, amount] of Object.entries(effects)) {
+        scaled[resource] = round2(amount * factor);
+    }
+    return scaled;
+}
+
+// Investment formula: bulk scales cost and yield together (preserves ROI);
+// variance perturbs only the yield (quality of the specific build).
+function applyInvestmentFormula({ baseCost, basePerTurn }) {
+    const bulk = rollBulk();
+    const variance = rollVariance();
+    return {
+        cost: scaleEffects(baseCost, bulk),
+        perTurn: scaleEffects(basePerTurn, bulk * variance),
+    };
+}
+
 // =====================================================
 // RANDOMIZATION (legacy)
 // =====================================================
@@ -248,24 +269,33 @@ function createCardInstance(card) {
         name: card.name,
         description: card.description,
         icon: card.icon,
-        
-        // Randomized cost (if applicable)
-        cost: card.baseCost 
-            ? randomizeEffects(card.baseCost, card.costVariance || 0)
-            : null,
-        
-        // Randomized per-turn effects
-        perTurn: card.basePerTurn 
-            ? randomizeEffects(card.basePerTurn, card.yieldVariance || 0)
-            : null,
-        
+
+        cost: null,
+        perTurn: null,
+
         // For events with duration
         duration: card.duration || null,
         turnsRemaining: card.duration || null,
-        
+
         // Original card reference
         _cardDef: card,
     };
+
+    if (card.category === "investment" && card.baseCost && card.basePerTurn) {
+        const { cost, perTurn } = applyInvestmentFormula({
+            baseCost: card.baseCost,
+            basePerTurn: card.basePerTurn,
+        });
+        instance.cost = cost;
+        instance.perTurn = perTurn;
+    } else {
+        if (card.baseCost) {
+            instance.cost = randomizeEffects(card.baseCost, card.costVariance || 0);
+        }
+        if (card.basePerTurn) {
+            instance.perTurn = randomizeEffects(card.basePerTurn, card.yieldVariance || 0);
+        }
+    }
     
     // For decisions: new schema options use the trade formula; legacy fall through.
     if (card.options) {

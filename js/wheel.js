@@ -7,17 +7,17 @@
 // =====================================================
 
 // 8 equal-sized slices (45° each). Interleaved so no two same types
-// are adjacent. Counts: 3 investment, 3 decision, 2 fate → probabilities
-// 37.5% / 37.5% / 25%.
+// are adjacent. Counts: 4 decision, 2 investment, 2 event → probabilities
+// 50% / 25% / 25%. Pattern: D I D E D I D E.
 const wheelConfig = [
+    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
     { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
     { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
-    { type: "fate",       label: "🎲 Fate",       icon: "🎲", color: "#8b1a1a" },
+    { type: "fate",       label: "🎲 Event",      icon: "🎲", color: "#8b1a1a" },
+    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
     { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
     { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
-    { type: "fate",       label: "🎲 Fate",       icon: "🎲", color: "#8b1a1a" },
-    { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
-    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
+    { type: "fate",       label: "🎲 Event",      icon: "🎲", color: "#8b1a1a" },
 ];
 
 // =====================================================
