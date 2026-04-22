@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Feudal Lord</title>
+        <link rel="stylesheet" href="css/style.css" />
+    </head>
+    <body>
+        <main class="app">
+            <header class="header">
+                <h1>Feudal Lord</h1>
+                <div class="resource-bar" id="resourceBar">
+                    <div class="resource" data-resource="gold">
+                        💰 <span id="goldValue">0</span>
+                        <span class="income-indicator" id="goldIncome"></span>
+                    </div>
+                    <div class="resource" data-resource="food">
+                        🌾 <span id="foodValue">0</span>
+                        <span class="income-indicator" id="foodIncome"></span>
+                    </div>
+                    <div class="resource" data-resource="manpower">
+                        👥 <span id="manpowerValue">0</span>
+                        <span class="income-indicator" id="manpowerIncome"></span>
+                    </div>
+                    <div class="resource" data-resource="favor">
+                        👑 <span id="favorValue">0</span>
+                        <span class="income-indicator" id="favorIncome"></span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="tradeToggle" class="header-btn">🔄 Trade</button>
+                    <button id="propertiesToggle" class="header-btn">🏰 Estate</button>
+                </div>
+            </header>
+
+            <section class="wheel-section">
+                <div class="wheel-container">
+                    <div class="wheel-pointer">▼</div>
+                    <div class="wheel" id="wheel">
+                        <button id="spinButton" class="spin-center">SPIN</button>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="footer">
+                <div>Turn: <span id="turnValue">1</span></div>
+                <div>Goal: 500 👑</div>
+                <button id="resetButton" class="link">Reset Game</button>
+            </footer>
+        </main>
+
+        <!-- Augury Fullscreen Overlay -->
+        <div class="overlay augury-overlay hidden" id="auguryOverlay">
+            <div class="overlay-content augury-content">
+                <button class="emergency-close" id="emergencyClose" title="Emergency: Skip this turn (Escape)">✕</button>
+                <h2 id="auguryTitle">Awaiting the augury...</h2>
+                <p id="auguryDescription">Press "Spin" to begin a new turn.</p>
+                <div id="auguryOptions" class="option-list"></div>
+            </div>
+        </div>
+
+        <!-- Trade Overlay (higher z-index, always accessible) -->
+        <div class="overlay trade-overlay hidden" id="tradeOverlay">
+            <div class="overlay-content trade-content">
+                <div class="overlay-header">
+                    <h2>Trade Sector</h2>
+                    <button class="close-btn" id="tradeClose">✕</button>
+                </div>
+                <div id="tradeAccordion" class="trade-accordion"></div>
+            </div>
+        </div>
+
+        <!-- Properties/Estate Overlay -->
+        <div class="overlay properties-overlay hidden" id="propertiesOverlay">
+            <div class="overlay-content properties-content">
+                <div class="overlay-header">
+                    <h2>Your Estate</h2>
+                    <button class="close-btn" id="propertiesClose">✕</button>
+                </div>
+                <div class="resource-tabs" id="resourceTabs">
+                    <button class="tab active" data-filter="all">All</button>
+                    <button class="tab" data-filter="gold">💰</button>
+                    <button class="tab" data-filter="food">🌾</button>
+                    <button class="tab" data-filter="manpower">👥</button>
+                    <button class="tab" data-filter="favor">👑</button>
+                </div>
+                <div id="propertyList" class="property-list"></div>
+            </div>
+        </div>
+
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Data files (no logic, just definitions) -->
+        <script src="js/data/cards-investment.js"></script>
+        <script src="js/data/cards-decision.js"></script>
+        <script src="js/data/cards-fate.js"></script>
+        <script src="js/data/cards-event.js"></script>
+        
+        <!-- Systems -->
+        <script src="js/cardSystem.js"></script>
+        <script src="js/wheel.js"></script>
+        <script src="js/trade.js"></script>
+        <script src="js/ui.js"></script>
+        <script src="js/game.js"></script>
+    </body>
+</html>
