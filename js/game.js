@@ -12,6 +12,11 @@ const defaultState = {
         manpower: 30,
         favor: 30
     },
+    // eventFlags: transient boolean state (conceptually "something is happening").
+    //   Auto-derived from active event cards' setsEventFlag + decision-set entries here.
+    // staticFlags: permanent, once-set boolean state ("something has happened").
+    eventFlags: [],
+    staticFlags: [],
     cardSystemState: null,
     pending: null,
     gameOver: false
@@ -106,8 +111,6 @@ function restorePendingAugury() {
             renderInvestmentCard(cardInstance);
         } else if (type === 'decision' && cardInstance) {
             renderDecisionCard(cardInstance);
-        } else if (type === 'fate' && cardInstance) {
-            renderFateCard(cardInstance);
         } else if (type === 'event' && cardInstance) {
             renderEventCard(cardInstance);
         } else {
@@ -192,45 +195,24 @@ function applyPassiveIncome() {
 // =====================================================
 
 function presentAugury(wheelResult) {
-    // Map wheel result to card category
-    const categoryMap = {
-        'investment': 'investment',
-        'decision': 'decision',
-        'fate': 'fate'
-    };
-    
-    // Sometimes fate can trigger events instead
-    let category = categoryMap[wheelResult];
-    if (category === 'fate' && Math.random() < 0.3) {
-        // 30% chance to get an event instead of fate
-        const eventCard = selectCard('event', gameState);
-        if (eventCard) {
-            presentEvent(eventCard);
-            return;
-        }
-    }
-    
-    // Select a card from the category
-    const card = selectCard(category, gameState);
-    
+    // Wheel result maps directly to card category (investment / decision / event).
+    const card = selectCard(wheelResult, gameState);
+
     if (!card) {
-        // Fallback if no cards available
         showToast("Nothing happens this turn...");
         gameState.pending = null;
         hideAuguryOverlay();
         return;
     }
-    
-    // Create instance with randomized values
+
     const cardInstance = createCardInstance(card);
-    
-    // Present based on category
-    if (category === 'investment') {
+
+    if (wheelResult === 'investment') {
         presentInvestment(cardInstance);
-    } else if (category === 'decision') {
+    } else if (wheelResult === 'decision') {
         presentDecision(cardInstance);
-    } else {
-        presentFate(cardInstance);
+    } else if (wheelResult === 'event') {
+        presentEvent(cardInstance);
     }
 }
 
@@ -246,25 +228,10 @@ function presentDecision(cardInstance) {
     saveState();
 }
 
-function presentFate(cardInstance) {
-    // DON'T apply effects yet - wait for "Continue" click
-    gameState.pending = { type: 'fate', cardInstance, effectsApplied: false };
-    renderFateCard(cardInstance);
-    saveState();
-}
-
-function presentEvent(card) {
-    const cardInstance = createCardInstance(card);
-    
-    // Apply activation effects
-    if (cardInstance.onActivate) {
-        applyResourceChange(cardInstance.onActivate, `${cardInstance.name} begins!`);
-    }
-    
-    // Activate the event
-    activateCard(cardInstance);
-    
-    gameState.pending = { type: 'event', cardInstance };
+function presentEvent(cardInstance) {
+    // Don't apply effects yet — wait for "Continue" click.
+    // Events are "just accept": instant effects + onActivate + activation all fire on Continue.
+    gameState.pending = { type: 'event', cardInstance, effectsApplied: false };
     renderEventCard(cardInstance);
     saveState();
 }
@@ -283,45 +250,54 @@ function handleAuguryAction(event) {
         return;
     }
 
-    // Handle continue/skip buttons
-    if (button.dataset.action === 'continue' || button.dataset.action === 'skip') {
-        gameState.pending = null;
-        hideAuguryOverlay();
-        renderProperties();
-        verifyState();
-        saveState();
+    if (!gameState.pending) {
+        if (button.dataset.action === 'continue' || button.dataset.action === 'skip') {
+            hideAuguryOverlay();
+        }
         return;
     }
 
-    if (!gameState.pending) return;
-
     const { type, cardInstance } = gameState.pending;
+    const action = button.dataset.action;
 
-    if (type === 'investment' && button.dataset.action === 'build') {
+    if (type === 'investment' && action === 'build') {
         handleBuildInvestment(cardInstance);
+    } else if (type === 'investment' && action === 'skip') {
+        gameState.pending = null;
+        hideAuguryOverlay();
+        saveState();
     } else if (type === 'decision') {
         const optionIndex = parseInt(button.dataset.optionIndex);
         if (!isNaN(optionIndex)) {
             handleDecisionChoice(cardInstance, optionIndex);
         }
-    } else if (type === 'fate') {
-        // Apply fate effects NOW when clicking Continue
-        if (cardInstance.effects && !gameState.pending.effectsApplied) {
-            applyResourceChange(cardInstance.effects, cardInstance.name);
-            gameState.pending.effectsApplied = true;
-        }
-        gameState.pending = null;
-        hideAuguryOverlay();
-        renderProperties();
-        verifyState();
-        saveState();
-    } else if (type === 'event') {
-        gameState.pending = null;
-        hideAuguryOverlay();
-        renderProperties();
-        verifyState();
-        saveState();
+    } else if (type === 'event' && action === 'continue') {
+        acceptEvent(cardInstance);
     }
+}
+
+function acceptEvent(cardInstance) {
+    if (!gameState.pending.effectsApplied) {
+        if (cardInstance.effects && Object.keys(cardInstance.effects).length > 0) {
+            applyResourceChange(cardInstance.effects, cardInstance.name);
+        }
+        if (cardInstance.onActivate) {
+            applyResourceChange(cardInstance.onActivate, `${cardInstance.name} begins!`);
+        }
+        if (cardInstance.duration || cardInstance.perTurn) {
+            activateCard(cardInstance);
+        }
+        // setsEventFlag is auto-derived from active cards (skipped here).
+        // clearsEventFlag + setsStaticFlag still apply imperatively.
+        applyFlagMutations(cardInstance, { autoDerivedSets: true });
+        gameState.pending.effectsApplied = true;
+    }
+    gameState.pending = null;
+    hideAuguryOverlay();
+    renderProperties();
+    updateIncomeIndicators();
+    verifyState();
+    saveState();
 }
 
 function handleBuildInvestment(cardInstance) {
@@ -378,13 +354,22 @@ function handleDecisionChoice(cardInstance, optionIndex) {
         const eventCard = allCards.find(c => c.typeId === option.triggersEvent);
         if (eventCard) {
             const eventInstance = createCardInstance(eventCard);
+            if (eventInstance.effects && Object.keys(eventInstance.effects).length > 0) {
+                applyResourceChange(eventInstance.effects, eventInstance.name);
+            }
             if (eventInstance.onActivate) {
                 applyResourceChange(eventInstance.onActivate, `${eventInstance.name} begins!`);
             }
-            activateCard(eventInstance);
+            if (eventInstance.duration || eventInstance.perTurn) {
+                activateCard(eventInstance);
+            }
+            applyFlagMutations(eventInstance, { autoDerivedSets: true });
             showToast(`${eventInstance.icon} ${eventInstance.name} triggered!`);
         }
     }
+
+    // Apply flag mutations from the chosen option itself (sets/clears event flags, sets static flags).
+    applyFlagMutations(option);
 
     gameState.pending = null;
     hideAuguryOverlay();
@@ -522,30 +507,21 @@ function loadState() {
 }
 
 function emergencySkipTurn() {
-    // Only allow emergency skip for fate/event, NOT for decisions/investments
-    // (player MUST make a choice for those)
+    // Only allow emergency skip for events (info/accept screens), NOT for decisions/investments
+    // (player MUST make a choice for those).
     if (!gameState.pending) {
         hideAuguryOverlay();
         return;
     }
-    
-    const { type } = gameState.pending;
-    
-    // For fate/event, allow skipping (just closes the info screen)
-    if (type === 'fate' || type === 'event') {
-        // For fate, still apply effects even if skipping
-        if (type === 'fate' && gameState.pending.cardInstance?.effects && !gameState.pending.effectsApplied) {
-            applyResourceChange(gameState.pending.cardInstance.effects, gameState.pending.cardInstance.name);
-        }
-        gameState.pending = null;
-        hideAuguryOverlay();
-        renderProperties();
-        verifyState();
-        saveState();
+
+    const { type, cardInstance } = gameState.pending;
+
+    if (type === 'event') {
+        // Treat emergency-close as Continue: accept the event and apply everything.
+        acceptEvent(cardInstance);
         return;
     }
-    
-    // For investment/decision, show a warning but don't skip
+
     showToast("You must make a decision!");
 }
 

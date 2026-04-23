@@ -13,11 +13,11 @@ const wheelConfig = [
     { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
     { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
     { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
-    { type: "fate",       label: "🎲 Event",      icon: "🎲", color: "#8b1a1a" },
+    { type: "event",      label: "🎲 Event",      icon: "🎲", color: "#8b1a1a" },
     { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
     { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
     { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
-    { type: "fate",       label: "🎲 Event",      icon: "🎲", color: "#8b1a1a" },
+    { type: "event",      label: "🎲 Event",      icon: "🎲", color: "#8b1a1a" },
 ];
 
 // =====================================================

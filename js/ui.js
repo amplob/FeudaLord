@@ -261,10 +261,10 @@ function renderDecisionCard(cardInstance) {
     optionsEl.innerHTML = optionsHtml;
 }
 
-function renderFateCard(cardInstance) {
-    // Show emergency close for info screens (fate/event)
+function renderEventCard(cardInstance) {
+    // Unified event renderer: handles instant-only, ongoing-only, and combined cards.
     document.getElementById('emergencyClose').style.display = 'block';
-    
+
     const titleEl = document.getElementById("auguryTitle");
     const descEl = document.getElementById("auguryDescription");
     const optionsEl = document.getElementById("auguryOptions");
@@ -272,42 +272,37 @@ function renderFateCard(cardInstance) {
     titleEl.textContent = `🎲 ${cardInstance.name}`;
     descEl.textContent = cardInstance.description;
 
-    const isPositive = Object.values(cardInstance.effects || {}).reduce((sum, v) => sum + v, 0) >= 0;
+    const instant = cardInstance.effects;
+    const hasInstant = instant && Object.keys(instant).length > 0;
+    const instantSum = hasInstant ? Object.values(instant).reduce((s, v) => s + v, 0) : 0;
+    const onActivateSum = cardInstance.onActivate
+        ? Object.values(cardInstance.onActivate).reduce((s, v) => s + v, 0)
+        : 0;
+    const perTurnSum = cardInstance.perTurn
+        ? Object.values(cardInstance.perTurn).reduce((s, v) => s + v, 0)
+        : 0;
+    const isPositive = (instantSum + onActivateSum + perTurnSum) >= 0;
+
+    const parts = [`<div class="fate-icon">${cardInstance.icon}</div>`];
+    if (hasInstant) {
+        parts.push(`<div class="fate-effects">${formatEffects(instant)}</div>`);
+    }
+    if (cardInstance.onActivate) {
+        parts.push(`<div class="event-activate">Immediate: ${formatEffects(cardInstance.onActivate)}</div>`);
+    }
+    if (cardInstance.perTurn) {
+        parts.push(`<div class="event-effect">Per turn: ${formatPerTurn(cardInstance.perTurn)}</div>`);
+    }
+    if (cardInstance.duration) {
+        parts.push(`<div class="event-duration">Lasts ${cardInstance.duration} turns</div>`);
+    }
+    if (cardInstance.onExpire) {
+        parts.push(`<div class="event-expire">On expire: ${formatEffects(cardInstance.onExpire)}</div>`);
+    }
 
     optionsEl.innerHTML = `
         <div class="fate-result ${isPositive ? 'positive' : 'negative'}">
-            <div class="fate-icon">${cardInstance.icon}</div>
-            <div class="fate-effects">${formatEffects(cardInstance.effects || {})}</div>
-        </div>
-        <div class="card-actions">
-            <button data-action="continue" class="primary">Continue</button>
-        </div>
-    `;
-}
-
-function renderEventCard(cardInstance) {
-    // Show emergency close for info screens (fate/event)
-    document.getElementById('emergencyClose').style.display = 'block';
-    
-    const titleEl = document.getElementById("auguryTitle");
-    const descEl = document.getElementById("auguryDescription");
-    const optionsEl = document.getElementById("auguryOptions");
-
-    titleEl.textContent = `📅 Event: ${cardInstance.name}`;
-    descEl.textContent = cardInstance.description;
-
-    let durationText = cardInstance.duration 
-        ? `Lasts ${cardInstance.duration} turns` 
-        : 'Permanent effect';
-
-    optionsEl.innerHTML = `
-        <div class="event-details">
-            <div class="event-icon">${cardInstance.icon}</div>
-            <div class="event-info">
-                <div class="event-duration">${durationText}</div>
-                ${cardInstance.perTurn ? `<div class="event-effect">Per turn: ${formatPerTurn(cardInstance.perTurn)}</div>` : ''}
-                ${cardInstance.onActivate ? `<div class="event-activate">Immediate: ${formatEffects(cardInstance.onActivate)}</div>` : ''}
-            </div>
+            ${parts.join('')}
         </div>
         <div class="card-actions">
             <button data-action="continue" class="primary">Continue</button>

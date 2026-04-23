@@ -22,15 +22,68 @@ function initCardSystem() {
     allCards = [
         ...investmentCards,
         ...decisionCards,
-        ...fateCards,
         ...eventCards
     ];
-    
+
     console.log(`Card system initialized with ${allCards.length} cards`);
     console.log(`- Investments: ${investmentCards.length}`);
     console.log(`- Decisions: ${decisionCards.length}`);
-    console.log(`- Fate: ${fateCards.length}`);
     console.log(`- Events: ${eventCards.length}`);
+}
+
+// =====================================================
+// FLAG SYSTEM
+// =====================================================
+// Two flavors:
+//   - eventFlags: transient ("something is happening"). Two sources:
+//       (a) Auto-derived: any active event card with `setsEventFlag: "name"`
+//           contributes the flag for its lifetime. No manual cleanup on expiry.
+//       (b) Manual: decision options can `setsEventFlag`/`clearsEventFlag`
+//           to push/pull entries in gameState.eventFlags directly.
+//     hasEventFlag returns true if either source has the flag.
+//   - staticFlags: permanent ("something has happened"). Only ever added
+//       (by any source); never cleared. Lives in gameState.staticFlags.
+// Cards can express eligibility via requiresEventFlag / blockedByEventFlag /
+// requiresStaticFlag / blockedByStaticFlag (each: string or array of strings).
+// =====================================================
+
+function asFlagArray(val) {
+    if (!val) return [];
+    return Array.isArray(val) ? val : [val];
+}
+
+function hasEventFlag(name) {
+    if (gameState.eventFlags && gameState.eventFlags.includes(name)) return true;
+    for (const c of activeCards) {
+        if (asFlagArray(c.setsEventFlag).includes(name)) return true;
+    }
+    return false;
+}
+
+function hasStaticFlag(name) {
+    return !!(gameState.staticFlags && gameState.staticFlags.includes(name));
+}
+
+function addEventFlag(name) {
+    if (!gameState.eventFlags.includes(name)) gameState.eventFlags.push(name);
+}
+
+function removeEventFlag(name) {
+    gameState.eventFlags = gameState.eventFlags.filter(f => f !== name);
+}
+
+function addStaticFlag(name) {
+    if (!gameState.staticFlags.includes(name)) gameState.staticFlags.push(name);
+}
+
+// Apply flag mutations from a card (on activation) or option (on choice).
+// On event activation, `setsEventFlag` is SKIPPED because it's auto-derived
+// from active cards — passing it manually would double-book it.
+function applyFlagMutations(src, { autoDerivedSets = false } = {}) {
+    if (!src) return;
+    if (!autoDerivedSets) asFlagArray(src.setsEventFlag).forEach(addEventFlag);
+    asFlagArray(src.clearsEventFlag).forEach(removeEventFlag);
+    asFlagArray(src.setsStaticFlag).forEach(addStaticFlag);
 }
 
 // =====================================================
@@ -87,7 +140,21 @@ function isCardEligible(card, state) {
             }
         }
     }
-    
+
+    // Check flag requirements
+    if (card.requiresEventFlag && !asFlagArray(card.requiresEventFlag).every(hasEventFlag)) {
+        return false;
+    }
+    if (card.blockedByEventFlag && asFlagArray(card.blockedByEventFlag).some(hasEventFlag)) {
+        return false;
+    }
+    if (card.requiresStaticFlag && !asFlagArray(card.requiresStaticFlag).every(hasStaticFlag)) {
+        return false;
+    }
+    if (card.blockedByStaticFlag && asFlagArray(card.blockedByStaticFlag).some(hasStaticFlag)) {
+        return false;
+    }
+
     return true;
 }
 
@@ -105,16 +172,33 @@ function getEligibleCards(category, state) {
 // =====================================================
 
 /**
+ * Effective weight = base weight × product of active multipliers from weightBoosts.
+ * weightBoosts: [{ ifEventFlag?: "name", ifStaticFlag?: "name", multiplier: N }, ...]
+ * Each boost whose condition is currently met multiplies the weight by its multiplier.
+ * Multiple active boosts stack multiplicatively.
+ */
+function effectiveWeight(card) {
+    let w = card.weight;
+    if (!card.weightBoosts) return w;
+    for (const boost of card.weightBoosts) {
+        if (boost.ifEventFlag && !hasEventFlag(boost.ifEventFlag)) continue;
+        if (boost.ifStaticFlag && !hasStaticFlag(boost.ifStaticFlag)) continue;
+        w *= (boost.multiplier ?? 1);
+    }
+    return w;
+}
+
+/**
  * Select a random card from eligible cards using weighted probability.
  */
 function selectCard(category, state) {
     const eligibleCards = getEligibleCards(category, state);
-    
+
     if (eligibleCards.length === 0) {
         console.warn(`No eligible cards for category: ${category}`);
         return null;
     }
-    
+
     // First, check for absolute chance cards
     for (const card of eligibleCards) {
         if (card.absoluteChance !== null && card.absoluteChance > 0) {
@@ -125,28 +209,24 @@ function selectCard(category, state) {
             }
         }
     }
-    
-    // Filter to cards with weight > 0 for normal selection
-    const weightedCards = eligibleCards.filter(card => card.weight > 0);
-    
+
+    // Filter to cards with effective weight > 0 for normal selection
+    const weightedCards = eligibleCards.filter(card => effectiveWeight(card) > 0);
+
     if (weightedCards.length === 0) {
-        // Fallback: pick random from all eligible
         return eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
     }
-    
-    // Calculate total weight
-    const totalWeight = weightedCards.reduce((sum, card) => sum + card.weight, 0);
-    
-    // Random selection based on weight
+
+    const totalWeight = weightedCards.reduce((sum, card) => sum + effectiveWeight(card), 0);
+
     let random = Math.random() * totalWeight;
     for (const card of weightedCards) {
-        random -= card.weight;
+        random -= effectiveWeight(card);
         if (random <= 0) {
             return card;
         }
     }
-    
-    // Fallback
+
     return weightedCards[weightedCards.length - 1];
 }
 
@@ -154,7 +234,7 @@ function selectCard(category, state) {
 // FORMULA MOTOR
 // =====================================================
 // Canonical gold-equivalent values per unit. Conversions and
-// fate-card sizing are derived from this table.
+// instant-event sizing are derived from this table.
 
 const RESOURCE_VALUE = { gold: 1, food: 0.5, manpower: 3, favor: 2 };
 
@@ -201,14 +281,26 @@ function applyTradeFormula({ inputRes, outputRes, inputBase, qualityFactor = 1, 
     return { inputAmount, outputAmount };
 }
 
-// Fate-style formula: no input, size is eventBase in gold-equivalent.
+// Instant-event formula: no input, size is eventBase in gold-equivalent.
 // output = eventBase × (1/valueOfTargetResource) × qualityFactor × varianceRoll × tierMultiplier
-function applyFateFormula({ outputRes, eventBase, qualityFactor = 1, tierMultiplier = 1 }) {
+function applyInstantEventFormula({ outputRes, eventBase, qualityFactor = 1, tierMultiplier = 1 }) {
     const variance = rollVariance();
     const outputAmount = round2(
         eventBase * (1 / RESOURCE_VALUE[outputRes]) * qualityFactor * variance * tierMultiplier
     );
     return { outputAmount };
+}
+
+// Fixed-output trade: outputAmount is given (rolled once per card), each option
+// pays a different inputRes to reach it. Higher qualityFactor / tierMultiplier
+// reduces the input cost (better deal for the player). Variance applies per option.
+// inputAmount = outputAmount × canonicalRate(out→in) / (qualityFactor × tierMultiplier) × varianceRoll
+function applyFixedOutputTrade({ outputRes, outputAmount, inputRes, qualityFactor = 1, tierMultiplier = 1 }) {
+    const variance = rollVariance();
+    const inputAmount = round2(
+        outputAmount * canonicalRate(outputRes, inputRes) / (qualityFactor * tierMultiplier) * variance
+    );
+    return { inputAmount };
 }
 
 // Scale every resource amount in an effects object by `factor`.
@@ -258,6 +350,15 @@ function randomizeEffects(effects, variance) {
     return randomized;
 }
 
+// Pick up flag-related fields from a card or option def onto its instance copy.
+function copyFlagFields(src) {
+    return {
+        setsEventFlag: src.setsEventFlag || null,
+        clearsEventFlag: src.clearsEventFlag || null,
+        setsStaticFlag: src.setsStaticFlag || null,
+    };
+}
+
 /**
  * Create a card instance with randomized values.
  */
@@ -276,6 +377,9 @@ function createCardInstance(card) {
         // For events with duration
         duration: card.duration || null,
         turnsRemaining: card.duration || null,
+
+        // Flag hooks (setsEventFlag needed on instance for auto-derived hasEventFlag)
+        ...copyFlagFields(card),
 
         // Original card reference
         _cardDef: card,
@@ -297,45 +401,89 @@ function createCardInstance(card) {
         }
     }
     
-    // For decisions: new schema options use the trade formula; legacy fall through.
+    // For decisions: three schemas supported.
+    //   1. Fixed-output: card-level outputRes + outputBase. Options are payment methods
+    //      (inputRes) or rejects (no inputRes). Output is rolled once per card.
+    //   2. Per-option trade: each option has inputRes/outputRes/inputBase.
+    //   3. Legacy: options carry raw effects.
     if (card.options) {
-        instance.options = card.options.map(opt => {
-            if (opt.inputRes && opt.outputRes && typeof opt.inputBase === "number") {
-                const tierMultiplier = evalTierMultiplier(opt.tierBoosts);
-                const { inputAmount, outputAmount } = applyTradeFormula({
-                    inputRes: opt.inputRes,
-                    outputRes: opt.outputRes,
-                    inputBase: opt.inputBase,
-                    qualityFactor: opt.qualityFactor || 1,
-                    tierMultiplier,
-                });
+        if (card.outputRes && typeof card.outputBase === "number") {
+            const outputAmount = round2(card.outputBase * rollBulk());
+            instance.options = card.options.map(opt => {
+                if (opt.inputRes) {
+                    const tierMultiplier = evalTierMultiplier(opt.tierBoosts);
+                    const { inputAmount } = applyFixedOutputTrade({
+                        outputRes: card.outputRes,
+                        outputAmount,
+                        inputRes: opt.inputRes,
+                        qualityFactor: opt.qualityFactor || 1,
+                        tierMultiplier,
+                    });
+                    return {
+                        label: opt.label,
+                        effects: {
+                            [opt.inputRes]: -inputAmount,
+                            [card.outputRes]: outputAmount,
+                        },
+                        perTurnEffects: opt.perTurnEffects
+                            ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
+                            : null,
+                        triggersEvent: opt.triggersEvent || null,
+                        ...copyFlagFields(opt),
+                    };
+                }
                 return {
                     label: opt.label,
-                    effects: {
-                        [opt.inputRes]: -inputAmount,
-                        [opt.outputRes]: outputAmount,
-                    },
+                    effects: {},
                     perTurnEffects: opt.perTurnEffects
                         ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
                         : null,
                     triggersEvent: opt.triggersEvent || null,
+                    ...copyFlagFields(opt),
                 };
-            }
-            return {
-                label: opt.label,
-                effects: randomizeEffects(opt.effects || {}, opt.effectsVariance || 0),
-                perTurnEffects: opt.perTurnEffects
-                    ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
-                    : null,
-                triggersEvent: opt.triggersEvent || null,
-            };
-        });
+            });
+        } else {
+            instance.options = card.options.map(opt => {
+                if (opt.inputRes && opt.outputRes && typeof opt.inputBase === "number") {
+                    const tierMultiplier = evalTierMultiplier(opt.tierBoosts);
+                    const { inputAmount, outputAmount } = applyTradeFormula({
+                        inputRes: opt.inputRes,
+                        outputRes: opt.outputRes,
+                        inputBase: opt.inputBase,
+                        qualityFactor: opt.qualityFactor || 1,
+                        tierMultiplier,
+                    });
+                    return {
+                        label: opt.label,
+                        effects: {
+                            [opt.inputRes]: -inputAmount,
+                            [opt.outputRes]: outputAmount,
+                        },
+                        perTurnEffects: opt.perTurnEffects
+                            ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
+                            : null,
+                        triggersEvent: opt.triggersEvent || null,
+                        ...copyFlagFields(opt),
+                    };
+                }
+                return {
+                    label: opt.label,
+                    effects: randomizeEffects(opt.effects || {}, opt.effectsVariance || 0),
+                    perTurnEffects: opt.perTurnEffects
+                        ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
+                        : null,
+                    triggersEvent: opt.triggersEvent || null,
+                    ...copyFlagFields(opt),
+                };
+            });
+        }
     }
 
-    // For fate cards: new schema uses fate formula; legacy effects fall through.
+    // Instant-event effects: eventBase sized in gold-equivalent. Applied on draw.
+    // Legacy top-level `effects` still supported.
     if (card.outputRes && typeof card.eventBase === "number") {
         const tierMultiplier = evalTierMultiplier(card.tierBoosts);
-        const { outputAmount } = applyFateFormula({
+        const { outputAmount } = applyInstantEventFormula({
             outputRes: card.outputRes,
             eventBase: card.eventBase,
             qualityFactor: card.qualityFactor || 1,

@@ -1,11 +1,13 @@
 // =====================================================
 // DECISION CARDS
 // =====================================================
-// Each option is a zero-sum trade (input gold-equivalent ≈ output
-// gold-equivalent when qualityFactor = 1). The formula motor applies
-// bulkRoll (size of opportunity) and varianceRoll (quality) per instance.
-// Some options can also `triggersEvent` to activate an event card.
+// Two schemas coexist:
+//  - Per-option trade: each option is a zero-sum trade (inputRes → outputRes).
+//  - Fixed-output: card-level outputRes + outputBase set the reward; each
+//    option is a different payment method (inputRes) or a reject (no input).
+//    outputAmount is rolled once per card; inputAmount is rolled per option.
 // Canonical values: gold=1, food=0.5, manpower=3, favor=2.
+// Some options can `triggersEvent` to activate an event card.
 // =====================================================
 
 const decisionCards = [
@@ -47,7 +49,7 @@ const decisionCards = [
         typeId: "bishopsRequest",
         category: "decision",
         name: "The Bishop's Request",
-        description: "The bishop seeks aid for a new chapel.",
+        description: "The bishop seeks aid for a new chapel. He will bless those who give.",
         icon: "⛪",
 
         dependencies: [],
@@ -60,28 +62,15 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
+        // Fixed output: ~15 g-eq of favor on average (7.5 × 2 × bulkMean 1.25)
+        outputRes: "favor",
+        outputBase: 7.5,
+
         options: [
-            {
-                label: "Gift gold",
-                inputRes: "gold",
-                outputRes: "favor",
-                inputBase: 20,
-                qualityFactor: 1,
-            },
-            {
-                label: "Send grain",
-                inputRes: "food",
-                outputRes: "favor",
-                inputBase: 30,
-                qualityFactor: 1,
-            },
-            {
-                label: "Send laborers",
-                inputRes: "manpower",
-                outputRes: "favor",
-                inputBase: 5,
-                qualityFactor: 1,
-            },
+            { label: "Gift gold", inputRes: "gold", qualityFactor: 1 },
+            { label: "Send grain", inputRes: "food", qualityFactor: 1 },
+            { label: "Send laborers", inputRes: "manpower", qualityFactor: 1 },
+            { label: "Refuse the bishop", qualityFactor: 1 },
         ],
     },
     {
@@ -101,21 +90,14 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
+        // Fixed output: ~18 g-eq of manpower on average (6 × 3 × bulkMean 1.25 ≈ 22.5 g-eq)
+        outputRes: "manpower",
+        outputBase: 6,
+
         options: [
-            {
-                label: "Accept his service (feed his men)",
-                inputRes: "food",
-                outputRes: "manpower",
-                inputBase: 30,
-                qualityFactor: 1,
-            },
-            {
-                label: "Buy his whole retinue",
-                inputRes: "gold",
-                outputRes: "manpower",
-                inputBase: 20,
-                qualityFactor: 1,
-            },
+            { label: "Feed his men", inputRes: "food", qualityFactor: 1 },
+            { label: "Buy his retinue", inputRes: "gold", qualityFactor: 1 },
+            { label: "Send him away", qualityFactor: 1 },
         ],
     },
     {
@@ -135,22 +117,15 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
+        // Fixed output: ~18 g-eq of gold (22.5 g-eq average)
+        outputRes: "gold",
+        outputBase: 18,
+
         options: [
-            {
-                label: "Let them trade grain (tax heavily)",
-                inputRes: "food",
-                outputRes: "gold",
-                inputBase: 30,
-                qualityFactor: 1,
-                triggersEvent: "tradeBoom",
-            },
-            {
-                label: "Put workers at their disposal",
-                inputRes: "manpower",
-                outputRes: "gold",
-                inputBase: 5,
-                qualityFactor: 1,
-            },
+            // Food option also triggers a Trade Boom event — big bonus on top of the gold.
+            { label: "Grant grain rights", inputRes: "food", qualityFactor: 1, triggersEvent: "tradeBoom" },
+            { label: "Assign workers", inputRes: "manpower", qualityFactor: 1 },
+            { label: "Reject the guild", qualityFactor: 1 },
         ],
     },
     {
@@ -170,21 +145,14 @@ const decisionCards = [
         weight: 8,
         absoluteChance: null,
 
+        // Fixed output: ~19.5 g-eq of manpower (6.5 × 3 × bulkMean 1.25 ≈ 24 g-eq)
+        outputRes: "manpower",
+        outputBase: 6.5,
+
         options: [
-            {
-                label: "Hire mercenaries",
-                inputRes: "gold",
-                outputRes: "manpower",
-                inputBase: 20,
-                qualityFactor: 1,
-            },
-            {
-                label: "Conscript your own (they resent you)",
-                inputRes: "favor",
-                outputRes: "manpower",
-                inputBase: 10,
-                qualityFactor: 1,
-            },
+            { label: "Hire mercenaries", inputRes: "gold", qualityFactor: 1 },
+            { label: "Conscript peasants", inputRes: "favor", qualityFactor: 1 },
+            { label: "Stay neutral", qualityFactor: 1 },
         ],
     },
     {
@@ -204,21 +172,14 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
+        // Fixed output: ~15 g-eq of food (30 × 0.5 × bulkMean 1.25 ≈ 18.75 g-eq)
+        outputRes: "food",
+        outputBase: 30,
+
         options: [
-            {
-                label: "Fund irrigation supplies",
-                inputRes: "gold",
-                outputRes: "food",
-                inputBase: 15,
-                qualityFactor: 1,
-            },
-            {
-                label: "Send laborers to the fields",
-                inputRes: "manpower",
-                outputRes: "food",
-                inputBase: 3,
-                qualityFactor: 1,
-            },
+            { label: "Fund irrigation", inputRes: "gold", qualityFactor: 1 },
+            { label: "Send laborers", inputRes: "manpower", qualityFactor: 1 },
+            { label: "Ignore their pleas", qualityFactor: 1 },
         ],
     },
 ];

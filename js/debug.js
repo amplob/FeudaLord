@@ -86,6 +86,8 @@ function addResourcesQuiet(change) {
 function simulateSingleRun(numTurns) {
     // Fresh starting state, independent of whatever the real game holds
     gameState = structuredClone(defaultState);
+    gameState.eventFlags = [];
+    gameState.staticFlags = [];
     activeCards = [];
     playedCardTypes = new Set();
 
@@ -98,56 +100,49 @@ function simulateSingleRun(numTurns) {
         // Passive income from active investments/events
         addResourcesQuiet(calculateTotalPassiveIncome());
 
-        // Spin wheel: uniform over 8 slices
+        // Spin wheel: uniform over 8 slices. Types: investment / decision / event.
         const wheelResult = wheelConfig[Math.floor(Math.random() * wheelConfig.length)].type;
 
-        // Fate slice has 30% chance to trigger an event instead
-        let handled = false;
-        if (wheelResult === "fate" && Math.random() < 0.3) {
-            const eventCard = selectCardDebug("event");
-            if (eventCard) {
-                const instance = createCardInstance(eventCard);
-                addResourcesQuiet(instance.onActivate);
+        const card = selectCardDebug(wheelResult);
+        if (card) {
+            const instance = createCardInstance(card);
+
+            if (wheelResult === "investment") {
+                // Build regardless of affordability
+                if (instance.cost) addResourcesQuiet(negateEffects(instance.cost));
                 activateCard(instance);
-                handled = true;
-            }
-        }
-
-        if (!handled) {
-            const card = selectCardDebug(wheelResult);
-            if (card) {
-                const instance = createCardInstance(card);
-
-                if (wheelResult === "investment") {
-                    // Build regardless of affordability
-                    if (instance.cost) addResourcesQuiet(negateEffects(instance.cost));
-                    activateCard(instance);
-                } else if (wheelResult === "decision") {
-                    // Random option
-                    const opt = instance.options[Math.floor(Math.random() * instance.options.length)];
-                    addResourcesQuiet(opt.effects);
-                    if (opt.perTurnEffects) {
-                        activateCard({
-                            instanceId: generateInstanceId(),
-                            typeId: `${instance.typeId}_effect`,
-                            category: "event",
-                            name: `${instance.name} (${opt.label})`,
-                            perTurn: opt.perTurnEffects,
-                            duration: null,
-                            turnsRemaining: null,
-                        });
-                    }
-                    if (opt.triggersEvent) {
-                        const eventCard = allCards.find(c => c.typeId === opt.triggersEvent);
-                        if (eventCard) {
-                            const eventInstance = createCardInstance(eventCard);
-                            if (eventInstance.onActivate) addResourcesQuiet(eventInstance.onActivate);
-                            activateCard(eventInstance);
-                        }
-                    }
-                } else if (wheelResult === "fate") {
-                    addResourcesQuiet(instance.effects);
+            } else if (wheelResult === "decision") {
+                // Random option
+                const opt = instance.options[Math.floor(Math.random() * instance.options.length)];
+                addResourcesQuiet(opt.effects);
+                if (opt.perTurnEffects) {
+                    activateCard({
+                        instanceId: generateInstanceId(),
+                        typeId: `${instance.typeId}_effect`,
+                        category: "event",
+                        name: `${instance.name} (${opt.label})`,
+                        perTurn: opt.perTurnEffects,
+                        duration: null,
+                        turnsRemaining: null,
+                    });
                 }
+                if (opt.triggersEvent) {
+                    const eventCard = allCards.find(c => c.typeId === opt.triggersEvent);
+                    if (eventCard) {
+                        const eventInstance = createCardInstance(eventCard);
+                        if (eventInstance.effects) addResourcesQuiet(eventInstance.effects);
+                        if (eventInstance.onActivate) addResourcesQuiet(eventInstance.onActivate);
+                        if (eventInstance.duration || eventInstance.perTurn) activateCard(eventInstance);
+                        applyFlagMutations(eventInstance, { autoDerivedSets: true });
+                    }
+                }
+                applyFlagMutations(opt);
+            } else if (wheelResult === "event") {
+                // Instant effects + onActivate apply now; ongoing events activate.
+                if (instance.effects) addResourcesQuiet(instance.effects);
+                if (instance.onActivate) addResourcesQuiet(instance.onActivate);
+                if (instance.duration || instance.perTurn) activateCard(instance);
+                applyFlagMutations(instance, { autoDerivedSets: true });
             }
         }
 
