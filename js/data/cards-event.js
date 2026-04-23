@@ -105,4 +105,27 @@ const eventCards = [
         perTurnEffects: { food: -6 },
         onExpire: { favor: 3 },
     },
+    {
+        typeId: "festivalSeason",
+        category: "event",
+        name: "Festival Season",
+        description: "The realm celebrates — songs, feasts, and spontaneous joy.",
+        icon: "🎉",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: false,
+        maxInstances: 1,
+        minTurn: 2,
+        requiresResource: null,
+
+        weight: 6,
+        absoluteChance: null,
+
+        // +10 food on activate (=5 g-eq), +3 favor/turn × 3 turns (=18 g-eq) ≈ 23 g-eq total
+        duration: 3,
+        onActivate: { food: 10 },
+        perTurnEffects: { favor: 3 },
+        onExpire: null,
+    },
 ];
