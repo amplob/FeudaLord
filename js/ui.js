@@ -183,7 +183,7 @@ function renderInvestmentCard(cardInstance) {
     const descEl = document.getElementById("auguryDescription");
     const optionsEl = document.getElementById("auguryOptions");
 
-    titleEl.textContent = `🏗️ Investment: ${cardInstance.name}`;
+    titleEl.textContent = `${CATEGORY_ICON.investment} Investment: ${cardInstance.name}`;
     descEl.textContent = cardInstance.description;
 
     const canBuild = canAfford(cardInstance.cost);
@@ -220,7 +220,7 @@ function renderDecisionCard(cardInstance) {
     const descEl = document.getElementById("auguryDescription");
     const optionsEl = document.getElementById("auguryOptions");
 
-    titleEl.textContent = `🎭 ${cardInstance.name}`;
+    titleEl.textContent = `${CATEGORY_ICON.decision} ${cardInstance.name}`;
     descEl.textContent = cardInstance.description;
 
     const showAssess = hasStaticFlag('assess');
@@ -283,7 +283,7 @@ function renderEventCard(cardInstance) {
     const descEl = document.getElementById("auguryDescription");
     const optionsEl = document.getElementById("auguryOptions");
 
-    titleEl.textContent = `🎲 ${cardInstance.name}`;
+    titleEl.textContent = `${CATEGORY_ICON.event} ${cardInstance.name}`;
     descEl.textContent = cardInstance.description;
 
     const instant = cardInstance.effects;
@@ -331,11 +331,11 @@ function renderTradeCard() {
     const descEl = document.getElementById("auguryDescription");
     const optionsEl = document.getElementById("auguryOptions");
 
-    titleEl.textContent = "💼 A Merchant Approaches";
+    titleEl.textContent = `${CATEGORY_ICON.trade} A Merchant Approaches`;
     descEl.textContent = "A caravan of traders arrives at your gates, offering their wares.";
 
     optionsEl.innerHTML = `
-        <div class="card-icon large">💼</div>
+        <div class="card-icon large">${CATEGORY_ICON.trade}</div>
         <div class="card-actions">
             <button data-action="trade" class="primary">Trade</button>
             <button data-action="pass" class="secondary">Pass</button>

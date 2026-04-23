@@ -4,6 +4,15 @@
 // Manages card selection, eligibility, and randomization.
 // =====================================================
 
+// Canonical per-category icons. Single source of truth: wheel slices and
+// augury card titles both reference this so they stay in lockstep.
+const CATEGORY_ICON = {
+    investment: "🔨",
+    decision: "🎭",
+    event: "❓",
+    trade: "⚖️",
+};
+
 // All cards combined (populated on init)
 let allCards = [];
 

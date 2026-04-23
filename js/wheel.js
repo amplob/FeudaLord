@@ -16,15 +16,17 @@
 // 1 bad), 1 investment (neutral), 1 trade (neutral). Probabilities: decision
 // 50%, event 25%, investment 12.5%, trade 12.5%. Interleaved so two slices of
 // the same type never sit adjacent.
+// Icons come from CATEGORY_ICON (cardSystem.js) so the wheel and the card
+// titles stay consistent. Labels are display-only text (no emoji here).
 const wheelConfig = [
-    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "🎭 Decision",  icon: "🎭", color: "#b8860b" },
-    { type: "investment", tonality: "neutral", multiplier: 1.0, label: "🔨 Invest",    icon: "🔨", color: "#7a6a55" },
-    { type: "decision",   tonality: "good",    multiplier: 1.3, label: "🎭 Fortune",   icon: "🎭", color: "#4a9b3e" },
-    { type: "event",      tonality: "bad",     multiplier: 1.2, label: "❓ Ill Omen",  icon: "❓", color: "#8b1a1a" },
-    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "🎭 Decision",  icon: "🎭", color: "#b8860b" },
-    { type: "trade",      tonality: "neutral", multiplier: 1.0, label: "⚖️ Merchant",  icon: "⚖️", color: "#3b5998" },
-    { type: "decision",   tonality: "bad",     multiplier: 0.7, label: "🎭 Curse",     icon: "🎭", color: "#5c0f0f" },
-    { type: "event",      tonality: "good",    multiplier: 1.2, label: "❓ Good Omen", icon: "❓", color: "#6ba850" },
+    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "Decision",  color: "#b8860b" },
+    { type: "investment", tonality: "neutral", multiplier: 1.0, label: "Invest",    color: "#7a6a55" },
+    { type: "decision",   tonality: "good",    multiplier: 1.3, label: "Fortune",   color: "#4a9b3e" },
+    { type: "event",      tonality: "bad",     multiplier: 1.2, label: "Ill Omen",  color: "#8b1a1a" },
+    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "Decision",  color: "#b8860b" },
+    { type: "trade",      tonality: "neutral", multiplier: 1.0, label: "Merchant",  color: "#3b5998" },
+    { type: "decision",   tonality: "bad",     multiplier: 0.7, label: "Curse",     color: "#5c0f0f" },
+    { type: "event",      tonality: "good",    multiplier: 1.2, label: "Good Omen", color: "#6ba850" },
 ];
 
 // =====================================================
@@ -46,7 +48,7 @@ function calculateSegments() {
             tonality: config.tonality,
             multiplier: config.multiplier,
             label: config.label,
-            icon: config.icon,
+            icon: CATEGORY_ICON[config.type],
             color: config.color,
             startAngle: currentAngle,
             endAngle: currentAngle + angleDegrees

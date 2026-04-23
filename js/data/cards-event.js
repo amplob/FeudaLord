@@ -56,10 +56,10 @@ const eventCards = [
         weight: 8,
         absoluteChance: null,
 
-        // -25 g-eq → ~-8.3 manpower (±15% variance)
+        // -24 g-eq → ~-8 manpower (±15% variance). Mirrors excellentHarvest.
         outputRes: "manpower",
-        eventBase: -25,
-        qualityFactor: 1,
+        eventBase: -20,
+        qualityFactor: 1.2,
     },
 
     // --- Ongoing events ---
@@ -105,11 +105,12 @@ const eventCards = [
         weight: 5,
         absoluteChance: null,
 
-        // -3 favor on activate, -6 food/turn × 3 turns, +3 favor relief on expire
-        duration: 3,
-        onActivate: { favor: -3 },
-        perTurnEffects: { food: -6 },
-        onExpire: { favor: 3 },
+        // -10 gold on activate, -10 food/turn × 4 turns = -30 g-eq total.
+        // Mirrors tradeBoom.
+        duration: 4,
+        onActivate: { gold: -10 },
+        perTurnEffects: { food: -10 },
+        onExpire: null,
     },
     {
         typeId: "festivalSeason",
@@ -133,6 +134,31 @@ const eventCards = [
         duration: 3,
         onActivate: { food: 10 },
         perTurnEffects: { favor: 3 },
+        onExpire: null,
+    },
+    {
+        typeId: "nobleFeud",
+        category: "event",
+        name: "Noble Feud",
+        description: "Two of your vassals are at each other's throats — bribes flow and loyalty wavers.",
+        icon: "⚔️",
+        tonality: "bad",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: false,
+        maxInstances: 1,
+        minTurn: 3,
+        requiresResource: null,
+
+        weight: 6,
+        absoluteChance: null,
+
+        // -5 gold on activate (=-5 g-eq), -3 favor/turn × 3 turns (=-18 g-eq) = -23 g-eq total
+        // Mirrors festivalSeason.
+        duration: 3,
+        onActivate: { gold: -5 },
+        perTurnEffects: { favor: -3 },
         onExpire: null,
     },
 ];
