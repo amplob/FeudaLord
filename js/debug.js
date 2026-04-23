@@ -87,13 +87,17 @@ function addResourcesQuiet(change) {
 // Single simulated run (always runs the full N turns)
 // -----------------------------------------------------
 
-function simulateSingleRun(numTurns) {
+function simulateSingleRun(numTurns, sliceTypeFilter = null) {
     // Fresh starting state, independent of whatever the real game holds
     gameState = structuredClone(defaultState);
     gameState.eventFlags = [];
     gameState.staticFlags = [];
     activeCards = [];
     playedCardTypes = new Set();
+
+    const slicePool = sliceTypeFilter
+        ? wheelConfig.filter(s => s.type === sliceTypeFilter)
+        : wheelConfig;
 
     for (let t = 0; t < numTurns; t++) {
         // Per-turn event effects + expirations
@@ -104,9 +108,9 @@ function simulateSingleRun(numTurns) {
         // Passive income from active investments/events
         addResourcesQuiet(calculateTotalPassiveIncome());
 
-        // Spin wheel: uniform over 8 slices. Each slice carries type, tonality,
+        // Spin wheel: uniform over slicePool. Each slice carries type, tonality,
         // and multiplier. Trade slices skip card draw (sim doesn't trade).
-        const slice = wheelConfig[Math.floor(Math.random() * wheelConfig.length)];
+        const slice = slicePool[Math.floor(Math.random() * slicePool.length)];
         const { type: wheelResult, tonality, multiplier: sliceMultiplier } = slice;
 
         if (wheelResult === "trade") {
@@ -168,12 +172,12 @@ function simulateSingleRun(numTurns) {
 // Multiple runs + aggregation
 // -----------------------------------------------------
 
-function simulateMultipleRuns(runs, turns) {
+function simulateMultipleRuns(runs, turns, sliceTypeFilter = null) {
     const snap = snapshotGlobalState();
 
     const allRuns = [];
     for (let i = 0; i < runs; i++) {
-        allRuns.push(simulateSingleRun(turns));
+        allRuns.push(simulateSingleRun(turns, sliceTypeFilter));
     }
 
     restoreGlobalState(snap);
@@ -187,14 +191,17 @@ function simulateMultipleRuns(runs, turns) {
         };
     }
 
-    return { stats, allRuns, runs, turns };
+    return { stats, allRuns, runs, turns, sliceTypeFilter };
 }
 
 // -----------------------------------------------------
 // Results modal
 // -----------------------------------------------------
 
-function showSimResults({ stats, allRuns, runs, turns }) {
+function showSimResults({ stats, allRuns, runs, turns, sliceTypeFilter }) {
+    const modeLabel = sliceTypeFilter
+        ? `${sliceTypeFilter} only`
+        : "full wheel";
     let overlay = document.getElementById("simResultsOverlay");
     if (!overlay) {
         overlay = document.createElement("div");
@@ -225,7 +232,7 @@ function showSimResults({ stats, allRuns, runs, turns }) {
 
     document.getElementById("simResultsBody").innerHTML = `
         <p style="color:#aaa;margin-bottom:12px;">
-            ${runs} runs × ${turns} turns · random decisions · affordability bypassed
+            ${runs} runs × ${turns} turns · ${modeLabel} · random decisions · affordability bypassed
         </p>
         <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
             <thead><tr style="border-bottom:1px solid #555;">
@@ -246,6 +253,56 @@ function showSimResults({ stats, allRuns, runs, turns }) {
 }
 
 // -----------------------------------------------------
+// Test picker modal
+// -----------------------------------------------------
+
+const SIM_MODES = [
+    { id: "full",     label: "Full test",     filter: null,         desc: "Standard wheel (all slice types)" },
+    { id: "event",    label: "Event test",    filter: "event",      desc: "Only event slices fire each turn" },
+    { id: "decision", label: "Decision test", filter: "decision",   desc: "Only decision slices fire each turn" },
+];
+
+function showTestPicker() {
+    let overlay = document.getElementById("testPickerOverlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "testPickerOverlay";
+        overlay.className = "overlay";
+        overlay.style.zIndex = "400";
+        overlay.innerHTML = `
+            <div class="overlay-content" style="max-width: 480px;">
+                <div class="overlay-header">
+                    <h2>🧪 Tests</h2>
+                    <button class="close-btn" id="testPickerClose">✕</button>
+                </div>
+                <div id="testPickerBody" class="option-list"></div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        document.getElementById("testPickerClose").addEventListener("click", () => {
+            overlay.classList.add("hidden");
+        });
+        overlay.addEventListener("click", (e) => {
+            if (e.target.id === "testPickerOverlay") overlay.classList.add("hidden");
+        });
+
+        const body = document.getElementById("testPickerBody");
+        for (const mode of SIM_MODES) {
+            const btn = document.createElement("button");
+            btn.className = "option";
+            btn.innerHTML = `<strong>${mode.label} ${SIM_RUNS}×${SIM_TURNS}</strong><span style="color:#aaa;font-size:0.9rem;">${mode.desc}</span>`;
+            btn.addEventListener("click", () => {
+                overlay.classList.add("hidden");
+                showSimResults(simulateMultipleRuns(SIM_RUNS, SIM_TURNS, mode.filter));
+            });
+            body.appendChild(btn);
+        }
+    }
+
+    overlay.classList.remove("hidden");
+}
+
+// -----------------------------------------------------
 // Wire up debug button
 // -----------------------------------------------------
 
@@ -255,12 +312,10 @@ function addDebugButton() {
     if (!actions) return;
 
     const btn = document.createElement("button");
-    btn.textContent = `🧪 Test ${SIM_RUNS}×${SIM_TURNS}`;
+    btn.textContent = "🧪 Test";
     btn.className = "header-btn";
-    btn.title = `Run ${SIM_RUNS} simulations of ${SIM_TURNS} turns each`;
-    btn.addEventListener("click", () => {
-        showSimResults(simulateMultipleRuns(SIM_RUNS, SIM_TURNS));
-    });
+    btn.title = "Open test picker";
+    btn.addEventListener("click", showTestPicker);
     actions.appendChild(btn);
 }
 
