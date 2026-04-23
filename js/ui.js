@@ -215,41 +215,64 @@ function renderInvestmentCard(cardInstance) {
 function renderDecisionCard(cardInstance) {
     // Hide emergency close for mandatory decisions
     document.getElementById('emergencyClose').style.display = 'none';
-    
+
     const titleEl = document.getElementById("auguryTitle");
     const descEl = document.getElementById("auguryDescription");
     const optionsEl = document.getElementById("auguryOptions");
 
-    titleEl.textContent = `⚖️ ${cardInstance.name}`;
+    titleEl.textContent = `🎭 ${cardInstance.name}`;
     descEl.textContent = cardInstance.description;
 
+    const showAssess = hasStaticFlag('assess');
+
     let optionsHtml = `<div class="card-icon large">${cardInstance.icon}</div>`;
-    
+
     cardInstance.options.forEach((option, index) => {
         let effectsText = '';
-        
+
         if (option.effects && Object.keys(option.effects).length > 0) {
             effectsText += formatEffects(option.effects);
         }
-        
+
         if (option.perTurnEffects && Object.keys(option.perTurnEffects).length > 0) {
             if (effectsText) effectsText += ' ';
             effectsText += `<span class="per-turn">${formatPerTurn(option.perTurnEffects)}</span>`;
         }
-        
+
         if (!effectsText) effectsText = 'No effect';
-        
+
+        let assessHtml = '';
+        if (showAssess && option.effects && Object.keys(option.effects).length > 0) {
+            const delta = goldEquivalent(option.effects);
+            const cls = delta >= 0 ? 'positive' : 'negative';
+            const sign = delta >= 0 ? '+' : '';
+            assessHtml = `<span class="option-assess ${cls}">${sign}${fmtNum(round2(delta))}💰</span>`;
+        }
+
         optionsHtml += `
             <div class="decision-option">
                 <button data-option-index="${index}" class="primary decision-btn">
-                    <span class="option-label">${option.label}</span>
-                    <span class="option-effects">${effectsText}</span>
+                    <div class="option-main">
+                        <span class="option-label">${option.label}</span>
+                        <span class="option-effects">${effectsText}</span>
+                    </div>
+                    ${assessHtml}
                 </button>
             </div>
         `;
     });
 
     optionsEl.innerHTML = optionsHtml;
+}
+
+// Sum gold-equivalent value of an effects object using canonical rates.
+// gold=1, food=0.5, manpower=3, favor=2 (see RESOURCE_VALUE in cardSystem.js).
+function goldEquivalent(effects) {
+    if (!effects) return 0;
+    return Object.entries(effects).reduce(
+        (sum, [res, amt]) => sum + amt * (RESOURCE_VALUE[res] || 0),
+        0
+    );
 }
 
 function renderEventCard(cardInstance) {

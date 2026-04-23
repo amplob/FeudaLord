@@ -590,11 +590,22 @@ button.link:hover {
 
 .decision-btn {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
     padding: 14px 16px !important;
-    gap: 6px;
+    gap: 12px;
+}
+
+.decision-btn .option-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+    min-width: 0;
 }
 
 .decision-btn .option-label {
@@ -610,6 +621,16 @@ button.link:hover {
 .decision-btn .per-turn {
     color: var(--accent);
 }
+
+.decision-btn .option-assess {
+    font-weight: 700;
+    font-size: 1rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.decision-btn .option-assess.positive { color: #4caf50; }
+.decision-btn .option-assess.negative { color: #e53935; }
 
 /* Fate Result */
 .fate-result {

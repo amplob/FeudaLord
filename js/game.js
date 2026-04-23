@@ -16,7 +16,9 @@ const defaultState = {
     //   Auto-derived from active event cards' setsEventFlag + decision-set entries here.
     // staticFlags: permanent, once-set boolean state ("something has happened").
     eventFlags: [],
-    staticFlags: [],
+    // "assess" is a player-facing aid: shows gold-equivalent delta on each
+    // decision option. Starts active; a future card could gate it.
+    staticFlags: ["assess"],
     cardSystemState: null,
     pending: null,
     gameOver: false

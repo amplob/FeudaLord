@@ -106,24 +106,27 @@ function renderWheelIcons(wheel) {
 // =====================================================
 
 let currentRotation = 0;
+let lastSpinDurationMs = 3000;
 
 /**
  * Spin the wheel to a random position and return the landed segment
  * (includes type, tonality, multiplier, label, color).
  */
 function spinWheel() {
-    // Generate random spin: 5-7 full rotations + random final position
-    const fullRotations = 5 + Math.floor(Math.random() * 3);
+    // 3-9 full rotations + random final position. Duration scales with rotation
+    // count so short spins feel snappy and long spins feel epic — gives each
+    // spin a visibly different motion even though the outcome is already
+    // uniformly distributed.
+    const fullRotations = 3 + Math.floor(Math.random() * 7);
     const randomAngle = Math.random() * 360;
     const totalSpin = (fullRotations * 360) + randomAngle;
 
-    // Add to current rotation
     currentRotation += totalSpin;
+    lastSpinDurationMs = 2500 + fullRotations * 200;
 
-    // Calculate result based on where the pointer lands
     const segment = calculateSegmentFromRotation(currentRotation);
 
-    console.log(`Spin: +${totalSpin.toFixed(1)}° | Total: ${currentRotation.toFixed(1)}° | Pointer at: ${getPointerAngle(currentRotation).toFixed(1)}° | Result: ${segment.type} (${segment.tonality}, ×${segment.multiplier})`);
+    console.log(`Spin: +${totalSpin.toFixed(1)}° (${fullRotations} rot, ${lastSpinDurationMs}ms) | Total: ${currentRotation.toFixed(1)}° | Pointer at: ${getPointerAngle(currentRotation).toFixed(1)}° | Result: ${segment.type} (${segment.tonality}, ×${segment.multiplier})`);
 
     return segment;
 }
@@ -177,13 +180,14 @@ function animateWheel(callback) {
         if (callback) callback();
         return;
     }
-    
-    wheel.style.transition = "transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)";
+
+    const durationSec = (lastSpinDurationMs / 1000).toFixed(2);
+    wheel.style.transition = `transform ${durationSec}s cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
     wheel.style.transform = `rotate(${currentRotation}deg)`;
-    
+
     setTimeout(() => {
         if (callback) callback();
-    }, 3100);
+    }, lastSpinDurationMs + 100);
 }
 
 // =====================================================
