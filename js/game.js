@@ -46,7 +46,6 @@ function initGame() {
 
     // Event listeners
     document.getElementById("spinButton").addEventListener("click", handleSpin);
-    document.getElementById("tradeToggle").addEventListener("click", toggleTradePanel);
     document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
     document.getElementById("propertiesToggle").addEventListener("click", togglePropertiesPanel);
     document.getElementById("propertiesClose").addEventListener("click", hidePropertiesOverlay);

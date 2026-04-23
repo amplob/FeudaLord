@@ -17,14 +17,14 @@
 // 50%, event 25%, investment 12.5%, trade 12.5%. Interleaved so two slices of
 // the same type never sit adjacent.
 const wheelConfig = [
-    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "⚖️ Decision",  icon: "⚖️", color: "#b8860b" },
-    { type: "investment", tonality: "neutral", multiplier: 1.0, label: "🔨 Invest",    icon: "🔨", color: "#556b2f" },
-    { type: "decision",   tonality: "good",    multiplier: 1.3, label: "✨ Fortune",   icon: "✨", color: "#4a9b3e" },
-    { type: "event",      tonality: "bad",     multiplier: 1.2, label: "🎲 Ill Omen",  icon: "🎲", color: "#8b1a1a" },
-    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "⚖️ Decision",  icon: "⚖️", color: "#b8860b" },
-    { type: "trade",      tonality: "neutral", multiplier: 1.0, label: "💼 Merchant",  icon: "💼", color: "#3b5998" },
-    { type: "decision",   tonality: "bad",     multiplier: 0.7, label: "💀 Curse",     icon: "💀", color: "#5c0f0f" },
-    { type: "event",      tonality: "good",    multiplier: 1.2, label: "🎲 Good Omen", icon: "🎲", color: "#6ba850" },
+    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "🎭 Decision",  icon: "🎭", color: "#b8860b" },
+    { type: "investment", tonality: "neutral", multiplier: 1.0, label: "🔨 Invest",    icon: "🔨", color: "#7a6a55" },
+    { type: "decision",   tonality: "good",    multiplier: 1.3, label: "🎭 Fortune",   icon: "🎭", color: "#4a9b3e" },
+    { type: "event",      tonality: "bad",     multiplier: 1.2, label: "❓ Ill Omen",  icon: "❓", color: "#8b1a1a" },
+    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "🎭 Decision",  icon: "🎭", color: "#b8860b" },
+    { type: "trade",      tonality: "neutral", multiplier: 1.0, label: "⚖️ Merchant",  icon: "⚖️", color: "#3b5998" },
+    { type: "decision",   tonality: "bad",     multiplier: 0.7, label: "🎭 Curse",     icon: "🎭", color: "#5c0f0f" },
+    { type: "event",      tonality: "good",    multiplier: 1.2, label: "❓ Good Omen", icon: "❓", color: "#6ba850" },
 ];
 
 // =====================================================

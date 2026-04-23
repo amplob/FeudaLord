@@ -8,8 +8,8 @@
 // =====================================================
 
 const DEBUG = true;
-const SIM_RUNS = 10;
-const SIM_TURNS = 50;
+const SIM_RUNS = 100;
+const SIM_TURNS = 100;
 
 // -----------------------------------------------------
 // Snapshot / restore
@@ -184,8 +184,6 @@ function simulateMultipleRuns(runs, turns) {
         const values = allRuns.map(r => r[key]);
         stats[key] = {
             mean: Math.round(values.reduce((a, b) => a + b, 0) / runs),
-            min: Math.min(...values),
-            max: Math.max(...values),
         };
     }
 
@@ -223,15 +221,7 @@ function showSimResults({ stats, allRuns, runs, turns }) {
 
     const row = (icon, label, s) =>
         `<tr><td style="padding:4px 8px;">${icon} ${label}</td>` +
-        `<td style="padding:4px 8px;text-align:right;"><b>${s.mean}</b></td>` +
-        `<td style="padding:4px 8px;text-align:right;color:#999;">${s.min} … ${s.max}</td></tr>`;
-
-    const runRow = (r, i) =>
-        `<tr><td style="padding:2px 8px;">#${i + 1}</td>` +
-        `<td style="padding:2px 8px;text-align:right;">${r.gold}</td>` +
-        `<td style="padding:2px 8px;text-align:right;">${r.food}</td>` +
-        `<td style="padding:2px 8px;text-align:right;">${r.manpower}</td>` +
-        `<td style="padding:2px 8px;text-align:right;">${r.favor}</td></tr>`;
+        `<td style="padding:4px 8px;text-align:right;"><b>${s.mean}</b></td></tr>`;
 
     document.getElementById("simResultsBody").innerHTML = `
         <p style="color:#aaa;margin-bottom:12px;">
@@ -241,7 +231,6 @@ function showSimResults({ stats, allRuns, runs, turns }) {
             <thead><tr style="border-bottom:1px solid #555;">
                 <th style="padding:4px 8px;text-align:left;">Resource</th>
                 <th style="padding:4px 8px;text-align:right;">Mean</th>
-                <th style="padding:4px 8px;text-align:right;">Min … Max</th>
             </tr></thead>
             <tbody>
                 ${row("💰", "Gold", stats.gold)}
@@ -250,19 +239,6 @@ function showSimResults({ stats, allRuns, runs, turns }) {
                 ${row("👑", "Favor", stats.favor)}
             </tbody>
         </table>
-        <details>
-            <summary style="cursor:pointer;color:#aaa;">Per-run values</summary>
-            <table style="width:100%;border-collapse:collapse;margin-top:8px;">
-                <thead><tr style="border-bottom:1px solid #555;color:#aaa;">
-                    <th style="padding:2px 8px;text-align:left;">Run</th>
-                    <th style="padding:2px 8px;text-align:right;">💰</th>
-                    <th style="padding:2px 8px;text-align:right;">🌾</th>
-                    <th style="padding:2px 8px;text-align:right;">👥</th>
-                    <th style="padding:2px 8px;text-align:right;">👑</th>
-                </tr></thead>
-                <tbody>${allRuns.map(runRow).join("")}</tbody>
-            </table>
-        </details>
     `;
 
     overlay.classList.remove("hidden");

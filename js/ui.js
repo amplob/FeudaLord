@@ -136,15 +136,6 @@ function hidePropertiesOverlay() {
     document.getElementById('propertiesOverlay').classList.add('hidden');
 }
 
-function toggleTradePanel() {
-    const overlay = document.getElementById('tradeOverlay');
-    if (overlay.classList.contains('hidden')) {
-        showTradeOverlay();
-    } else {
-        hideTradeOverlay();
-    }
-}
-
 function togglePropertiesPanel() {
     const overlay = document.getElementById('propertiesOverlay');
     if (overlay.classList.contains('hidden')) {

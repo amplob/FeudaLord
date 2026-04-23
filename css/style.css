@@ -294,8 +294,8 @@ button.link:hover {
 .augury-overlay {
     background: rgba(10, 8, 6, 0.85);
     z-index: 100;
-    /* Allow clicking through to see resources */
-    padding-top: 120px; /* Space for resource bar to be visible */
+    /* Keep the card below the header (title + resource bar + action buttons). */
+    padding-top: 180px;
     align-items: flex-start;
 }
 
