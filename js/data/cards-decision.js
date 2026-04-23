@@ -4,9 +4,12 @@
 // Two schemas coexist:
 //  - Per-option trade: each option is a zero-sum trade (inputRes → outputRes).
 //  - Fixed-output: card-level outputRes + outputBase set the reward; each
-//    option is a different payment method (inputRes) or a reject (no input).
-//    outputAmount is rolled once per card; inputAmount is rolled per option.
+//    option is a different payment method (inputRes). outputAmount is rolled
+//    once per card; inputAmount is rolled per option.
 // Canonical values: gold=1, food=0.5, manpower=3, favor=2.
+// Decisions are UNSKIPPABLE — every option must require a payment. If the
+// player cannot afford any option, resources go negative and verifyState()
+// ends the game. The manual trade panel is the survival safety net.
 // Some options can `triggersEvent` to activate an event card.
 // =====================================================
 
@@ -70,7 +73,6 @@ const decisionCards = [
             { label: "Gift gold", inputRes: "gold", qualityFactor: 1 },
             { label: "Send grain", inputRes: "food", qualityFactor: 1 },
             { label: "Send laborers", inputRes: "manpower", qualityFactor: 1 },
-            { label: "Refuse the bishop", qualityFactor: 1 },
         ],
     },
     {
@@ -97,7 +99,6 @@ const decisionCards = [
         options: [
             { label: "Feed his men", inputRes: "food", qualityFactor: 1 },
             { label: "Buy his retinue", inputRes: "gold", qualityFactor: 1 },
-            { label: "Send him away", qualityFactor: 1 },
         ],
     },
     {
@@ -125,7 +126,6 @@ const decisionCards = [
             // Food option also triggers a Trade Boom event — big bonus on top of the gold.
             { label: "Grant grain rights", inputRes: "food", qualityFactor: 1, triggersEvent: "tradeBoom" },
             { label: "Assign workers", inputRes: "manpower", qualityFactor: 1 },
-            { label: "Reject the guild", qualityFactor: 1 },
         ],
     },
     {
@@ -152,7 +152,6 @@ const decisionCards = [
         options: [
             { label: "Hire mercenaries", inputRes: "gold", qualityFactor: 1 },
             { label: "Conscript peasants", inputRes: "favor", qualityFactor: 1 },
-            { label: "Stay neutral", qualityFactor: 1 },
         ],
     },
     {
@@ -179,7 +178,6 @@ const decisionCards = [
         options: [
             { label: "Fund irrigation", inputRes: "gold", qualityFactor: 1 },
             { label: "Send laborers", inputRes: "manpower", qualityFactor: 1 },
-            { label: "Ignore their pleas", qualityFactor: 1 },
         ],
     },
 
@@ -209,7 +207,6 @@ const decisionCards = [
         options: [
             { label: "Pay him in coin", inputRes: "gold", qualityFactor: 1 },
             { label: "Feast the troupe", inputRes: "food", qualityFactor: 1 },
-            { label: "Send him away", qualityFactor: 1 },
         ],
     },
     {
@@ -235,7 +232,7 @@ const decisionCards = [
 
         options: [
             { label: "Sell the grain", inputRes: "food", qualityFactor: 1 },
-            { label: "Keep the reserves", qualityFactor: 1 },
+            { label: "Command royal levy", inputRes: "favor", qualityFactor: 1 },
         ],
     },
     {
@@ -262,7 +259,6 @@ const decisionCards = [
         options: [
             { label: "Pay their contract", inputRes: "gold", qualityFactor: 1 },
             { label: "Appeal to honor", inputRes: "favor", qualityFactor: 1 },
-            { label: "Send them away", qualityFactor: 1 },
         ],
     },
     {
@@ -289,7 +285,6 @@ const decisionCards = [
         options: [
             { label: "Send trained hunters", inputRes: "manpower", qualityFactor: 1 },
             { label: "Equip the expedition", inputRes: "gold", qualityFactor: 1 },
-            { label: "Cancel the hunt", qualityFactor: 1 },
         ],
     },
     {
@@ -315,7 +310,7 @@ const decisionCards = [
 
         options: [
             { label: "Squeeze the peasants", inputRes: "favor", qualityFactor: 1 },
-            { label: "Keep a light hand", qualityFactor: 1 },
+            { label: "Send armed enforcers", inputRes: "manpower", qualityFactor: 1 },
         ],
     },
     {
@@ -342,7 +337,6 @@ const decisionCards = [
         options: [
             { label: "Pay in coin", inputRes: "gold", qualityFactor: 1 },
             { label: "Offer royal favor", inputRes: "favor", qualityFactor: 1 },
-            { label: "Let him pass on", qualityFactor: 1 },
         ],
     },
     {
@@ -369,7 +363,6 @@ const decisionCards = [
         options: [
             { label: "Fund his shop", inputRes: "gold", qualityFactor: 1 },
             { label: "Assign apprentices", inputRes: "manpower", qualityFactor: 1 },
-            { label: "Turn him away", qualityFactor: 1 },
         ],
     },
     {
@@ -396,7 +389,6 @@ const decisionCards = [
         options: [
             { label: "Feed and house them", inputRes: "food", qualityFactor: 1 },
             { label: "Equip them properly", inputRes: "gold", qualityFactor: 1 },
-            { label: "Turn them down", qualityFactor: 1 },
         ],
     },
     {
@@ -423,7 +415,6 @@ const decisionCards = [
         options: [
             { label: "Accept the match (political cost)", inputRes: "favor", qualityFactor: 1 },
             { label: "Send an armed escort", inputRes: "manpower", qualityFactor: 1 },
-            { label: "Decline the offer", qualityFactor: 1 },
         ],
     },
 

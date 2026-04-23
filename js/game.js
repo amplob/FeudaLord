@@ -47,7 +47,7 @@ function initGame() {
     // Event listeners
     document.getElementById("spinButton").addEventListener("click", handleSpin);
     document.getElementById("tradeToggle").addEventListener("click", toggleTradePanel);
-    document.getElementById("tradeClose").addEventListener("click", hideTradeOverlay);
+    document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
     document.getElementById("propertiesToggle").addEventListener("click", togglePropertiesPanel);
     document.getElementById("propertiesClose").addEventListener("click", hidePropertiesOverlay);
     document.getElementById("resetButton").addEventListener("click", resetGame);
@@ -55,7 +55,7 @@ function initGame() {
 
     // Close overlays on background click
     document.getElementById('tradeOverlay').addEventListener('click', (e) => {
-        if (e.target.id === 'tradeOverlay') hideTradeOverlay();
+        if (e.target.id === 'tradeOverlay') handleTradeClose();
     });
     document.getElementById('propertiesOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'propertiesOverlay') hidePropertiesOverlay();
@@ -96,9 +96,9 @@ function restorePendingAugury() {
     if (!gameState.pending) return;
     
     const { type, cardInstance } = gameState.pending;
-    
-    // Validate that cardInstance exists and has required properties
-    if (!cardInstance || !cardInstance.name) {
+
+    // Trade pseudo-card has no cardInstance; everything else requires one.
+    if (type !== 'trade' && (!cardInstance || !cardInstance.name)) {
         console.warn("Invalid pending state detected, clearing...");
         gameState.pending = null;
         hideAuguryOverlay();
@@ -107,7 +107,9 @@ function restorePendingAugury() {
     }
     
     try {
-        if (type === 'investment' && cardInstance) {
+        if (type === 'trade') {
+            renderTradeCard();
+        } else if (type === 'investment' && cardInstance) {
             renderInvestmentCard(cardInstance);
         } else if (type === 'decision' && cardInstance) {
             renderDecisionCard(cardInstance);
@@ -143,15 +145,15 @@ function handleSpin() {
 
     // Apply passive income
     applyPassiveIncome();
-    
-    // Spin the wheel
-    const result = spinWheel();
-    
+
+    // Spin the wheel — returns the full landed segment (type/tonality/multiplier)
+    const segment = spinWheel();
+
     // Animate and present result
     animateWheel(() => {
         setSpinButtonState(false);
         showAuguryOverlay();
-        presentAugury(result);
+        presentAugury(segment);
     });
 
     gameState.turn += 1;
@@ -194,9 +196,19 @@ function applyPassiveIncome() {
 // AUGURY PRESENTATION
 // =====================================================
 
-function presentAugury(wheelResult) {
-    // Wheel result maps directly to card category (investment / decision / event).
-    const card = selectCard(wheelResult, gameState);
+function presentAugury(segment) {
+    // Wheel slice maps directly to a category (investment / decision / event / trade).
+    // Tonality ("good"/"neutral"/"bad") filters the event pool; multiplier scales
+    // payouts (decisions) and event magnitudes (events). Trade is a fixed flow,
+    // not drawn from the card pool.
+    if (segment.type === 'trade') {
+        presentTrade(segment);
+        return;
+    }
+
+    // Events are filtered by tonality; decisions and investments aren't.
+    const tonalityFilter = segment.type === 'event' ? segment.tonality : undefined;
+    const card = selectCard(segment.type, gameState, tonalityFilter);
 
     if (!card) {
         showToast("Nothing happens this turn...");
@@ -205,34 +217,40 @@ function presentAugury(wheelResult) {
         return;
     }
 
-    const cardInstance = createCardInstance(card);
+    const cardInstance = createCardInstance(card, { sliceMultiplier: segment.multiplier });
 
-    if (wheelResult === 'investment') {
-        presentInvestment(cardInstance);
-    } else if (wheelResult === 'decision') {
-        presentDecision(cardInstance);
-    } else if (wheelResult === 'event') {
-        presentEvent(cardInstance);
+    if (segment.type === 'investment') {
+        presentInvestment(cardInstance, segment);
+    } else if (segment.type === 'decision') {
+        presentDecision(cardInstance, segment);
+    } else if (segment.type === 'event') {
+        presentEvent(cardInstance, segment);
     }
 }
 
-function presentInvestment(cardInstance) {
-    gameState.pending = { type: 'investment', cardInstance };
-    renderInvestmentCard(cardInstance);
+function presentInvestment(cardInstance, segment) {
+    gameState.pending = { type: 'investment', cardInstance, segment };
+    renderInvestmentCard(cardInstance, segment);
     saveState();
 }
 
-function presentDecision(cardInstance) {
-    gameState.pending = { type: 'decision', cardInstance };
-    renderDecisionCard(cardInstance);
+function presentDecision(cardInstance, segment) {
+    gameState.pending = { type: 'decision', cardInstance, segment };
+    renderDecisionCard(cardInstance, segment);
     saveState();
 }
 
-function presentEvent(cardInstance) {
+function presentEvent(cardInstance, segment) {
     // Don't apply effects yet — wait for "Continue" click.
     // Events are "just accept": instant effects + onActivate + activation all fire on Continue.
-    gameState.pending = { type: 'event', cardInstance, effectsApplied: false };
-    renderEventCard(cardInstance);
+    gameState.pending = { type: 'event', cardInstance, segment, effectsApplied: false };
+    renderEventCard(cardInstance, segment);
+    saveState();
+}
+
+function presentTrade(segment) {
+    gameState.pending = { type: 'trade', segment };
+    renderTradeCard();
     saveState();
 }
 
@@ -273,6 +291,14 @@ function handleAuguryAction(event) {
         }
     } else if (type === 'event' && action === 'continue') {
         acceptEvent(cardInstance);
+    } else if (type === 'trade' && action === 'trade') {
+        // Keep pending; open the existing trade overlay. Closing it returns here.
+        hideAuguryOverlay();
+        showTradeOverlay();
+    } else if (type === 'trade' && action === 'pass') {
+        gameState.pending = null;
+        hideAuguryOverlay();
+        saveState();
     }
 }
 
@@ -376,6 +402,17 @@ function handleDecisionChoice(cardInstance, optionIndex) {
     renderProperties();
     verifyState();
     saveState();
+}
+
+// When closing the trade overlay, if we got here from the Merchant wheel slice,
+// go back to the augury so the player can choose again (Trade or Pass). The
+// merchant approach doesn't auto-end the turn until Pass is clicked.
+function handleTradeClose() {
+    hideTradeOverlay();
+    if (gameState.pending?.type === 'trade') {
+        showAuguryOverlay();
+        renderTradeCard();
+    }
 }
 
 function handleTrade(tradeId, from, to, rate) {

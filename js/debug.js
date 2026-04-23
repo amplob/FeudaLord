@@ -44,8 +44,12 @@ function isCardEligibleDebug(card) {
     return true;
 }
 
-function selectCardDebug(category) {
-    const eligible = allCards.filter(c => c.category === category && isCardEligibleDebug(c));
+function selectCardDebug(category, tonality) {
+    const eligible = allCards.filter(c => {
+        if (c.category !== category) return false;
+        if (tonality && c.tonality !== tonality) return false;
+        return isCardEligibleDebug(c);
+    });
     if (eligible.length === 0) return null;
 
     for (const card of eligible) {
@@ -100,12 +104,20 @@ function simulateSingleRun(numTurns) {
         // Passive income from active investments/events
         addResourcesQuiet(calculateTotalPassiveIncome());
 
-        // Spin wheel: uniform over 8 slices. Types: investment / decision / event.
-        const wheelResult = wheelConfig[Math.floor(Math.random() * wheelConfig.length)].type;
+        // Spin wheel: uniform over 8 slices. Each slice carries type, tonality,
+        // and multiplier. Trade slices skip card draw (sim doesn't trade).
+        const slice = wheelConfig[Math.floor(Math.random() * wheelConfig.length)];
+        const { type: wheelResult, tonality, multiplier: sliceMultiplier } = slice;
 
-        const card = selectCardDebug(wheelResult);
+        if (wheelResult === "trade") {
+            gameState.turn += 1;
+            continue;
+        }
+
+        const tonalityFilter = wheelResult === "event" ? tonality : undefined;
+        const card = selectCardDebug(wheelResult, tonalityFilter);
         if (card) {
-            const instance = createCardInstance(card);
+            const instance = createCardInstance(card, { sliceMultiplier });
 
             if (wheelResult === "investment") {
                 // Build regardless of affordability

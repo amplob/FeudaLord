@@ -9,6 +9,8 @@
 // Canonical values: gold=1, food=0.5, manpower=3, favor=2.
 // eventBase is sized in gold-equivalent (negative = disaster).
 // Can also be triggered by decision options via `triggersEvent`.
+// Each event declares a `tonality` ("good" | "bad") used by the wheel to
+// filter the pool when the landed slice is of a specific tonality.
 // =====================================================
 
 const eventCards = [
@@ -19,6 +21,7 @@ const eventCards = [
         name: "Excellent Harvest!",
         description: "The gods have blessed your fields.",
         icon: "🌾✨",
+        tonality: "good",
 
         dependencies: [],
         blockedBy: [],
@@ -41,6 +44,7 @@ const eventCards = [
         name: "Plague Strikes!",
         description: "A terrible sickness sweeps through your lands.",
         icon: "☠️🤒",
+        tonality: "bad",
 
         dependencies: [],
         blockedBy: [],
@@ -65,6 +69,7 @@ const eventCards = [
         name: "Trade Boom",
         description: "Merchants flock to your lands, filling the coffers.",
         icon: "📈💰",
+        tonality: "good",
 
         dependencies: [],
         blockedBy: [],
@@ -88,6 +93,7 @@ const eventCards = [
         name: "Prolonged Drought",
         description: "The sun beats down mercilessly, parching the fields.",
         icon: "☀️🏜️",
+        tonality: "bad",
 
         dependencies: [],
         blockedBy: [],
@@ -111,6 +117,7 @@ const eventCards = [
         name: "Festival Season",
         description: "The realm celebrates — songs, feasts, and spontaneous joy.",
         icon: "🎉",
+        tonality: "good",
 
         dependencies: [],
         blockedBy: [],

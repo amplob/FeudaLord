@@ -310,6 +310,25 @@ function renderEventCard(cardInstance) {
     `;
 }
 
+function renderTradeCard() {
+    document.getElementById('emergencyClose').style.display = 'none';
+
+    const titleEl = document.getElementById("auguryTitle");
+    const descEl = document.getElementById("auguryDescription");
+    const optionsEl = document.getElementById("auguryOptions");
+
+    titleEl.textContent = "💼 A Merchant Approaches";
+    descEl.textContent = "A caravan of traders arrives at your gates, offering their wares.";
+
+    optionsEl.innerHTML = `
+        <div class="card-icon large">💼</div>
+        <div class="card-actions">
+            <button data-action="trade" class="primary">Trade</button>
+            <button data-action="pass" class="secondary">Pass</button>
+        </div>
+    `;
+}
+
 function renderGameOver(message) {
     // Hide emergency close for game over
     document.getElementById('emergencyClose').style.display = 'none';

@@ -160,11 +160,14 @@ function isCardEligible(card, state) {
 
 /**
  * Get all eligible cards of a specific category.
+ * If tonality is provided ("good"/"bad"/"neutral"), also filter by card.tonality.
  */
-function getEligibleCards(category, state) {
-    return allCards.filter(card => 
-        card.category === category && isCardEligible(card, state)
-    );
+function getEligibleCards(category, state, tonality) {
+    return allCards.filter(card => {
+        if (card.category !== category) return false;
+        if (tonality && card.tonality !== tonality) return false;
+        return isCardEligible(card, state);
+    });
 }
 
 // =====================================================
@@ -190,12 +193,14 @@ function effectiveWeight(card) {
 
 /**
  * Select a random card from eligible cards using weighted probability.
+ * Optional tonality filter ("good"/"bad"/"neutral") narrows the pool — used
+ * by the wheel to draw only cards matching the landed slice's tonality.
  */
-function selectCard(category, state) {
-    const eligibleCards = getEligibleCards(category, state);
+function selectCard(category, state, tonality) {
+    const eligibleCards = getEligibleCards(category, state, tonality);
 
     if (eligibleCards.length === 0) {
-        console.warn(`No eligible cards for category: ${category}`);
+        console.warn(`No eligible cards for category: ${category}${tonality ? ` (tonality: ${tonality})` : ""}`);
         return null;
     }
 
@@ -361,8 +366,12 @@ function copyFlagFields(src) {
 
 /**
  * Create a card instance with randomized values.
+ * `sliceMultiplier` comes from the wheel slice's tonality: >1 for "good" slices
+ * (better output per input / bigger positive event), <1 for "bad" (rougher deal /
+ * intensified negative event — signs are preserved by multiplication).
+ * Investments ignore it (always called with default 1).
  */
-function createCardInstance(card) {
+function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
     const instance = {
         instanceId: generateInstanceId(),
         typeId: card.typeId,
@@ -377,6 +386,7 @@ function createCardInstance(card) {
         // For events with duration
         duration: card.duration || null,
         turnsRemaining: card.duration || null,
+        tonality: card.tonality || null,
 
         // Flag hooks (setsEventFlag needed on instance for auto-derived hasEventFlag)
         ...copyFlagFields(card),
@@ -400,7 +410,7 @@ function createCardInstance(card) {
             instance.perTurn = randomizeEffects(card.basePerTurn, card.yieldVariance || 0);
         }
     }
-    
+
     // For decisions: three schemas supported.
     //   1. Fixed-output: card-level outputRes + outputBase. Options are payment methods
     //      (inputRes) or rejects (no inputRes). Output is rolled once per card.
@@ -408,10 +418,10 @@ function createCardInstance(card) {
     //   3. Legacy: options carry raw effects.
     if (card.options) {
         if (card.outputRes && typeof card.outputBase === "number") {
-            const outputAmount = round2(card.outputBase * rollBulk());
+            const outputAmount = round2(card.outputBase * rollBulk() * sliceMultiplier);
             instance.options = card.options.map(opt => {
                 if (opt.inputRes) {
-                    const tierMultiplier = evalTierMultiplier(opt.tierBoosts);
+                    const tierMultiplier = evalTierMultiplier(opt.tierBoosts) * sliceMultiplier;
                     const { inputAmount } = applyFixedOutputTrade({
                         outputRes: card.outputRes,
                         outputAmount,
@@ -445,7 +455,7 @@ function createCardInstance(card) {
         } else {
             instance.options = card.options.map(opt => {
                 if (opt.inputRes && opt.outputRes && typeof opt.inputBase === "number") {
-                    const tierMultiplier = evalTierMultiplier(opt.tierBoosts);
+                    const tierMultiplier = evalTierMultiplier(opt.tierBoosts) * sliceMultiplier;
                     const { inputAmount, outputAmount } = applyTradeFormula({
                         inputRes: opt.inputRes,
                         outputRes: opt.outputRes,
@@ -482,7 +492,7 @@ function createCardInstance(card) {
     // Instant-event effects: eventBase sized in gold-equivalent. Applied on draw.
     // Legacy top-level `effects` still supported.
     if (card.outputRes && typeof card.eventBase === "number") {
-        const tierMultiplier = evalTierMultiplier(card.tierBoosts);
+        const tierMultiplier = evalTierMultiplier(card.tierBoosts) * sliceMultiplier;
         const { outputAmount } = applyInstantEventFormula({
             outputRes: card.outputRes,
             eventBase: card.eventBase,
@@ -491,22 +501,25 @@ function createCardInstance(card) {
         });
         instance.effects = { [card.outputRes]: outputAmount };
     } else if (card.effects) {
-        instance.effects = randomizeEffects(card.effects, card.effectsVariance || 0);
+        instance.effects = scaleEffects(
+            randomizeEffects(card.effects, card.effectsVariance || 0),
+            sliceMultiplier
+        );
     }
-    
-    // For events, randomize per-turn and activation effects
+
+    // For events, randomize per-turn and activation effects (scaled by slice multiplier)
     if (card.category === 'event') {
-        instance.perTurn = card.perTurnEffects 
-            ? randomizeEffects(card.perTurnEffects, card.effectsVariance || 0)
+        instance.perTurn = card.perTurnEffects
+            ? scaleEffects(randomizeEffects(card.perTurnEffects, card.effectsVariance || 0), sliceMultiplier)
             : null;
-        instance.onActivate = card.onActivate 
-            ? randomizeEffects(card.onActivate, card.effectsVariance || 0)
+        instance.onActivate = card.onActivate
+            ? scaleEffects(randomizeEffects(card.onActivate, card.effectsVariance || 0), sliceMultiplier)
             : null;
-        instance.onExpire = card.onExpire 
-            ? randomizeEffects(card.onExpire, card.effectsVariance || 0)
+        instance.onExpire = card.onExpire
+            ? scaleEffects(randomizeEffects(card.onExpire, card.effectsVariance || 0), sliceMultiplier)
             : null;
     }
-    
+
     return instance;
 }
 

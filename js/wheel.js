@@ -6,18 +6,25 @@
 // To modify the wheel, just edit this array!
 // =====================================================
 
-// 8 equal-sized slices (45° each). Interleaved so no two same types
-// are adjacent. Counts: 4 decision, 2 investment, 2 event → probabilities
-// 50% / 25% / 25%. Pattern: D I D E D I D E.
+// 8 equal-sized slices (45° each). Each slice has a TYPE (what category of
+// card it draws) and a TONALITY (good/neutral/bad), which influences:
+//   - Which cards are eligible (events are filtered by tonality).
+//   - A sliceMultiplier that amplifies the resulting numbers (bigger payouts
+//     on good slices, harsher terms on bad slices). Decisions multiply their
+//     qualityFactor; events scale eventBase and ongoing effects (sign preserved).
+// Layout counts: 4 decisions (1 good, 2 neutral, 1 bad), 2 events (1 good,
+// 1 bad), 1 investment (neutral), 1 trade (neutral). Probabilities: decision
+// 50%, event 25%, investment 12.5%, trade 12.5%. Interleaved so two slices of
+// the same type never sit adjacent.
 const wheelConfig = [
-    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
-    { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
-    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
-    { type: "event",      label: "🎲 Event",      icon: "🎲", color: "#8b1a1a" },
-    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
-    { type: "investment", label: "🔨 Investment", icon: "🔨", color: "#2e5a1c" },
-    { type: "decision",   label: "⚖️ Decision",   icon: "⚖️", color: "#b8860b" },
-    { type: "event",      label: "🎲 Event",      icon: "🎲", color: "#8b1a1a" },
+    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "⚖️ Decision",  icon: "⚖️", color: "#b8860b" },
+    { type: "investment", tonality: "neutral", multiplier: 1.0, label: "🔨 Invest",    icon: "🔨", color: "#556b2f" },
+    { type: "decision",   tonality: "good",    multiplier: 1.3, label: "✨ Fortune",   icon: "✨", color: "#4a9b3e" },
+    { type: "event",      tonality: "bad",     multiplier: 1.2, label: "🎲 Ill Omen",  icon: "🎲", color: "#8b1a1a" },
+    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "⚖️ Decision",  icon: "⚖️", color: "#b8860b" },
+    { type: "trade",      tonality: "neutral", multiplier: 1.0, label: "💼 Merchant",  icon: "💼", color: "#3b5998" },
+    { type: "decision",   tonality: "bad",     multiplier: 0.7, label: "💀 Curse",     icon: "💀", color: "#5c0f0f" },
+    { type: "event",      tonality: "good",    multiplier: 1.2, label: "🎲 Good Omen", icon: "🎲", color: "#6ba850" },
 ];
 
 // =====================================================
@@ -36,6 +43,8 @@ function calculateSegments() {
     for (const config of wheelConfig) {
         wheelSegments.push({
             type: config.type,
+            tonality: config.tonality,
+            multiplier: config.multiplier,
             label: config.label,
             icon: config.icon,
             color: config.color,
@@ -99,23 +108,24 @@ function renderWheelIcons(wheel) {
 let currentRotation = 0;
 
 /**
- * Spin the wheel to a random position and return the result.
+ * Spin the wheel to a random position and return the landed segment
+ * (includes type, tonality, multiplier, label, color).
  */
 function spinWheel() {
     // Generate random spin: 5-7 full rotations + random final position
     const fullRotations = 5 + Math.floor(Math.random() * 3);
     const randomAngle = Math.random() * 360;
     const totalSpin = (fullRotations * 360) + randomAngle;
-    
+
     // Add to current rotation
     currentRotation += totalSpin;
-    
+
     // Calculate result based on where the pointer lands
-    const result = calculateResultFromRotation(currentRotation);
-    
-    console.log(`Spin: +${totalSpin.toFixed(1)}° | Total: ${currentRotation.toFixed(1)}° | Pointer at: ${getPointerAngle(currentRotation).toFixed(1)}° | Result: ${result}`);
-    
-    return result;
+    const segment = calculateSegmentFromRotation(currentRotation);
+
+    console.log(`Spin: +${totalSpin.toFixed(1)}° | Total: ${currentRotation.toFixed(1)}° | Pointer at: ${getPointerAngle(currentRotation).toFixed(1)}° | Result: ${segment.type} (${segment.tonality}, ×${segment.multiplier})`);
+
+    return segment;
 }
 
 /**
@@ -142,19 +152,20 @@ function getPointerAngle(rotation) {
 }
 
 /**
- * Determine which segment the pointer is pointing at.
+ * Determine which segment the pointer is pointing at. Returns the full
+ * segment object (type, tonality, multiplier, label, color, angles).
  */
-function calculateResultFromRotation(rotation) {
+function calculateSegmentFromRotation(rotation) {
     const pointerAngle = getPointerAngle(rotation);
-    
+
     for (const segment of wheelSegments) {
         if (pointerAngle >= segment.startAngle && pointerAngle < segment.endAngle) {
-            return segment.type;
+            return segment;
         }
     }
-    
+
     // Edge case: exactly 360° = 0° = first segment
-    return wheelSegments[0].type;
+    return wheelSegments[0];
 }
 
 /**
@@ -207,38 +218,41 @@ function symbolFor(resource) {
 
 function testWheelProbabilities(iterations = 1000) {
     const counts = {};
-    wheelSegments.forEach(s => counts[s.type] = 0);
+    wheelSegments.forEach(s => {
+        const key = `${s.type}_${s.tonality}`;
+        counts[key] = 0;
+    });
 
     const savedRotation = currentRotation;
 
     for (let i = 0; i < iterations; i++) {
-        const result = spinWheel();
-        counts[result]++;
+        const seg = spinWheel();
+        counts[`${seg.type}_${seg.tonality}`]++;
     }
 
     currentRotation = savedRotation;
 
-    const segmentsPerType = {};
+    const segmentsPerKey = {};
     wheelSegments.forEach(s => {
-        segmentsPerType[s.type] = (segmentsPerType[s.type] || 0) + 1;
+        const key = `${s.type}_${s.tonality}`;
+        segmentsPerKey[key] = (segmentsPerKey[key] || 0) + 1;
     });
 
     console.log(`\n=== Wheel Probability Test (${iterations} spins) ===`);
-    for (const type of Object.keys(counts)) {
-        const actual = (counts[type] / iterations * 100).toFixed(1);
-        const expected = (segmentsPerType[type] / wheelSegments.length * 100).toFixed(1);
-        console.log(`${type}: ${actual}% (expected: ${expected}%)`);
+    for (const key of Object.keys(counts)) {
+        const actual = (counts[key] / iterations * 100).toFixed(1);
+        const expected = (segmentsPerKey[key] / wheelSegments.length * 100).toFixed(1);
+        console.log(`${key}: ${actual}% (expected: ${expected}%)`);
     }
 }
 
 function testSpecificAngles() {
     console.log("\n=== Testing specific angles ===");
     const testRotations = [0, 36, 72, 144, 180, 216, 288, 324, 359];
-    
+
     for (const rot of testRotations) {
         const pointerAngle = getPointerAngle(rot);
-        const result = calculateResultFromRotation(rot);
-        const segment = wheelSegments.find(s => s.type === result);
-        console.log(`Rotation: ${rot}° → Pointer at: ${pointerAngle.toFixed(1)}° → ${segment.label} (${segment.startAngle}°-${segment.endAngle}°)`);
+        const segment = calculateSegmentFromRotation(rot);
+        console.log(`Rotation: ${rot}° → Pointer at: ${pointerAngle.toFixed(1)}° → ${segment.label} (${segment.tonality}, ×${segment.multiplier}) [${segment.startAngle}°-${segment.endAngle}°]`);
     }
 }
