@@ -140,17 +140,6 @@ function simulateSingleRun(numTurns, sliceTypeFilter = null) {
                 // Random option
                 const opt = instance.options[Math.floor(Math.random() * instance.options.length)];
                 addResourcesQuiet(opt.effects);
-                if (opt.perTurnEffects) {
-                    activateCard({
-                        instanceId: generateInstanceId(),
-                        typeId: `${instance.typeId}_effect`,
-                        category: "event",
-                        name: `${instance.name} (${opt.label})`,
-                        perTurn: opt.perTurnEffects,
-                        duration: null,
-                        turnsRemaining: null,
-                    });
-                }
                 if (opt.triggersEvent) {
                     const eventCard = allCards.find(c => c.typeId === opt.triggersEvent);
                     if (eventCard) {

@@ -149,6 +149,9 @@ function validateCards() {
                 if (opt.triggersEvent && !eventIds.has(opt.triggersEvent)) {
                     log(`${tag}: option "${opt.label}" triggersEvent "${opt.triggersEvent}" — no such event`);
                 }
+                if (opt.perTurnEffects) {
+                    log(`${tag}: option "${opt.label}" has perTurnEffects — define a real event card and use triggersEvent instead`);
+                }
                 if (isFixedOutput) {
                     // Fixed-output: option may or may not have inputRes, but must NOT mix per-option-trade fields.
                     if (opt.outputRes || typeof opt.inputBase === "number") {
@@ -551,9 +554,6 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
                             [opt.inputRes]: -inputAmount,
                             [card.outputRes]: outputAmount,
                         },
-                        perTurnEffects: opt.perTurnEffects
-                            ? scaleEffects(opt.perTurnEffects, 1)
-                            : null,
                         triggersEvent: opt.triggersEvent || null,
                         ...copyFlagFields(opt),
                     };
@@ -561,9 +561,6 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
                 return {
                     label: opt.label,
                     effects: {},
-                    perTurnEffects: opt.perTurnEffects
-                        ? scaleEffects(opt.perTurnEffects, 1)
-                        : null,
                     triggersEvent: opt.triggersEvent || null,
                     ...copyFlagFields(opt),
                 };
@@ -579,7 +576,6 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
                     return {
                         label: opt.label,
                         effects: {},
-                        perTurnEffects: null,
                         triggersEvent: opt.triggersEvent || null,
                         ...copyFlagFields(opt),
                     };
@@ -598,9 +594,6 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
                         [opt.inputRes]: -inputAmount,
                         [opt.outputRes]: outputAmount,
                     },
-                    perTurnEffects: opt.perTurnEffects
-                        ? scaleEffects(opt.perTurnEffects, 1)
-                        : null,
                     triggersEvent: opt.triggersEvent || null,
                     ...copyFlagFields(opt),
                 };

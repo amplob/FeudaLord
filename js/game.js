@@ -348,24 +348,10 @@ function handleDecisionChoice(cardInstance, optionIndex) {
         applyResourceChange(option.effects, `${cardInstance.name}: ${option.label}`);
     }
     
-    // If has per-turn effects, create an event-like card
-    if (option.perTurnEffects && Object.keys(option.perTurnEffects).length > 0) {
-        const eventInstance = {
-            instanceId: generateInstanceId(),
-            typeId: `${cardInstance.typeId}_effect`,
-            category: 'event',
-            name: `${cardInstance.name} (${option.label})`,
-            description: 'Ongoing effect from your decision',
-            icon: cardInstance.icon,
-            perTurn: option.perTurnEffects,
-            duration: null, // Permanent
-            turnsRemaining: null,
-        };
-        activateCard(eventInstance);
-        showToast(`Ongoing: ${formatEffects(option.perTurnEffects)}/turn`);
-    }
-
-    // If this option triggers an event card, activate it now
+    // For ongoing consequences of a decision, the option declares
+    // `triggersEvent: "<eventTypeId>"` and we activate that real event card.
+    // (No more synthetic "decision-as-event" branch; it had no tonality, no
+    // expiry, and wasn't visible to the validator.)
     if (option.triggersEvent) {
         const eventCard = allCards.find(c => c.typeId === option.triggersEvent);
         if (eventCard) {
