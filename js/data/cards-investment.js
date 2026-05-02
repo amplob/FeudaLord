@@ -176,7 +176,7 @@ const investmentCards = [
         absoluteChance: null,
 
         // 70 g-eq / 2 g-eq/turn → ROI 35
-        baseCost: { gold: 40, manpower: 10 },
+        baseCost: { gold: 40, food: 60 },
         basePerTurn: { gold: 2 },
     },
     {
@@ -197,7 +197,7 @@ const investmentCards = [
         absoluteChance: null,
 
         // 90 g-eq / 3 g-eq/turn → ROI 30
-        baseCost: { gold: 60, manpower: 10 },
+        baseCost: { gold: 60, food: 60 },
         basePerTurn: { gold: 2, food: 2 },
     },
     {
@@ -218,7 +218,7 @@ const investmentCards = [
         absoluteChance: null,
 
         // 160 g-eq / 5 g-eq/turn → ROI 32
-        baseCost: { gold: 100, manpower: 20 },
+        baseCost: { gold: 100, food: 120 },
         basePerTurn: { manpower: 1, favor: 1 },
     },
 ];
