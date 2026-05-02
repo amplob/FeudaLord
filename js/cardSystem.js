@@ -476,32 +476,6 @@ function applyInvestmentFormula({ baseCost, basePerTurn }) {
     };
 }
 
-// =====================================================
-// RANDOMIZATION (legacy)
-// =====================================================
-
-/**
- * Apply variance to a base value.
- */
-function applyVariance(baseValue, variance) {
-    if (variance === 0 || variance === undefined) return baseValue;
-    const multiplier = 1 + (Math.random() * 2 - 1) * variance;
-    return Math.round(baseValue * multiplier);
-}
-
-/**
- * Randomize an effects object (cost, yield, effects).
- */
-function randomizeEffects(effects, variance) {
-    if (!effects) return {};
-
-    const randomized = {};
-    for (const [resource, amount] of Object.entries(effects)) {
-        randomized[resource] = applyVariance(amount, variance);
-    }
-    return randomized;
-}
-
 // Pick up flag-related fields from a card or option def onto its instance copy.
 function copyFlagFields(src) {
     return {
@@ -550,12 +524,8 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
         instance.cost = cost;
         instance.perTurn = perTurn;
     } else {
-        if (card.baseCost) {
-            instance.cost = randomizeEffects(card.baseCost, card.costVariance || 0);
-        }
-        if (card.basePerTurn) {
-            instance.perTurn = randomizeEffects(card.basePerTurn, card.yieldVariance || 0);
-        }
+        if (card.baseCost) instance.cost = scaleEffects(card.baseCost, 1);
+        if (card.basePerTurn) instance.perTurn = scaleEffects(card.basePerTurn, 1);
     }
 
     // For decisions: two schemas supported.
@@ -582,7 +552,7 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
                             [card.outputRes]: outputAmount,
                         },
                         perTurnEffects: opt.perTurnEffects
-                            ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
+                            ? scaleEffects(opt.perTurnEffects, 1)
                             : null,
                         triggersEvent: opt.triggersEvent || null,
                         ...copyFlagFields(opt),
@@ -592,7 +562,7 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
                     label: opt.label,
                     effects: {},
                     perTurnEffects: opt.perTurnEffects
-                        ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
+                        ? scaleEffects(opt.perTurnEffects, 1)
                         : null,
                     triggersEvent: opt.triggersEvent || null,
                     ...copyFlagFields(opt),
@@ -629,7 +599,7 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
                         [opt.outputRes]: outputAmount,
                     },
                     perTurnEffects: opt.perTurnEffects
-                        ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
+                        ? scaleEffects(opt.perTurnEffects, 1)
                         : null,
                     triggersEvent: opt.triggersEvent || null,
                     ...copyFlagFields(opt),
@@ -650,23 +620,14 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
         });
         instance.effects = { [card.outputRes]: outputAmount };
     } else if (card.effects) {
-        instance.effects = scaleEffects(
-            randomizeEffects(card.effects, card.effectsVariance || 0),
-            sliceMultiplier
-        );
+        instance.effects = scaleEffects(card.effects, sliceMultiplier);
     }
 
-    // For events, randomize per-turn and activation effects (scaled by slice multiplier)
+    // Events: scale per-turn / activation / expiry by the slice multiplier.
     if (card.category === 'event') {
-        instance.perTurn = card.perTurnEffects
-            ? scaleEffects(randomizeEffects(card.perTurnEffects, card.effectsVariance || 0), sliceMultiplier)
-            : null;
-        instance.onActivate = card.onActivate
-            ? scaleEffects(randomizeEffects(card.onActivate, card.effectsVariance || 0), sliceMultiplier)
-            : null;
-        instance.onExpire = card.onExpire
-            ? scaleEffects(randomizeEffects(card.onExpire, card.effectsVariance || 0), sliceMultiplier)
-            : null;
+        instance.perTurn = card.perTurnEffects ? scaleEffects(card.perTurnEffects, sliceMultiplier) : null;
+        instance.onActivate = card.onActivate ? scaleEffects(card.onActivate, sliceMultiplier) : null;
+        instance.onExpire = card.onExpire ? scaleEffects(card.onExpire, sliceMultiplier) : null;
     }
 
     return instance;
