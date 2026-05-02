@@ -893,6 +893,11 @@ button.link:hover {
 }
 
 /* Realm overlay (landscape view of built structures) */
+.realm-overlay {
+    background: rgba(10, 8, 6, 0.98);
+    z-index: 150;
+}
+
 .realm-content {
     max-width: 720px;
     width: 95%;
