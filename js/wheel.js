@@ -76,6 +76,7 @@ function applyWheelStyle() {
 
     wheel.style.background = generateWheelGradient();
     renderWheelIcons(wheel);
+    renderWheelPegs(wheel);
     console.log("Wheel gradient applied:", generateWheelGradient());
 }
 
@@ -103,34 +104,186 @@ function renderWheelIcons(wheel) {
     }
 }
 
+// Place a small peg at every slice boundary on the rim. Pegs are children of
+// #wheel so they rotate with it; the spin loop tracks when each peg crosses
+// the pointer at screen-angle 0 and applies a kick + bounce-back when needed.
+function renderWheelPegs(wheel) {
+    wheel.querySelectorAll(".wheel-peg").forEach(el => el.remove());
+    const radiusPct = 50; // exactly on the rim
+    const N = wheelConfig.length;
+    for (let k = 0; k < N; k++) {
+        const angleDeg = (k * 360) / N;
+        const rad = (angleDeg * Math.PI) / 180;
+        const x = radiusPct * Math.sin(rad);
+        const y = -radiusPct * Math.cos(rad);
+
+        const peg = document.createElement("span");
+        peg.className = "wheel-peg";
+        peg.style.left = `calc(50% + ${x}%)`;
+        peg.style.top = `calc(50% + ${y}%)`;
+        // Re-center the peg on its position and orient its long axis radially.
+        peg.style.transform = `translate(-50%, -50%) rotate(${angleDeg}deg)`;
+        wheel.appendChild(peg);
+    }
+}
+
 // =====================================================
-// WHEEL SPINNING LOGIC
+// WHEEL SPINNING LOGIC (peg/pointer physics)
 // =====================================================
+// State:
+//   currentRotation     — cumulative wheel angle in degrees (increases over time)
+//   wheelVelocity       — angular velocity in deg/sec (positive = forward spin)
+//   isSpinning          — guard against re-entrant spins
+//
+// Physics model:
+//   Each frame integrates (angle += velocity * dt) under constant FRICTION.
+//   Pegs sit at the boundaries between slices (every 360/N degrees in wheel-
+//   local coordinates), so a peg crosses the pointer whenever the cumulative
+//   rotation passes through a multiple of `pegSpacing`.
+//
+//   On a forward crossing:
+//     - if pre-impact velocity ≥ PASS_THRESHOLD, lose PEG_KICK and continue.
+//     - else the peg blocks: stop just before the boundary and reverse with a
+//       small bounce velocity (drops the wheel back into the previous slice).
+//
+//   On a backward crossing (during bounce-back), the same kick applies; if the
+//   bounce energy isn't enough to clear the peg behind, the wheel settles in
+//   the slice it bounced into.
 
 let currentRotation = 0;
-let lastSpinDurationMs = 3000;
+let wheelVelocity = 0;
+let isSpinning = false;
+let _spinCallback = null;
+let _lastFrameTime = 0;
+
+// Tuned for a 240px wheel with 8 slices. INITIAL_VELOCITY_* gives a 4–6s spin
+// with a couple of dozen peg ticks; PASS_THRESHOLD picks the moment when the
+// pointer can start to "block" instead of click through.
+const FRICTION = 320;            // deg/s² constant deceleration
+const PEG_KICK = 11;             // deg/s lost per peg crossing
+const PASS_THRESHOLD = 35;       // deg/s — below this on impact, peg blocks
+const BOUNCE_REVERSE = 0.45;     // fraction of incoming velocity reversed
+const MIN_BOUNCE_VEL = 70;       // floor on bounce velocity (keeps it visible)
+const INITIAL_VELOCITY_MIN = 1500;
+const INITIAL_VELOCITY_MAX = 2300;
+
+function pegSpacingDeg() {
+    return 360 / wheelConfig.length;
+}
 
 /**
- * Spin the wheel to a random position and return the landed segment
- * (includes type, tonality, multiplier, label, color).
+ * Spin the wheel. Calls `callback(segment)` once the wheel comes to rest.
+ * No-op if a spin is already in progress.
  */
-function spinWheel() {
-    // 3-9 full rotations + random final position. Duration scales with rotation
-    // count so short spins feel snappy and long spins feel epic — gives each
-    // spin a visibly different motion even though the outcome is already
-    // uniformly distributed.
-    const fullRotations = 3 + Math.floor(Math.random() * 7);
-    const randomAngle = Math.random() * 360;
-    const totalSpin = (fullRotations * 360) + randomAngle;
+function spinWheel(callback) {
+    if (isSpinning) return;
+    isSpinning = true;
+    _spinCallback = callback || null;
 
-    currentRotation += totalSpin;
-    lastSpinDurationMs = 2500 + fullRotations * 200;
+    wheelVelocity = INITIAL_VELOCITY_MIN +
+        Math.random() * (INITIAL_VELOCITY_MAX - INITIAL_VELOCITY_MIN);
 
+    _lastFrameTime = performance.now();
+    requestAnimationFrame(_spinFrame);
+}
+
+function _spinFrame(now) {
+    // Cap dt so a stalled tab doesn't teleport the wheel through every peg.
+    const dt = Math.min((now - _lastFrameTime) / 1000, 0.05);
+    _lastFrameTime = now;
+
+    // Apply friction toward 0.
+    if (wheelVelocity > 0) {
+        wheelVelocity = Math.max(0, wheelVelocity - FRICTION * dt);
+    } else if (wheelVelocity < 0) {
+        wheelVelocity = Math.min(0, wheelVelocity + FRICTION * dt);
+    }
+
+    if (wheelVelocity === 0) {
+        _settleSpin();
+        return;
+    }
+
+    const proposed = currentRotation + wheelVelocity * dt;
+    const spacing = pegSpacingDeg();
+    const oldBucket = Math.floor(currentRotation / spacing);
+    const newBucket = Math.floor(proposed / spacing);
+
+    if (newBucket === oldBucket) {
+        currentRotation = proposed;
+    } else if (newBucket > oldBucket) {
+        // Forward crossings.
+        let v = wheelVelocity;
+        let blockedAt = null;
+        for (let b = oldBucket + 1; b <= newBucket; b++) {
+            if (v < PASS_THRESHOLD) {
+                blockedAt = b;
+                break;
+            }
+            v -= PEG_KICK;
+        }
+        if (blockedAt !== null) {
+            // The peg at boundary `blockedAt * spacing` rejects the wheel.
+            // Park just below it (in the slice we were leaving) and bounce.
+            currentRotation = blockedAt * spacing - 0.0001;
+            const bounceMagnitude = Math.max(MIN_BOUNCE_VEL, Math.abs(v) * BOUNCE_REVERSE + MIN_BOUNCE_VEL);
+            wheelVelocity = -bounceMagnitude;
+            _strikePointer();
+        } else {
+            currentRotation = proposed;
+            wheelVelocity = Math.max(0, v);
+            _strikePointer();
+        }
+    } else {
+        // Backward crossings (bounce-back already underway).
+        let v = -wheelVelocity;
+        let blockedAt = null;
+        for (let b = oldBucket; b > newBucket; b--) {
+            if (v < PASS_THRESHOLD) {
+                blockedAt = b;
+                break;
+            }
+            v -= PEG_KICK;
+        }
+        if (blockedAt !== null) {
+            // Can't make it back across this peg either — settle here.
+            currentRotation = blockedAt * spacing + 0.0001;
+            wheelVelocity = 0;
+            _strikePointer();
+            _settleSpin();
+            return;
+        }
+        currentRotation = proposed;
+        wheelVelocity = -Math.max(0, v);
+        _strikePointer();
+    }
+
+    _applyWheelTransform();
+    requestAnimationFrame(_spinFrame);
+}
+
+function _applyWheelTransform() {
+    const wheel = document.getElementById("wheel");
+    if (wheel) wheel.style.transform = `rotate(${currentRotation}deg)`;
+}
+
+function _strikePointer() {
+    const p = document.getElementById("wheelPointer");
+    if (!p) return;
+    p.classList.remove("struck");
+    // Force a reflow so the animation can replay back-to-back.
+    void p.offsetWidth;
+    p.classList.add("struck");
+}
+
+function _settleSpin() {
+    isSpinning = false;
+    _applyWheelTransform();
     const segment = calculateSegmentFromRotation(currentRotation);
-
-    console.log(`Spin: +${totalSpin.toFixed(1)}° (${fullRotations} rot, ${lastSpinDurationMs}ms) | Total: ${currentRotation.toFixed(1)}° | Pointer at: ${getPointerAngle(currentRotation).toFixed(1)}° | Result: ${segment.type} (${segment.tonality}, ×${segment.multiplier})`);
-
-    return segment;
+    console.log(`Spin settled: rotation=${currentRotation.toFixed(1)}° | pointer=${getPointerAngle(currentRotation).toFixed(1)}° | ${segment.type}/${segment.tonality} ×${segment.multiplier}`);
+    const cb = _spinCallback;
+    _spinCallback = null;
+    if (cb) cb(segment);
 }
 
 /**
@@ -173,25 +326,6 @@ function calculateSegmentFromRotation(rotation) {
     return wheelSegments[0];
 }
 
-/**
- * Animate the wheel to its current rotation.
- */
-function animateWheel(callback) {
-    const wheel = document.getElementById("wheel");
-    if (!wheel) {
-        if (callback) callback();
-        return;
-    }
-
-    const durationSec = (lastSpinDurationMs / 1000).toFixed(2);
-    wheel.style.transition = `transform ${durationSec}s cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
-    wheel.style.transform = `rotate(${currentRotation}deg)`;
-
-    setTimeout(() => {
-        if (callback) callback();
-    }, lastSpinDurationMs + 100);
-}
-
 // =====================================================
 // INITIALIZATION
 // =====================================================
@@ -208,6 +342,9 @@ document.addEventListener("DOMContentLoaded", initWheel);
 // DEBUG FUNCTIONS
 // =====================================================
 
+// Synchronous probability check that draws uniformly from the wheel without
+// running the animation. spinWheel() is now async (callback-based) so this
+// shortcut keeps the test dev tool useful from the console.
 function testWheelProbabilities(iterations = 1000) {
     const counts = {};
     wheelSegments.forEach(s => {
@@ -215,14 +352,11 @@ function testWheelProbabilities(iterations = 1000) {
         counts[key] = 0;
     });
 
-    const savedRotation = currentRotation;
-
     for (let i = 0; i < iterations; i++) {
-        const seg = spinWheel();
+        const angle = Math.random() * 360;
+        const seg = calculateSegmentFromRotation(angle);
         counts[`${seg.type}_${seg.tonality}`]++;
     }
-
-    currentRotation = savedRotation;
 
     const segmentsPerKey = {};
     wheelSegments.forEach(s => {
@@ -230,7 +364,7 @@ function testWheelProbabilities(iterations = 1000) {
         segmentsPerKey[key] = (segmentsPerKey[key] || 0) + 1;
     });
 
-    console.log(`\n=== Wheel Probability Test (${iterations} spins) ===`);
+    console.log(`\n=== Wheel Probability Test (${iterations} draws) ===`);
     for (const key of Object.keys(counts)) {
         const actual = (counts[key] / iterations * 100).toFixed(1);
         const expected = (segmentsPerKey[key] / wheelSegments.length * 100).toFixed(1);

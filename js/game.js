@@ -152,11 +152,10 @@ function handleSpin() {
     // Apply passive income
     applyPassiveIncome();
 
-    // Spin the wheel — returns the full landed segment (type/tonality/multiplier)
-    const segment = spinWheel();
-
-    // Animate and present result
-    animateWheel(() => {
+    // Spin the wheel: physics loop runs in wheel.js, calls back with the
+    // landed segment once the wheel comes to rest (after peg collisions and
+    // any final bounce-back).
+    spinWheel((segment) => {
         setSpinButtonState(false);
         showAuguryOverlay();
         presentAugury(segment);

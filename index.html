@@ -36,7 +36,20 @@
 
             <section class="wheel-section">
                 <div class="wheel-container">
-                    <div class="wheel-pointer">▼</div>
+                    <div class="wheel-pointer" id="wheelPointer">
+                        <svg viewBox="0 0 32 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="pointerGrad" x1="0" x2="0" y1="0" y2="1">
+                                    <stop offset="0" stop-color="#f0d060"/>
+                                    <stop offset="0.55" stop-color="#b88a1c"/>
+                                    <stop offset="1" stop-color="#5a3d10"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M16,54 L4,18 L8,8 L16,4 L24,8 L28,18 Z"
+                                  fill="url(#pointerGrad)" stroke="#1a1410" stroke-width="1.4" stroke-linejoin="round"/>
+                            <circle cx="16" cy="14" r="2.2" fill="#1a1410"/>
+                        </svg>
+                    </div>
                     <div class="wheel" id="wheel">
                         <button id="spinButton" class="spin-center">SPIN</button>
                     </div>
