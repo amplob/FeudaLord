@@ -189,6 +189,12 @@ function renderInvestmentCard(cardInstance) {
     const canBuild = canAfford(cardInstance.cost);
     const affordClass = canBuild ? '' : 'cannot-afford';
 
+    const yieldGoldEq = goldEquivalent(cardInstance.perTurn);
+    const roi = yieldGoldEq > 0 ? goldEquivalent(cardInstance.cost) / yieldGoldEq : 0;
+    const roiText = roi > 0
+        ? (roi % 1 === 0 ? `${roi}` : roi.toFixed(2))
+        : "—";
+
     optionsEl.innerHTML = `
         <div class="card-details ${affordClass}">
             <div class="card-icon">${cardInstance.icon}</div>
@@ -200,6 +206,10 @@ function renderInvestmentCard(cardInstance) {
                 <div class="stat-row yield">
                     <span class="label">Yield:</span>
                     <span class="value">${formatPerTurn(cardInstance.perTurn)}</span>
+                </div>
+                <div class="stat-row roi">
+                    <span class="label">ROI:</span>
+                    <span class="value">${roiText} turns</span>
                 </div>
             </div>
         </div>

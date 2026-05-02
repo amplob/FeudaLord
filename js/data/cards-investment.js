@@ -1,8 +1,9 @@
 // =====================================================
 // INVESTMENT CARDS
 // =====================================================
-// Pay a cost now, earn per-turn income. Target ROI = 20 turns
-// (cost in gold-equivalent = 20 × yield per turn in gold-equivalent).
+// Pay a cost now, earn per-turn income. Target ROI per card is in
+// [25, 35] turns (cost in gold-equivalent ≈ 25-35 × yield per turn
+// in gold-equivalent).
 // Canonical values: gold=1, food=0.5, manpower=3, favor=2.
 // Instance randomization (see applyInvestmentFormula):
 //   bulkRoll    ∈ [0.5, 2]   → scales cost AND yield (preserves ROI)
@@ -27,9 +28,9 @@ const investmentCards = [
         weight: 10,
         absoluteChance: null,
 
-        // 30 gold = 30 g-eq → +3 food/turn = 1.5 g-eq/turn → ROI 20
+        // 30 g-eq / 1 g-eq/turn → ROI 30
         baseCost: { gold: 30 },
-        basePerTurn: { food: 3 },
+        basePerTurn: { food: 2 },
     },
     {
         typeId: "goldmine",
@@ -48,9 +49,9 @@ const investmentCards = [
         weight: 10,
         absoluteChance: null,
 
-        // 20 manpower = 60 g-eq → +3 gold/turn = 3 g-eq/turn → ROI 20
+        // 60 g-eq / 2 g-eq/turn → ROI 30
         baseCost: { manpower: 20 },
-        basePerTurn: { gold: 3 },
+        basePerTurn: { gold: 2 },
     },
     {
         typeId: "barracks",
@@ -69,8 +70,8 @@ const investmentCards = [
         weight: 10,
         absoluteChance: null,
 
-        // 60 gold = 60 g-eq → +1 manpower/turn = 3 g-eq/turn → ROI 20
-        baseCost: { gold: 60 },
+        // 75 g-eq / 3 g-eq/turn → ROI 25
+        baseCost: { gold: 75 },
         basePerTurn: { manpower: 1 },
     },
     {
@@ -90,15 +91,15 @@ const investmentCards = [
         weight: 8,
         absoluteChance: null,
 
-        // 60 gold + 40 food = 80 g-eq → +2 favor/turn = 4 g-eq/turn → ROI 20
+        // 80 g-eq / 3 g-eq/turn → ROI ≈ 26.67
         baseCost: { gold: 60, food: 40 },
-        basePerTurn: { favor: 2 },
+        basePerTurn: { favor: 1.5 },
     },
     {
         typeId: "market",
         category: "investment",
         name: "Open a Market",
-        description: "Merchants bring coin, grain, and a touch of prestige.",
+        description: "Merchants bring coin and grain.",
         icon: "🏪",
 
         dependencies: [],
@@ -111,9 +112,9 @@ const investmentCards = [
         weight: 10,
         absoluteChance: null,
 
-        // 30 gold + 20 food = 40 g-eq → +1 gold +1 food +0.25 favor/turn = 2 g-eq/turn → ROI 20
+        // 40 g-eq / 1.5 g-eq/turn → ROI ≈ 26.67
         baseCost: { gold: 30, food: 20 },
-        basePerTurn: { gold: 1, food: 1, favor: 0.25 },
+        basePerTurn: { gold: 1, food: 1 },
     },
     {
         typeId: "fishingBoats",
@@ -132,9 +133,9 @@ const investmentCards = [
         weight: 10,
         absoluteChance: null,
 
-        // 15 gold = 15 g-eq → +2 food/turn = 1 g-eq/turn → ROI 15 (fast payback)
+        // 15 g-eq / 0.5 g-eq/turn → ROI 30
         baseCost: { gold: 15 },
-        basePerTurn: { food: 2 },
+        basePerTurn: { food: 1 },
     },
     {
         typeId: "vineyard",
@@ -153,8 +154,8 @@ const investmentCards = [
         weight: 10,
         absoluteChance: null,
 
-        // 15 gold + 40 food = 35 g-eq → +1 gold +0.5 favor/turn = 2 g-eq/turn → ROI ~17
-        baseCost: { gold: 15, food: 40 },
+        // 50 g-eq / 2 g-eq/turn → ROI 25
+        baseCost: { gold: 30, food: 40 },
         basePerTurn: { gold: 1, favor: 0.5 },
     },
     {
@@ -174,15 +175,15 @@ const investmentCards = [
         weight: 9,
         absoluteChance: null,
 
-        // 40 gold + 10 manpower = 70 g-eq → +3 gold/turn = 3 g-eq/turn → ROI ~23
+        // 70 g-eq / 2 g-eq/turn → ROI 35
         baseCost: { gold: 40, manpower: 10 },
-        basePerTurn: { gold: 3 },
+        basePerTurn: { gold: 2 },
     },
     {
         typeId: "tradeCaravan",
         category: "investment",
         name: "Sponsor a Trade Caravan",
-        description: "A long route across the realm — slow returns, but generous.",
+        description: "A long route across the realm.",
         icon: "🐴",
 
         dependencies: [],
@@ -195,7 +196,7 @@ const investmentCards = [
         weight: 8,
         absoluteChance: null,
 
-        // 60 gold + 10 manpower = 90 g-eq → +2 gold +2 food/turn = 3 g-eq/turn → ROI ~30
+        // 90 g-eq / 3 g-eq/turn → ROI 30
         baseCost: { gold: 60, manpower: 10 },
         basePerTurn: { gold: 2, food: 2 },
     },
@@ -216,8 +217,8 @@ const investmentCards = [
         weight: 6,
         absoluteChance: null,
 
-        // 100 gold + 20 manpower = 160 g-eq → +1 manpower +0.5 favor/turn = 4 g-eq/turn → ROI ~40
+        // 160 g-eq / 5 g-eq/turn → ROI 32
         baseCost: { gold: 100, manpower: 20 },
-        basePerTurn: { manpower: 1, favor: 0.5 },
+        basePerTurn: { manpower: 1, favor: 1 },
     },
 ];
