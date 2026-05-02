@@ -420,11 +420,10 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
         }
     }
 
-    // For decisions: three schemas supported.
+    // For decisions: two schemas supported.
     //   1. Fixed-output: card-level outputRes + outputBase. Options are payment methods
     //      (inputRes) or rejects (no inputRes). Output is rolled once per card.
     //   2. Per-option trade: each option has inputRes/outputRes/inputBase.
-    //   3. Legacy: options carry raw effects.
     if (card.options) {
         if (card.outputRes && typeof card.outputBase === "number") {
             const outputAmount = round2(card.outputBase * rollBulk() * sliceMultiplier);
@@ -463,31 +462,34 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
             });
         } else {
             instance.options = card.options.map(opt => {
-                if (opt.inputRes && opt.outputRes && typeof opt.inputBase === "number") {
-                    const tierMultiplier = evalTierMultiplier(opt.tierBoosts) * sliceMultiplier;
-                    const { inputAmount, outputAmount } = applyTradeFormula({
-                        inputRes: opt.inputRes,
-                        outputRes: opt.outputRes,
-                        inputBase: opt.inputBase,
-                        qualityFactor: opt.qualityFactor || 1,
-                        tierMultiplier,
-                    });
+                if (!(opt.inputRes && opt.outputRes && typeof opt.inputBase === "number")) {
+                    console.error(
+                        `Decision ${card.typeId} option "${opt.label}" — per-option-trade ` +
+                        `decisions require inputRes/outputRes/inputBase on every option. ` +
+                        `Use the fixed-output schema (card-level outputRes/outputBase) for reject-style options.`
+                    );
                     return {
                         label: opt.label,
-                        effects: {
-                            [opt.inputRes]: -inputAmount,
-                            [opt.outputRes]: outputAmount,
-                        },
-                        perTurnEffects: opt.perTurnEffects
-                            ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
-                            : null,
+                        effects: {},
+                        perTurnEffects: null,
                         triggersEvent: opt.triggersEvent || null,
                         ...copyFlagFields(opt),
                     };
                 }
+                const tierMultiplier = evalTierMultiplier(opt.tierBoosts) * sliceMultiplier;
+                const { inputAmount, outputAmount } = applyTradeFormula({
+                    inputRes: opt.inputRes,
+                    outputRes: opt.outputRes,
+                    inputBase: opt.inputBase,
+                    qualityFactor: opt.qualityFactor || 1,
+                    tierMultiplier,
+                });
                 return {
                     label: opt.label,
-                    effects: randomizeEffects(opt.effects || {}, opt.effectsVariance || 0),
+                    effects: {
+                        [opt.inputRes]: -inputAmount,
+                        [opt.outputRes]: outputAmount,
+                    },
                     perTurnEffects: opt.perTurnEffects
                         ? randomizeEffects(opt.perTurnEffects, opt.effectsVariance || 0)
                         : null,
