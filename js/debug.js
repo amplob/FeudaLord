@@ -36,6 +36,15 @@ function restoreGlobalState(snap) {
 // -----------------------------------------------------
 
 function isCardEligibleDebug(card) {
+    // Skip flag-gated cards entirely. The sim doesn't simulate flag/story
+    // state, so including them would either misreport balance (if we
+    // bypassed the check) or never fire them (if we honored it). Story
+    // arcs get their own focused sim runs that set the relevant flags.
+    if (card.requiresEventFlag) return false;
+    if (card.blockedByEventFlag) return false;
+    if (card.requiresStaticFlag) return false;
+    if (card.blockedByStaticFlag) return false;
+
     if (gameState.turn < card.minTurn) return false;
     if (card.isUnique && playedCardTypes.has(card.typeId)) return false;
     if (card.maxInstances !== null && countActiveInstances(card.typeId) >= card.maxInstances) return false;
@@ -145,20 +154,12 @@ function simulateSingleRun(numTurns, sliceTypeFilter = null) {
                 if (opt.triggersEvent) {
                     const eventCard = allCards.find(c => c.typeId === opt.triggersEvent);
                     if (eventCard) {
-                        const eventInstance = createCardInstance(eventCard);
-                        if (eventInstance.effects) addResourcesQuiet(eventInstance.effects);
-                        if (eventInstance.onActivate) addResourcesQuiet(eventInstance.onActivate);
-                        if (eventInstance.duration || eventInstance.perTurn) activateCard(eventInstance);
-                        applyFlagMutations(eventInstance, { autoDerivedSets: true });
+                        applyEventInstance(createCardInstance(eventCard), addResourcesQuiet);
                     }
                 }
                 applyFlagMutations(opt);
             } else if (wheelResult === "event") {
-                // Instant effects + onActivate apply now; ongoing events activate.
-                if (instance.effects) addResourcesQuiet(instance.effects);
-                if (instance.onActivate) addResourcesQuiet(instance.onActivate);
-                if (instance.duration || instance.perTurn) activateCard(instance);
-                applyFlagMutations(instance, { autoDerivedSets: true });
+                applyEventInstance(instance, addResourcesQuiet);
             }
         }
 
@@ -198,10 +199,22 @@ function simulateMultipleRuns(runs, turns, sliceTypeFilter = null) {
 // Results modal
 // -----------------------------------------------------
 
+// Cards with any flag/story field — excluded from sim by isCardEligibleDebug.
+function countFlagGatedCards() {
+    return allCards.filter(c =>
+        c.requiresEventFlag || c.blockedByEventFlag ||
+        c.requiresStaticFlag || c.blockedByStaticFlag
+    ).length;
+}
+
 function showSimResults({ stats, allRuns, runs, turns, sliceTypeFilter }) {
     const modeLabel = sliceTypeFilter
         ? `${sliceTypeFilter} only`
         : "full wheel";
+    const excluded = countFlagGatedCards();
+    const excludedNote = excluded > 0
+        ? ` · ${excluded} flag-gated card${excluded === 1 ? "" : "s"} excluded`
+        : "";
     let overlay = document.getElementById("simResultsOverlay");
     if (!overlay) {
         overlay = document.createElement("div");
@@ -232,7 +245,7 @@ function showSimResults({ stats, allRuns, runs, turns, sliceTypeFilter }) {
 
     document.getElementById("simResultsBody").innerHTML = `
         <p style="color:#aaa;margin-bottom:12px;">
-            ${runs} runs × ${turns} turns · ${modeLabel} · random decisions · affordability bypassed
+            ${runs} runs × ${turns} turns · ${modeLabel} · random decisions · affordability bypassed${excludedNote}
         </p>
         <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
             <thead><tr style="border-bottom:1px solid #555;">
