@@ -43,21 +43,21 @@ const decisionCards = [
                 label: "Welcome them as workers",
                 inputRes: "food",
                 outputRes: "manpower",
-                inputBase: 30,
+                inputBase: 12,
                 qualityFactor: 1.3,
             },
             {
                 label: "Provide charitable relief",
                 inputRes: "food",
                 outputRes: "favor",
-                inputBase: 30,
+                inputBase: 12,
                 qualityFactor: 1.0,
             },
             {
                 label: "Sell their meager goods",
                 inputRes: "food",
                 outputRes: "gold",
-                inputBase: 30,
+                inputBase: 12,
                 qualityFactor: 0.7,
             },
         ],
@@ -106,7 +106,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "manpower",
-        outputBase: 6,
+        outputBase: 5,
 
         options: [
             { label: "Feed his men", inputRes: "food", qualityFactor: 1.0 },
@@ -132,7 +132,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "gold",
-        outputBase: 18,
+        outputBase: 17,
 
         options: [
             // Food option also triggers a Trade Boom event — big bonus on top of the gold.
@@ -159,7 +159,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "manpower",
-        outputBase: 6.5,
+        outputBase: 5.5,
 
         options: [
             { label: "Hire mercenaries", inputRes: "gold", qualityFactor: 1.0 },
@@ -185,7 +185,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "food",
-        outputBase: 30,
+        outputBase: 33,
 
         options: [
             { label: "Fund irrigation", inputRes: "gold", qualityFactor: 1.3 },
@@ -240,7 +240,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "gold",
-        outputBase: 18,
+        outputBase: 17,
 
         options: [
             { label: "Sell the grain", inputRes: "food", qualityFactor: 1.3 },
@@ -266,7 +266,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "manpower",
-        outputBase: 6,
+        outputBase: 5,
 
         options: [
             { label: "Pay their contract", inputRes: "gold", qualityFactor: 1.3 },
@@ -292,7 +292,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "food",
-        outputBase: 35,
+        outputBase: 40,
 
         options: [
             { label: "Send trained hunters", inputRes: "manpower", qualityFactor: 1.3 },
@@ -318,7 +318,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "gold",
-        outputBase: 18,
+        outputBase: 17,
 
         options: [
             { label: "Squeeze the peasants", inputRes: "favor", qualityFactor: 0.7 },
@@ -344,7 +344,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "food",
-        outputBase: 30,
+        outputBase: 35,
 
         options: [
             { label: "Pay in coin", inputRes: "gold", qualityFactor: 1.3 },
@@ -396,7 +396,7 @@ const decisionCards = [
         absoluteChance: null,
 
         outputRes: "manpower",
-        outputBase: 6,
+        outputBase: 5,
 
         options: [
             { label: "Feed and house them", inputRes: "food", qualityFactor: 1.3 },
