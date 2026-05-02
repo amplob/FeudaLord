@@ -148,6 +148,73 @@ function togglePropertiesPanel() {
 }
 
 // =====================================================
+// UI - Realm (landscape view)
+// =====================================================
+//
+// Each investment has a fixed coordinate on a 4:3 canvas (percentages of
+// width/height, anchored at the icon's center). When the structure is built
+// the emoji shows in full color; when not, it shows as a grey silhouette so
+// the player can see what's left to claim. Coordinates are tuned to the
+// landscape backdrop bands defined in style.css (.realm-canvas).
+const STRUCTURE_LAYOUT = {
+    goldmine:     { left: 15, top: 15 },
+    stoneQuarry:  { left: 78, top: 18 },
+    royalKeep:    { left: 50, top: 30 },
+    barracks:     { left: 22, top: 50 },
+    cathedral:    { left: 50, top: 53 },
+    vineyard:     { left: 78, top: 50 },
+    market:       { left: 38, top: 65 },
+    tradeCaravan: { left: 15, top: 73 },
+    watermill:    { left: 28, top: 87 },
+    fishingBoats: { left: 78, top: 90 },
+};
+
+function renderRealm() {
+    const canvas = document.getElementById("realmCanvas");
+    if (!canvas) return;
+    const built = new Map(getBuiltStructures().map(s => [s.typeId, s]));
+    canvas.innerHTML = "";
+    for (const card of investmentCards) {
+        const layout = STRUCTURE_LAYOUT[card.typeId];
+        if (!layout) continue;
+        const struct = built.get(card.typeId);
+        const isBuilt = !!struct;
+        const level = struct ? (struct.level || 1) : 0;
+
+        const node = document.createElement("div");
+        node.className = `realm-structure${isBuilt ? "" : " empty"}`;
+        node.style.left = `${layout.left}%`;
+        node.style.top = `${layout.top}%`;
+        node.title = isBuilt && level > 1
+            ? `${card.name} (Lv. ${level})`
+            : card.name;
+        node.innerHTML = `
+            <span class="icon">${card.icon}</span>
+            ${level > 1 ? `<span class="level-badge">Lv. ${level}</span>` : ""}
+        `;
+        canvas.appendChild(node);
+    }
+}
+
+function showRealmOverlay() {
+    renderRealm();
+    document.getElementById('realmOverlay').classList.remove('hidden');
+}
+
+function hideRealmOverlay() {
+    document.getElementById('realmOverlay').classList.add('hidden');
+}
+
+function toggleRealmPanel() {
+    const overlay = document.getElementById('realmOverlay');
+    if (overlay.classList.contains('hidden')) {
+        showRealmOverlay();
+    } else {
+        hideRealmOverlay();
+    }
+}
+
+// =====================================================
 // UI - Spin Button Control
 // =====================================================
 

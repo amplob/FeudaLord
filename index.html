@@ -29,6 +29,7 @@
                     </div>
                 </div>
                 <div class="header-actions">
+                    <button id="realmToggle" class="header-btn">🗺️ Realm</button>
                     <button id="propertiesToggle" class="header-btn">🏰 Estate</button>
                 </div>
             </header>
@@ -67,6 +68,17 @@
                     <button class="close-btn" id="tradeClose">✕</button>
                 </div>
                 <div id="tradeAccordion" class="trade-accordion"></div>
+            </div>
+        </div>
+
+        <!-- Realm Overlay (landscape view of built structures) -->
+        <div class="overlay realm-overlay hidden" id="realmOverlay">
+            <div class="overlay-content realm-content">
+                <div class="overlay-header">
+                    <h2>Your Realm</h2>
+                    <button class="close-btn" id="realmClose">✕</button>
+                </div>
+                <div id="realmCanvas" class="realm-canvas"></div>
             </div>
         </div>
 

@@ -51,6 +51,8 @@ function initGame() {
     document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
     document.getElementById("propertiesToggle").addEventListener("click", togglePropertiesPanel);
     document.getElementById("propertiesClose").addEventListener("click", hidePropertiesOverlay);
+    document.getElementById("realmToggle").addEventListener("click", toggleRealmPanel);
+    document.getElementById("realmClose").addEventListener("click", hideRealmOverlay);
     document.getElementById("resetButton").addEventListener("click", resetGame);
     document.getElementById("auguryOptions").addEventListener("click", handleAuguryAction);
 
@@ -60,6 +62,9 @@ function initGame() {
     });
     document.getElementById('propertiesOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'propertiesOverlay') hidePropertiesOverlay();
+    });
+    document.getElementById('realmOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'realmOverlay') hideRealmOverlay();
     });
     
     // Emergency close button for stuck augury
