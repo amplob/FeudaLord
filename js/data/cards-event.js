@@ -11,6 +11,8 @@
 // Can also be triggered by decision options via `triggersEvent`.
 // Each event declares a `tonality` ("good" | "bad") used by the wheel to
 // filter the pool when the landed slice is of a specific tonality.
+// Pool is balanced: the 3 good and 3 bad cards mirror each other in
+// magnitude so the average per-event lifetime g-eq sums to ~0.
 // =====================================================
 
 const eventCards = [
@@ -33,9 +35,9 @@ const eventCards = [
         weight: 10,
         absoluteChance: null,
 
-        // +20 g-eq × 1.2 quality → ~+48 food (±15% variance)
+        // +12 g-eq → ~+24 food (×qF 1.2, ±15% variance)
         outputRes: "food",
-        eventBase: 20,
+        eventBase: 10,
         qualityFactor: 1.2,
     },
     {
@@ -56,9 +58,9 @@ const eventCards = [
         weight: 8,
         absoluteChance: null,
 
-        // -24 g-eq → ~-8 manpower (±15% variance). Mirrors excellentHarvest.
+        // -12 g-eq → ~-4 manpower. Mirrors excellentHarvest.
         outputRes: "manpower",
-        eventBase: -20,
+        eventBase: -10,
         qualityFactor: 1.2,
     },
 
@@ -81,10 +83,10 @@ const eventCards = [
         weight: 6,
         absoluteChance: null,
 
-        // +10 g-eq on activate, +5 g-eq/turn × 4 turns = +30 g-eq total
+        // +4 g-eq onActivate, +2 g-eq/turn × 4 turns = +12 g-eq total
         duration: 4,
-        onActivate: { gold: 10 },
-        perTurnEffects: { gold: 5 },
+        onActivate: { gold: 4 },
+        perTurnEffects: { gold: 2 },
         onExpire: null,
     },
     {
@@ -105,11 +107,11 @@ const eventCards = [
         weight: 5,
         absoluteChance: null,
 
-        // -10 gold on activate, -10 food/turn × 4 turns = -30 g-eq total.
+        // -4 g-eq onActivate, -4 food/turn × 4 turns (=-8 g-eq) = -12 g-eq total.
         // Mirrors tradeBoom.
         duration: 4,
-        onActivate: { gold: -10 },
-        perTurnEffects: { food: -10 },
+        onActivate: { gold: -4 },
+        perTurnEffects: { food: -4 },
         onExpire: null,
     },
     {
@@ -130,10 +132,10 @@ const eventCards = [
         weight: 6,
         absoluteChance: null,
 
-        // +10 food on activate (=5 g-eq), +3 favor/turn × 3 turns (=18 g-eq) ≈ 23 g-eq total
+        // +2 favor/turn × 3 turns (= +12 g-eq total)
         duration: 3,
-        onActivate: { food: 10 },
-        perTurnEffects: { favor: 3 },
+        onActivate: null,
+        perTurnEffects: { favor: 2 },
         onExpire: null,
     },
     {
@@ -154,11 +156,10 @@ const eventCards = [
         weight: 6,
         absoluteChance: null,
 
-        // -5 gold on activate (=-5 g-eq), -3 favor/turn × 3 turns (=-18 g-eq) = -23 g-eq total
-        // Mirrors festivalSeason.
+        // -2 favor/turn × 3 turns (= -12 g-eq total). Mirrors festivalSeason.
         duration: 3,
-        onActivate: { gold: -5 },
-        perTurnEffects: { favor: -3 },
+        onActivate: null,
+        perTurnEffects: { favor: -2 },
         onExpire: null,
     },
 ];

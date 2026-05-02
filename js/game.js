@@ -7,8 +7,8 @@ const STORAGE_KEY = "feudal-lord-save";
 const defaultState = {
     turn: 1,
     resources: {
-        gold: 100,
-        food: 50,
+        gold: 30,
+        food: 30,
         manpower: 30,
         favor: 30
     },
