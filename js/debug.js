@@ -228,11 +228,13 @@ function showSimResults({ stats, allRuns, runs, turns, sliceTypeFilter }) {
             </div>
         `;
         document.body.appendChild(overlay);
-        document.getElementById("simResultsClose").addEventListener("click", () => {
+        const closeAndReturn = () => {
             overlay.classList.add("hidden");
-        });
+            showTestPicker();
+        };
+        document.getElementById("simResultsClose").addEventListener("click", closeAndReturn);
         overlay.addEventListener("click", (e) => {
-            if (e.target.id === "simResultsOverlay") overlay.classList.add("hidden");
+            if (e.target.id === "simResultsOverlay") closeAndReturn();
         });
     }
 
@@ -267,9 +269,11 @@ function showSimResults({ stats, allRuns, runs, turns, sliceTypeFilter }) {
 // -----------------------------------------------------
 
 const SIM_MODES = [
-    { id: "full",     label: "Full test",     filter: null,         desc: "Standard wheel (all slice types)" },
-    { id: "event",    label: "Event test",    filter: "event",      desc: "Only event slices fire each turn" },
-    { id: "decision", label: "Decision test", filter: "decision",   desc: "Only decision slices fire each turn" },
+    { id: "full",     label: "Full test",     filter: null,       desc: "Standard wheel (all slice types)" },
+    { id: "event",    label: "Event test",    filter: "event",    desc: "Only event slices fire each turn" },
+    { id: "decision", label: "Decision test", filter: "decision", desc: "Only decision slices fire each turn" },
+    { id: "inspect",  label: "Investment inspector", action: "inspect",
+      desc: "Add/remove investment levels (no cost — debug only)" },
 ];
 
 function showTestPicker() {
@@ -300,16 +304,128 @@ function showTestPicker() {
         for (const mode of SIM_MODES) {
             const btn = document.createElement("button");
             btn.className = "option";
-            btn.innerHTML = `<strong>${mode.label} ${SIM_RUNS}×${SIM_TURNS}</strong><span style="color:#aaa;font-size:0.9rem;">${mode.desc}</span>`;
+            const heading = mode.action === "inspect"
+                ? mode.label
+                : `${mode.label} ${SIM_RUNS}×${SIM_TURNS}`;
+            btn.innerHTML = `<strong>${heading}</strong><span style="color:#aaa;font-size:0.9rem;">${mode.desc}</span>`;
             btn.addEventListener("click", () => {
                 overlay.classList.add("hidden");
-                showSimResults(simulateMultipleRuns(SIM_RUNS, SIM_TURNS, mode.filter));
+                if (mode.action === "inspect") {
+                    showInvestmentInspector();
+                } else {
+                    showSimResults(simulateMultipleRuns(SIM_RUNS, SIM_TURNS, mode.filter));
+                }
             });
             body.appendChild(btn);
         }
     }
 
     overlay.classList.remove("hidden");
+}
+
+// -----------------------------------------------------
+// Investment inspector (debug add/remove without paying)
+// -----------------------------------------------------
+
+// Add a level to an investment without paying. Yield uses the standard
+// randomization, so this matches what a real build would have produced.
+function debugAddInvestment(typeId) {
+    const card = allCards.find(c => c.typeId === typeId);
+    if (!card) return;
+    activateCard(createCardInstance(card));
+}
+
+// Remove one level. Approximates the level's contribution as perTurn / level
+// (we don't track individual builds), so the resulting yield drifts a bit
+// from a "true" undo — fine for debug.
+function debugRemoveInvestment(typeId) {
+    const idx = activeCards.findIndex(c => c.typeId === typeId);
+    if (idx === -1) return;
+    const inst = activeCards[idx];
+    const lvl = inst.level || 1;
+    if (lvl <= 1) {
+        activeCards.splice(idx, 1);
+        return;
+    }
+    for (const r of Object.keys(inst.perTurn || {})) {
+        inst.perTurn[r] = round2(inst.perTurn[r] - inst.perTurn[r] / lvl);
+    }
+    inst.level = lvl - 1;
+}
+
+function showInvestmentInspector() {
+    let overlay = document.getElementById("investmentInspectorOverlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "investmentInspectorOverlay";
+        overlay.className = "overlay";
+        overlay.style.zIndex = "400";
+        overlay.innerHTML = `
+            <div class="overlay-content" style="max-width: 540px;">
+                <div class="overlay-header">
+                    <h2>🛠️ Investment Inspector</h2>
+                    <button class="close-btn" id="investmentInspectorClose">✕</button>
+                </div>
+                <p style="color:#aaa;font-size:0.85rem;margin:0 0 12px 0;padding:0 4px;">
+                    Debug only. <b>+</b> adds a level (free, randomized yield). <b>−</b> removes one
+                    (yield approximated by avg level contribution).
+                </p>
+                <div id="investmentInspectorBody"></div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        const closeAndReturn = () => {
+            overlay.classList.add("hidden");
+            showTestPicker();
+        };
+        document.getElementById("investmentInspectorClose").addEventListener("click", closeAndReturn);
+        overlay.addEventListener("click", (e) => {
+            if (e.target.id === "investmentInspectorOverlay") closeAndReturn();
+        });
+    }
+    renderInvestmentInspector();
+    overlay.classList.remove("hidden");
+}
+
+function renderInvestmentInspector() {
+    const body = document.getElementById("investmentInspectorBody");
+    if (!body) return;
+    body.innerHTML = "";
+    for (const card of investmentCards) {
+        const existing = activeCards.find(c => c.typeId === card.typeId);
+        const lvl = existing ? (existing.level || 1) : 0;
+        const yieldText = existing && existing.perTurn
+            ? formatPerTurn(existing.perTurn)
+            : "—";
+
+        const row = document.createElement("div");
+        row.className = "investment-debug-row";
+        row.innerHTML = `
+            <div class="row-info">
+                <span class="icon">${card.icon}</span>
+                <div class="row-text">
+                    <strong>${card.name}</strong>
+                    <small>${lvl > 0 ? `Lv. ${lvl}` : "(not built)"} · ${yieldText}</small>
+                </div>
+            </div>
+            <div class="row-actions">
+                <button data-act="add" data-id="${card.typeId}" title="Add level">+</button>
+                <button data-act="remove" data-id="${card.typeId}" ${lvl === 0 ? "disabled" : ""} title="Remove level">−</button>
+            </div>
+        `;
+        body.appendChild(row);
+    }
+    body.onclick = (e) => {
+        const btn = e.target.closest("button[data-act]");
+        if (!btn) return;
+        const typeId = btn.dataset.id;
+        if (btn.dataset.act === "add") debugAddInvestment(typeId);
+        else if (btn.dataset.act === "remove") debugRemoveInvestment(typeId);
+        renderInvestmentInspector();
+        if (typeof updateIncomeIndicators === "function") updateIncomeIndicators();
+        if (typeof renderProperties === "function") renderProperties();
+        if (typeof saveState === "function") saveState();
+    };
 }
 
 // -----------------------------------------------------
