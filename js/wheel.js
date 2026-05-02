@@ -12,9 +12,9 @@
 //   - A sliceMultiplier that amplifies the resulting numbers (bigger payouts
 //     on good slices, harsher terms on bad slices). Decisions multiply their
 //     qualityFactor; events scale eventBase and ongoing effects (sign preserved).
-// Layout counts: 4 decisions (1 good, 2 neutral, 1 bad), 2 events (1 good,
-// 1 bad), 1 investment (neutral), 1 trade (neutral). Probabilities: decision
-// 50%, event 25%, investment 12.5%, trade 12.5%. Interleaved so two slices of
+// Layout counts: 3 decisions (1 good, 1 neutral, 1 bad), 2 events (1 good,
+// 1 bad), 2 investments (neutral), 1 trade (neutral). Probabilities: decision
+// 37.5%, event 25%, investment 25%, trade 12.5%. Interleaved so two slices of
 // the same type never sit adjacent.
 // Icons come from CATEGORY_ICON (cardSystem.js) so the wheel and the card
 // titles stay consistent. Labels are display-only text (no emoji here).
@@ -23,7 +23,7 @@ const wheelConfig = [
     { type: "investment", tonality: "neutral", multiplier: 1.0, label: "Invest",    color: "#7a6a55" },
     { type: "decision",   tonality: "good",    multiplier: 1.3, label: "Fortune",   color: "#4a9b3e" },
     { type: "event",      tonality: "bad",     multiplier: 1.2, label: "Ill Omen",  color: "#8b1a1a" },
-    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "Decision",  color: "#b8860b" },
+    { type: "investment", tonality: "neutral", multiplier: 1.0, label: "Invest",    color: "#7a6a55" },
     { type: "trade",      tonality: "neutral", multiplier: 1.0, label: "Merchant",  color: "#3b5998" },
     { type: "decision",   tonality: "bad",     multiplier: 0.7, label: "Curse",     color: "#5c0f0f" },
     { type: "event",      tonality: "good",    multiplier: 1.2, label: "Good Omen", color: "#6ba850" },
