@@ -393,6 +393,14 @@ function selectCard(category, state, tonality) {
 
 const RESOURCE_VALUE = { gold: 1, food: 0.5, manpower: 3, favor: 2 };
 
+// Display symbols (used by ui.js formatters).
+const RESOURCE_ICON = {
+    gold: "💰",
+    food: "🌾",
+    manpower: "👥",
+    favor: "👑",
+};
+
 function canonicalRate(from, to) {
     return RESOURCE_VALUE[from] / RESOURCE_VALUE[to];
 }

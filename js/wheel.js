@@ -205,20 +205,6 @@ function initWheel() {
 document.addEventListener("DOMContentLoaded", initWheel);
 
 // =====================================================
-// UTILITY
-// =====================================================
-
-function symbolFor(resource) {
-    const symbols = {
-        gold: "💰",
-        food: "🌾",
-        manpower: "👥",
-        favor: "👑"
-    };
-    return symbols[resource] || resource;
-}
-
-// =====================================================
 // DEBUG FUNCTIONS
 // =====================================================
 

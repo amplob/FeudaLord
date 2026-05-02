@@ -56,7 +56,7 @@ function renderProperties() {
     }
 
     if (filtered.length === 0) {
-        list.innerHTML = `<div class="property-empty">No properties producing ${symbolFor(currentPropertyFilter)}</div>`;
+        list.innerHTML = `<div class="property-empty">No properties producing ${RESOURCE_ICON[currentPropertyFilter]}</div>`;
         return;
     }
 
@@ -407,9 +407,9 @@ function formatEffects(effects, showPlus = true) {
     return entries
         .map(([key, value]) => {
             if (showPlus) {
-                return `${value >= 0 ? "+" : ""}${fmtNum(value)}${symbolFor(key)}`;
+                return `${value >= 0 ? "+" : ""}${fmtNum(value)}${RESOURCE_ICON[key]}`;
             } else {
-                return `${fmtNum(value)}${symbolFor(key)}`;
+                return `${fmtNum(value)}${RESOURCE_ICON[key]}`;
             }
         })
         .join(" ");
@@ -420,7 +420,7 @@ function formatCost(cost) {
     const entries = Object.entries(cost);
     if (entries.length === 0) return "Free";
     return entries
-        .map(([key, value]) => `${fmtNum(value)}${symbolFor(key)}`)
+        .map(([key, value]) => `${fmtNum(value)}${RESOURCE_ICON[key]}`)
         .join(" ");
 }
 
@@ -429,6 +429,6 @@ function formatPerTurn(perTurn) {
     const entries = Object.entries(perTurn);
     if (entries.length === 0) return "";
     return entries
-        .map(([key, value]) => `${value >= 0 ? "+" : ""}${fmtNum(value)}${symbolFor(key)}/turn`)
+        .map(([key, value]) => `${value >= 0 ? "+" : ""}${fmtNum(value)}${RESOURCE_ICON[key]}/turn`)
         .join(" ");
 }
