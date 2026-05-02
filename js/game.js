@@ -305,18 +305,7 @@ function handleAuguryAction(event) {
 
 function acceptEvent(cardInstance) {
     if (!gameState.pending.effectsApplied) {
-        if (cardInstance.effects && Object.keys(cardInstance.effects).length > 0) {
-            applyResourceChange(cardInstance.effects, cardInstance.name);
-        }
-        if (cardInstance.onActivate) {
-            applyResourceChange(cardInstance.onActivate, `${cardInstance.name} begins!`);
-        }
-        if (cardInstance.duration || cardInstance.perTurn) {
-            activateCard(cardInstance);
-        }
-        // setsEventFlag is auto-derived from active cards (skipped here).
-        // clearsEventFlag + setsStaticFlag still apply imperatively.
-        applyFlagMutations(cardInstance, { autoDerivedSets: true });
+        applyEventInstance(cardInstance, applyResourceChange);
         gameState.pending.effectsApplied = true;
     }
     gameState.pending = null;
@@ -381,16 +370,7 @@ function handleDecisionChoice(cardInstance, optionIndex) {
         const eventCard = allCards.find(c => c.typeId === option.triggersEvent);
         if (eventCard) {
             const eventInstance = createCardInstance(eventCard);
-            if (eventInstance.effects && Object.keys(eventInstance.effects).length > 0) {
-                applyResourceChange(eventInstance.effects, eventInstance.name);
-            }
-            if (eventInstance.onActivate) {
-                applyResourceChange(eventInstance.onActivate, `${eventInstance.name} begins!`);
-            }
-            if (eventInstance.duration || eventInstance.perTurn) {
-                activateCard(eventInstance);
-            }
-            applyFlagMutations(eventInstance, { autoDerivedSets: true });
+            applyEventInstance(eventInstance, applyResourceChange);
             showToast(`${eventInstance.icon} ${eventInstance.name} triggered!`);
         }
     }

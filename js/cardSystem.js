@@ -593,6 +593,36 @@ function getActiveCardsByCategory(category) {
 }
 
 // =====================================================
+// EVENT APPLICATION
+// =====================================================
+
+/**
+ * Apply an event instance's effects in canonical order:
+ *   1. instant effects
+ *   2. onActivate
+ *   3. activateCard if ongoing (duration or perTurn)
+ *   4. applyFlagMutations (autoDerivedSets, since setsEventFlag is read off
+ *      the instance after it's active)
+ *
+ * `applyChange(effects, label)` is the resource-write strategy: in production
+ * it's `applyResourceChange` (shows a toast); in the sim it's
+ * `addResourcesQuiet` (silent). Single source of truth — used by acceptEvent,
+ * the decision triggersEvent branch, and the headless sim.
+ */
+function applyEventInstance(instance, applyChange) {
+    if (instance.effects && Object.keys(instance.effects).length > 0) {
+        applyChange(instance.effects, instance.name);
+    }
+    if (instance.onActivate) {
+        applyChange(instance.onActivate, `${instance.name} begins!`);
+    }
+    if (instance.duration || instance.perTurn) {
+        activateCard(instance);
+    }
+    applyFlagMutations(instance, { autoDerivedSets: true });
+}
+
+// =====================================================
 // TURN PROCESSING
 // =====================================================
 
