@@ -1,0 +1,31 @@
+Code smells (per prioritat)
+P0 — Three event-application code paths that must stay in sync
+acceptEvent (game.js:306-328), the triggersEvent branch of handleDecisionChoice (game.js:380-396), and simulateSingleRun's event branch (debug.js:156-162) all do the same thing: apply effects → apply onActivate → activateCard if ongoing → applyFlagMutations. Three copies, already slightly different (the decision-trigger version shows a toast, the sim doesn't call onExpire). Extract to applyEventInstance(instance, { onMessage }). Adding a new field (e.g. sound cue, analytics hook) today means editing three places and getting one wrong.
+
+P0 — isCardEligibleDebug silently diverges from isCardEligible
+isCardEligibleDebug (debug.js:38-45) skips requiresResource, all four flag checks, and weightBoosts via selectCardDebug (debug.js:61 uses raw c.weight). Today flags barely exist so the sim is close to reality. The moment you add flag-gated cards, the sim will report misleading balance. Either fold the debug path into the main one with a { bypassResources, bypassFlags } flag, or assert at init-time that no card uses flags while debug is running.
+
+P1 — Three decision schemas still live in createCardInstance
+Per-option trade / fixed-output / legacy raw-effects (cardSystem.js:428-498). Legacy is the one with effects directly on options. Quick grep:
+
+If no cards still use legacy effects: { … } on options, delete that branch. It's ~15 lines of speculative support.
+If some do, either migrate them or keep but document in ENGINE.md §4.2 (currently it only mentions two schemas).
+P1 — No card validator
+Still the #1 thing this codebase needs. A 30-line function that on initCardSystem walks allCards and asserts:
+
+typeId unique across all categories
+every triggersEvent targets a real event card
+every dependencies/blockedBy entry resolves
+decisions have either outputRes+outputBase OR all options have inputRes+outputRes+inputBase OR all options have raw effects (pick a schema; don't mix)
+events declare either eventBase or onActivate/perTurnEffects/onExpire, not zero
+requiresResource / requiresEventFlag / blockedBy* use valid resource / flag names
+Run it in dev (gated by DEBUG) — fail loud, console.error with the bad typeId. Without this, authoring a new story card breaks silently at draw time, often only in a sim result that looks "a bit off".
+
+P2 — Legacy randomization path still co-exists with the formula motor
+applyVariance + randomizeEffects (cardSystem.js:348-365) wrap every event field even though events now go through applyInstantEventFormula for the main payload. Events still route perTurnEffects, onActivate, onExpire through the legacy randomizeEffects(…, card.effectsVariance || 0) — and no event card declares effectsVariance, so that pass is a no-op wrapper in every case (cardSystem.js:521-529). Just write the values directly through scaleEffects. Easier to read, no behavior change.
+
+P2 — Decision perTurnEffects creates an anonymous second-class event
+game.js:364-375 synthesizes a fake event card with no tonality, no onExpire, no flag hooks, no typeId that resolves against allCards. Same pattern duplicated in debug.js:134-143. If you ever want decisions to chain into proper ongoing events, use triggersEvent for that — and delete this ad-hoc branch.
+
+P3 — symbolFor lives in wheel.js but has nothing to do with the wheel
+(wheel.js:211-219). It's a resource→emoji table, used by ui.js formatters. Move to cardSystem.js next to CATEGORY_ICON and RESOURCE_VALUE, or inline into ui.js (it's only called from there).
