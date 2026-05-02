@@ -38,6 +38,144 @@ function initCardSystem() {
     console.log(`- Investments: ${investmentCards.length}`);
     console.log(`- Decisions: ${decisionCards.length}`);
     console.log(`- Events: ${eventCards.length}`);
+
+    validateCards();
+}
+
+// =====================================================
+// CARD VALIDATOR (DEBUG only)
+// =====================================================
+// Runs at init to catch the kinds of typos that otherwise surface as "the
+// sim looks a bit off" or "this card never appears": duplicate typeIds,
+// dangling cross-card references, mixed decision schemas, dead events,
+// resource/flag name typos. console.error per problem; doesn't block init.
+
+function validateCards() {
+    if (typeof DEBUG !== "undefined" && !DEBUG) return 0;
+
+    let problems = 0;
+    const log = (msg) => { console.error(`[card-validator] ${msg}`); problems++; };
+
+    const validResources = new Set(Object.keys(RESOURCE_VALUE));
+    const checkResources = (obj, where) => {
+        for (const r of Object.keys(obj || {})) {
+            if (!validResources.has(r)) log(`${where}: unknown resource "${r}"`);
+        }
+    };
+
+    // Build lookup tables: typeId index, event ids, flags that anyone declares.
+    const byId = new Map();
+    const eventIds = new Set();
+    const seedStatic = (typeof defaultState !== "undefined" && defaultState.staticFlags) || [];
+    const setFlags = { event: new Set(), static: new Set(seedStatic) };
+
+    for (const c of allCards) {
+        if (byId.has(c.typeId)) {
+            log(`duplicate typeId "${c.typeId}" (${byId.get(c.typeId).category} + ${c.category})`);
+        } else {
+            byId.set(c.typeId, c);
+        }
+        if (c.category === "event") eventIds.add(c.typeId);
+        asFlagArray(c.setsEventFlag).forEach(f => setFlags.event.add(f));
+        asFlagArray(c.setsStaticFlag).forEach(f => setFlags.static.add(f));
+        for (const opt of c.options || []) {
+            asFlagArray(opt.setsEventFlag).forEach(f => setFlags.event.add(f));
+            asFlagArray(opt.setsStaticFlag).forEach(f => setFlags.static.add(f));
+        }
+    }
+
+    for (const c of allCards) {
+        const tag = `${c.category}/${c.typeId}`;
+
+        // Cross-card refs
+        for (const dep of c.dependencies || []) {
+            if (!byId.has(dep)) log(`${tag}: dependency "${dep}" not found`);
+        }
+        for (const bk of c.blockedBy || []) {
+            if (!byId.has(bk)) log(`${tag}: blockedBy "${bk}" not found`);
+        }
+
+        // Resource keys in eligibility / payloads
+        checkResources(c.requiresResource, `${tag}.requiresResource`);
+
+        // Flag references must resolve to a flag that some card sets
+        // (or, for static, was seeded by defaultState).
+        for (const f of asFlagArray(c.requiresEventFlag)) {
+            if (!setFlags.event.has(f)) log(`${tag}: requiresEventFlag "${f}" — no card sets it`);
+        }
+        for (const f of asFlagArray(c.blockedByEventFlag)) {
+            if (!setFlags.event.has(f)) log(`${tag}: blockedByEventFlag "${f}" — no card sets it`);
+        }
+        for (const f of asFlagArray(c.requiresStaticFlag)) {
+            if (!setFlags.static.has(f)) log(`${tag}: requiresStaticFlag "${f}" — never set`);
+        }
+        for (const f of asFlagArray(c.blockedByStaticFlag)) {
+            if (!setFlags.static.has(f)) log(`${tag}: blockedByStaticFlag "${f}" — never set`);
+        }
+
+        // Per-category checks
+        if (c.category === "investment") {
+            if (!c.baseCost) log(`${tag}: investment missing baseCost`);
+            if (!c.basePerTurn) log(`${tag}: investment missing basePerTurn`);
+            checkResources(c.baseCost, `${tag}.baseCost`);
+            checkResources(c.basePerTurn, `${tag}.basePerTurn`);
+        }
+
+        if (c.category === "event") {
+            if (!c.tonality) log(`${tag}: event missing tonality (good/bad)`);
+            const hasInstant = typeof c.eventBase === "number" && c.outputRes;
+            const hasOnActivate = c.onActivate && Object.keys(c.onActivate).length > 0;
+            const hasPerTurn = c.perTurnEffects && Object.keys(c.perTurnEffects).length > 0;
+            const hasOnExpire = c.onExpire && Object.keys(c.onExpire).length > 0;
+            if (!hasInstant && !hasOnActivate && !hasPerTurn && !hasOnExpire) {
+                log(`${tag}: event has no eventBase / onActivate / perTurnEffects / onExpire — does nothing`);
+            }
+            if (c.outputRes && !validResources.has(c.outputRes)) log(`${tag}: outputRes "${c.outputRes}" invalid`);
+            checkResources(c.onActivate, `${tag}.onActivate`);
+            checkResources(c.perTurnEffects, `${tag}.perTurnEffects`);
+            checkResources(c.onExpire, `${tag}.onExpire`);
+        }
+
+        if (c.category === "decision") {
+            if (!c.options || c.options.length === 0) {
+                log(`${tag}: decision has no options`);
+                continue;
+            }
+            const isFixedOutput = c.outputRes && typeof c.outputBase === "number";
+            if (isFixedOutput && !validResources.has(c.outputRes)) {
+                log(`${tag}: outputRes "${c.outputRes}" invalid`);
+            }
+            for (const opt of c.options) {
+                if (opt.triggersEvent && !eventIds.has(opt.triggersEvent)) {
+                    log(`${tag}: option "${opt.label}" triggersEvent "${opt.triggersEvent}" — no such event`);
+                }
+                if (isFixedOutput) {
+                    // Fixed-output: option may or may not have inputRes, but must NOT mix per-option-trade fields.
+                    if (opt.outputRes || typeof opt.inputBase === "number") {
+                        log(`${tag}: option "${opt.label}" mixes per-option-trade fields with a fixed-output card`);
+                    }
+                    if (opt.inputRes && !validResources.has(opt.inputRes)) {
+                        log(`${tag}: option "${opt.label}" inputRes "${opt.inputRes}" invalid`);
+                    }
+                } else {
+                    // Per-option trade: every option requires the trio.
+                    if (!(opt.inputRes && opt.outputRes && typeof opt.inputBase === "number")) {
+                        log(`${tag}: option "${opt.label}" missing inputRes/outputRes/inputBase (per-option-trade requires all three)`);
+                    } else {
+                        if (!validResources.has(opt.inputRes)) log(`${tag}: option "${opt.label}" inputRes "${opt.inputRes}" invalid`);
+                        if (!validResources.has(opt.outputRes)) log(`${tag}: option "${opt.label}" outputRes "${opt.outputRes}" invalid`);
+                    }
+                }
+            }
+        }
+    }
+
+    if (problems === 0) {
+        console.log(`[card-validator] ✓ ${allCards.length} cards validated`);
+    } else {
+        console.error(`[card-validator] ✗ ${problems} problem(s) across ${allCards.length} cards`);
+    }
+    return problems;
 }
 
 // =====================================================
