@@ -65,17 +65,19 @@ function renderProperties() {
         const item = document.createElement("div");
         item.className = "property-item";
         
-        // Show turns remaining for events
-        let turnsInfo = '';
+        // Show turns remaining for events; show level for investments > Lv.1
+        let suffix = '';
         if (card.turnsRemaining !== null && card.turnsRemaining !== undefined) {
-            turnsInfo = `<span class="turns-remaining">(${card.turnsRemaining} turns)</span>`;
+            suffix = `<span class="turns-remaining">(${card.turnsRemaining} turns)</span>`;
+        } else if (card.category === "investment" && (card.level || 1) > 1) {
+            suffix = `<span class="level-badge">Lv. ${card.level}</span>`;
         }
-        
+
         item.innerHTML = `
             <div class="property-info">
                 <span class="icon">${card.icon || '🏠'}</span>
                 <span class="name">${card.name}</span>
-                ${turnsInfo}
+                ${suffix}
             </div>
             <span class="yield">${card.perTurn ? formatPerTurn(card.perTurn) : ''}</span>
         `;
@@ -183,7 +185,12 @@ function renderInvestmentCard(cardInstance) {
     const descEl = document.getElementById("auguryDescription");
     const optionsEl = document.getElementById("auguryOptions");
 
-    titleEl.textContent = `${CATEGORY_ICON.investment} Investment: ${cardInstance.name}`;
+    // If this typeId is already built, treat the build as a level-up.
+    const existing = getActiveCards().find(c => c.typeId === cardInstance.typeId);
+    const currentLevel = existing ? (existing.level || 1) : 0;
+    const nextLevel = currentLevel + 1;
+    const verb = currentLevel > 0 ? `Upgrade to Lv. ${nextLevel}` : "Investment";
+    titleEl.textContent = `${CATEGORY_ICON.investment} ${verb}: ${cardInstance.name}`;
     descEl.textContent = cardInstance.description;
 
     const canBuild = canAfford(cardInstance.cost);

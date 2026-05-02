@@ -254,11 +254,15 @@ function isCardEligible(card, state) {
         return false;
     }
     
-    // Check max instances
+    // Check max instances. For investments this acts as a max LEVEL: building
+    // the same one again levels up rather than spawning a second copy.
     if (card.maxInstances !== null) {
-        const instanceCount = countActiveInstances(card.typeId);
-        if (instanceCount >= card.maxInstances) {
-            return false;
+        if (card.category === "investment") {
+            const existing = activeCards.find(c => c.typeId === card.typeId);
+            const currentLevel = existing ? (existing.level || 1) : 0;
+            if (currentLevel >= card.maxInstances) return false;
+        } else {
+            if (countActiveInstances(card.typeId) >= card.maxInstances) return false;
         }
     }
     
@@ -645,11 +649,29 @@ function generateInstanceId() {
 
 /**
  * Add a card to active cards (investments, events).
+ *
+ * Investments level up: building the same investment again finds the
+ * existing structure, increments its `level`, and adds the new build's
+ * perTurn into the existing perTurn (per resource). The cost was paid
+ * separately by the caller. Other categories always create a new
+ * concurrent instance.
  */
 function activateCard(instance) {
+    if (instance.category === "investment") {
+        const existing = activeCards.find(c => c.typeId === instance.typeId);
+        if (existing) {
+            existing.level = (existing.level || 1) + 1;
+            for (const [r, amt] of Object.entries(instance.perTurn || {})) {
+                existing.perTurn[r] = round2((existing.perTurn[r] || 0) + amt);
+            }
+            playedCardTypes.add(instance.typeId);
+            console.log(`Investment leveled up: ${existing.name} → Lv.${existing.level}`);
+            return;
+        }
+        instance.level = 1;
+    }
     activeCards.push(instance);
     playedCardTypes.add(instance.typeId);
-    
     console.log(`Card activated: ${instance.name} (${instance.instanceId})`);
 }
 
@@ -692,6 +714,24 @@ function getActiveCards() {
  */
 function getActiveCardsByCategory(category) {
     return activeCards.filter(card => card.category === category);
+}
+
+/**
+ * Single source of truth for the "what's been built" view (e.g. a future
+ * landscape rendering each structure as pixels on a backdrop). One entry
+ * per investment typeId; each carries its current `level` (1..maxInstances)
+ * and the stacked per-turn yield. Read-only — mutate via activateCard.
+ */
+function getBuiltStructures() {
+    return activeCards
+        .filter(c => c.category === "investment")
+        .map(c => ({
+            typeId: c.typeId,
+            name: c.name,
+            icon: c.icon,
+            level: c.level || 1,
+            perTurn: c.perTurn,
+        }));
 }
 
 // =====================================================

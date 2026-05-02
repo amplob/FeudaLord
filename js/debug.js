@@ -47,7 +47,15 @@ function isCardEligibleDebug(card) {
 
     if (gameState.turn < card.minTurn) return false;
     if (card.isUnique && playedCardTypes.has(card.typeId)) return false;
-    if (card.maxInstances !== null && countActiveInstances(card.typeId) >= card.maxInstances) return false;
+    if (card.maxInstances !== null) {
+        if (card.category === "investment") {
+            const existing = activeCards.find(c => c.typeId === card.typeId);
+            const lvl = existing ? (existing.level || 1) : 0;
+            if (lvl >= card.maxInstances) return false;
+        } else if (countActiveInstances(card.typeId) >= card.maxInstances) {
+            return false;
+        }
+    }
     if (card.dependencies?.length && !card.dependencies.every(d => hasActiveCard(d))) return false;
     if (card.blockedBy?.length && card.blockedBy.some(b => hasActiveCard(b))) return false;
     return true;
