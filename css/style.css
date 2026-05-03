@@ -62,24 +62,119 @@ body {
     letter-spacing: 2px;
 }
 
-.header-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.header-btn {
-    flex: 1;
+/* Hamburger button (top-left of game screen). Sits above the sidebar so the
+   user can click it to close the drawer too. Position: fixed so scrolling
+   doesn't move it; only rendered when #gameScreen is visible since it's a
+   child of #gameScreen. */
+.burger-btn {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    width: 40px;
+    height: 40px;
     background: var(--panel);
     border: 1px solid var(--panel-border);
-    color: var(--text);
-    padding: 8px 12px;
-    font-size: 0.9rem;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    cursor: pointer;
+    z-index: 280;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 
-.header-btn:hover {
+.burger-btn span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--text);
+    border-radius: 1px;
+    transition: transform 0.2s ease, opacity 0.15s ease;
+}
+
+/* Morph hamburger → X when open. */
+.burger-btn[aria-expanded="true"] span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+}
+.burger-btn[aria-expanded="true"] span:nth-child(2) {
+    opacity: 0;
+}
+.burger-btn[aria-expanded="true"] span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+}
+
+/* Slide-out left drawer with secondary actions. */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 240px;
+    max-width: 80vw;
+    background: var(--panel);
+    border-right: 1px solid var(--panel-border);
+    box-shadow: 6px 0 20px rgba(0,0,0,0.4);
+    z-index: 270;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    padding: 60px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar.open {
+    transform: translateX(0);
+}
+
+.sidebar-title {
+    margin: 0 0 8px;
+    font-family: "Cinzel", serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.sidebar-item {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--panel-border);
+    padding: 12px 14px;
+    text-align: left;
+    border-radius: 6px;
+    font-family: "Crimson Text", Georgia, serif;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sidebar-item:hover,
+.sidebar-item:focus-visible {
     background: var(--secondary);
     border-color: var(--secondary-light);
+}
+
+.sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 265;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.sidebar-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 /* Resource Bar */

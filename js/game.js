@@ -49,12 +49,11 @@ function initGame() {
     // Event listeners
     document.getElementById("spinButton").addEventListener("click", handleSpin);
     document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
-    document.getElementById("propertiesToggle").addEventListener("click", togglePropertiesPanel);
     document.getElementById("propertiesClose").addEventListener("click", hidePropertiesOverlay);
-    document.getElementById("realmToggle").addEventListener("click", toggleRealmPanel);
     document.getElementById("realmClose").addEventListener("click", hideRealmOverlay);
     document.getElementById("resetButton").addEventListener("click", resetGame);
     document.getElementById("auguryOptions").addEventListener("click", handleAuguryAction);
+    wireSidebar();
 
     // Close overlays on background click
     document.getElementById('tradeOverlay').addEventListener('click', (e) => {
@@ -562,6 +561,54 @@ function resetGame() {
 }
 
 // =====================================================
+// SIDEBAR (slide-out drawer)
+// =====================================================
+// Single source for opening secondary screens (Realm, Estate, Test, Main Menu).
+// The hamburger button toggles the drawer; clicking the backdrop or any item
+// closes it. Items dispatch by data-action so debug.js can append a Test entry
+// without needing its own listener.
+
+function wireSidebar() {
+    const burger = document.getElementById("menuBurger");
+    const sidebar = document.getElementById("sidebar");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    if (!burger || !sidebar || !backdrop) return;
+
+    function setOpen(open) {
+        sidebar.classList.toggle("open", open);
+        backdrop.classList.toggle("visible", open);
+        sidebar.setAttribute("aria-hidden", open ? "false" : "true");
+        burger.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    burger.addEventListener("click", () => {
+        setOpen(!sidebar.classList.contains("open"));
+    });
+    backdrop.addEventListener("click", () => setOpen(false));
+
+    sidebar.addEventListener("click", (e) => {
+        const btn = e.target.closest(".sidebar-item");
+        if (!btn) return;
+        const action = btn.dataset.action;
+        setOpen(false);
+        switch (action) {
+            case "realm":  toggleRealmPanel(); break;
+            case "estate": togglePropertiesPanel(); break;
+            case "menu":   returnToMainMenu(); break;
+            case "test":
+                if (typeof showTestPicker === "function") showTestPicker();
+                break;
+        }
+    });
+}
+
+function returnToMainMenu() {
+    saveState();
+    document.getElementById("gameScreen").classList.add("is-hidden");
+    document.getElementById("menuScreen").classList.remove("is-hidden");
+}
+
+// =====================================================
 // MENU SCREEN
 // =====================================================
 // The game stays dormant behind the entry menu until Play is clicked,
@@ -569,6 +616,7 @@ function resetGame() {
 // flash while the menu is on screen.
 
 const MENU_PREFIX = "feudal-lord-menu-";
+let _gameStarted = false;
 
 function wireMenu() {
     const musicBtn = document.getElementById("musicToggle");
@@ -587,10 +635,15 @@ function wireMenu() {
     wireToggle(musicBtn, "music");
     wireToggle(soundBtn, "sound");
 
+    // Idempotent: returning to the menu and clicking Play again should not
+    // re-bind every listener inside initGame.
     playBtn.addEventListener("click", () => {
         document.getElementById("menuScreen").classList.add("is-hidden");
         document.getElementById("gameScreen").classList.remove("is-hidden");
-        initGame();
+        if (!_gameStarted) {
+            _gameStarted = true;
+            initGame();
+        }
     });
 
     wireAuthUI();

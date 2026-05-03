@@ -34,6 +34,22 @@
         </section>
 
         <main class="app is-hidden" id="gameScreen">
+            <button id="menuBurger" class="burger-btn" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+
+            <!-- Slide-out drawer with the game's secondary screens. Items are
+                 button[data-action] children; wireSidebar() in game.js delegates
+                 clicks to the matching handler. The Test entry is injected by
+                 debug.js when DEBUG is true. -->
+            <aside id="sidebar" class="sidebar" aria-hidden="true">
+                <h2 class="sidebar-title">Menu</h2>
+                <button class="sidebar-item" data-action="realm">🗺️ Realm</button>
+                <button class="sidebar-item" data-action="estate">🏰 Estate</button>
+                <button class="sidebar-item" data-action="menu">🏠 Main Menu</button>
+            </aside>
+            <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
             <header class="header">
                 <h1>Feudal Lord</h1>
                 <div class="resource-bar" id="resourceBar">
@@ -53,10 +69,6 @@
                         👑 <span id="favorValue">0</span>
                         <span class="income-indicator" id="favorIncome"></span>
                     </div>
-                </div>
-                <div class="header-actions">
-                    <button id="realmToggle" class="header-btn">🗺️ Realm</button>
-                    <button id="propertiesToggle" class="header-btn">🏰 Estate</button>
                 </div>
             </header>
 

@@ -434,15 +434,22 @@ function renderInvestmentInspector() {
 
 function addDebugButton() {
     if (!DEBUG) return;
-    const actions = document.querySelector(".header-actions");
-    if (!actions) return;
+    const sidebar = document.getElementById("sidebar");
+    if (!sidebar) return;
+    if (sidebar.querySelector('.sidebar-item[data-action="test"]')) return;
 
     const btn = document.createElement("button");
+    btn.className = "sidebar-item";
+    btn.dataset.action = "test";
     btn.textContent = "🧪 Test";
-    btn.className = "header-btn";
     btn.title = "Open test picker";
-    btn.addEventListener("click", showTestPicker);
-    actions.appendChild(btn);
+    // Insert after the title so Test sits at the top of the action list.
+    const title = sidebar.querySelector(".sidebar-title");
+    if (title && title.nextSibling) {
+        sidebar.insertBefore(btn, title.nextSibling);
+    } else {
+        sidebar.appendChild(btn);
+    }
 }
 
 document.addEventListener("DOMContentLoaded", addDebugButton);
