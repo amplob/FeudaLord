@@ -1030,6 +1030,91 @@ button.link:hover {
     margin: 0;
 }
 
+.menu-auth {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+}
+
+.menu-auth-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    background: #fff;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.15s;
+}
+
+.menu-auth-btn:hover {
+    background: #f8f9fa;
+}
+
+.menu-auth-btn .g-mark {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4285f4 0%, #34a853 33%, #fbbc05 66%, #ea4335 100%);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.menu-auth-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 24px;
+}
+
+.menu-auth-status img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.menu-auth-status .auth-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.menu-auth-status .auth-meta #authName {
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    font-family: inherit;
+}
+
+.link-btn:hover {
+    color: var(--primary);
+}
+
 /* Realm overlay (landscape view of built structures) */
 .realm-overlay {
     background: rgba(10, 8, 6, 0.98);

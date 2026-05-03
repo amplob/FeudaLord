@@ -592,6 +592,45 @@ function wireMenu() {
         document.getElementById("gameScreen").classList.remove("is-hidden");
         initGame();
     });
+
+    wireAuthUI();
+}
+
+// Reflect auth state on the menu: either a "Sign in with Google" button or
+// a small profile chip with the user's name + a Sign out link.
+function wireAuthUI() {
+    if (typeof onAuthChange !== "function") {
+        // Firebase scripts didn't load (offline, blocked, etc) — hide the
+        // whole auth block so the user doesn't see a button that does nothing.
+        document.getElementById("authBlock")?.classList.add("is-hidden");
+        return;
+    }
+
+    const signInBtn = document.getElementById("signInButton");
+    const signOutBtn = document.getElementById("signOutButton");
+    const status = document.getElementById("authStatus");
+    const nameEl = document.getElementById("authName");
+    const avatarEl = document.getElementById("authAvatar");
+
+    signInBtn.addEventListener("click", signInWithGoogle);
+    signOutBtn.addEventListener("click", signOutUser);
+
+    onAuthChange(user => {
+        if (user) {
+            signInBtn.classList.add("is-hidden");
+            status.classList.remove("is-hidden");
+            nameEl.textContent = user.displayName || user.email || "Signed in";
+            if (user.photoURL) {
+                avatarEl.src = user.photoURL;
+                avatarEl.classList.remove("is-hidden");
+            } else {
+                avatarEl.classList.add("is-hidden");
+            }
+        } else {
+            signInBtn.classList.remove("is-hidden");
+            status.classList.add("is-hidden");
+        }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", wireMenu);
