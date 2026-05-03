@@ -1259,6 +1259,31 @@ button.link:hover {
     filter: grayscale(1);
 }
 
+/* Spin stamina counter (under the wheel). */
+.spin-status {
+    font-family: "Cinzel", serif;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    color: var(--accent);
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    margin-top: 4px;
+}
+
+.spin-status.empty {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.spin-center.no-spins {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 /* Investment inspector rows (debug) */
 .investment-debug-row {
     display: flex;

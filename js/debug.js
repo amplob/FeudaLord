@@ -274,6 +274,8 @@ const SIM_MODES = [
     { id: "decision", label: "Decision test", filter: "decision", desc: "Only decision slices fire each turn" },
     { id: "inspect",  label: "Investment inspector", action: "inspect",
       desc: "Add/remove investment levels (no cost — debug only)" },
+    { id: "deplete",  label: "Deplete spins", action: "deplete",
+      desc: "Set current spins to 0 (debug — exercises the empty-stamina UI)" },
 ];
 
 function showTestPicker() {
@@ -304,7 +306,7 @@ function showTestPicker() {
         for (const mode of SIM_MODES) {
             const btn = document.createElement("button");
             btn.className = "option";
-            const heading = mode.action === "inspect"
+            const heading = mode.action
                 ? mode.label
                 : `${mode.label} ${SIM_RUNS}×${SIM_TURNS}`;
             btn.innerHTML = `<strong>${heading}</strong><span style="color:#aaa;font-size:0.9rem;">${mode.desc}</span>`;
@@ -312,6 +314,13 @@ function showTestPicker() {
                 overlay.classList.add("hidden");
                 if (mode.action === "inspect") {
                     showInvestmentInspector();
+                } else if (mode.action === "deplete") {
+                    if (gameState) {
+                        gameState.spins = 0;
+                        gameState.lastSpinAt = Date.now();
+                        saveState();
+                        if (typeof renderSpinStatus === "function") renderSpinStatus();
+                    }
                 } else {
                     showSimResults(simulateMultipleRuns(SIM_RUNS, SIM_TURNS, mode.filter));
                 }

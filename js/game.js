@@ -4,6 +4,10 @@
 
 const STORAGE_KEY = "feudal-lord-save";
 
+// Spin stamina: one spin regenerates every SPIN_REGEN_MS, capped at maxSpins.
+// Achievements / unlocks can grow maxSpins later (held on gameState).
+const SPIN_REGEN_MS = 5 * 60 * 1000;
+
 const defaultState = {
     turn: 1,
     resources: {
@@ -21,7 +25,15 @@ const defaultState = {
     staticFlags: ["assess"],
     cardSystemState: null,
     pending: null,
-    gameOver: false
+    gameOver: false,
+
+    // Stamina (spin economy). lastSpinAt is the ms timestamp the current
+    // regen interval started counting from; advances by SPIN_REGEN_MS as
+    // each regen tick is credited. Null on first ever load — populated on
+    // first applyRegen().
+    spins: 30,
+    maxSpins: 30,
+    lastSpinAt: null,
 };
 
 let gameState = null;
@@ -40,9 +52,15 @@ function initGame() {
     // Restore card system state
     restoreCardSystemState(gameState.cardSystemState);
     
+    // Credit regen for time elapsed since last save, then start the live tick
+    // so the countdown updates every second while the game is open.
+    applyRegen();
+
     // Update UI
     updateResourceBar(gameState);
     renderProperties();
+    renderSpinStatus();
+    startSpinTick();
     initTradeUI(handleTrade);
     setupPropertyTabs();
 
@@ -133,6 +151,44 @@ function restorePendingAugury() {
 }
 
 // =====================================================
+// SPIN STAMINA
+// =====================================================
+// Regenerates +1 spin every SPIN_REGEN_MS up to maxSpins. lastSpinAt holds
+// the ms timestamp the current regen interval is counted from. Idempotent:
+// works correctly even if the page was closed for hours — the elapsed time
+// since lastSpinAt credits the right number of ticks on next load.
+
+function applyRegen() {
+    if (!gameState) return;
+    const now = Date.now();
+    if (gameState.lastSpinAt == null) {
+        gameState.lastSpinAt = now;
+        return;
+    }
+    if (gameState.spins >= gameState.maxSpins) {
+        // Cap reached — keep the timer pinned to "now" so it doesn't accumulate
+        // phantom ticks while the bucket is full.
+        gameState.lastSpinAt = now;
+        return;
+    }
+    const elapsed = now - gameState.lastSpinAt;
+    const ticks = Math.floor(elapsed / SPIN_REGEN_MS);
+    if (ticks > 0) {
+        gameState.spins = Math.min(gameState.maxSpins, gameState.spins + ticks);
+        gameState.lastSpinAt += ticks * SPIN_REGEN_MS;
+        if (gameState.spins >= gameState.maxSpins) {
+            gameState.lastSpinAt = now;
+        }
+    }
+}
+
+function spinsRegenInMs() {
+    if (gameState.spins >= gameState.maxSpins) return null;
+    const elapsed = Date.now() - (gameState.lastSpinAt || Date.now());
+    return Math.max(0, SPIN_REGEN_MS - (elapsed % SPIN_REGEN_MS));
+}
+
+// =====================================================
 // MAIN GAME LOOP
 // =====================================================
 
@@ -142,8 +198,22 @@ function handleSpin() {
         return;
     }
 
+    applyRegen();
+    if (gameState.spins <= 0) {
+        const ms = spinsRegenInMs();
+        const total = Math.ceil((ms ?? 0) / 1000);
+        const mm = String(Math.floor(total / 60)).padStart(2, "0");
+        const ss = String(total % 60).padStart(2, "0");
+        showToast(`Out of spins. Next +1 in ${mm}:${ss}.`);
+        return;
+    }
+
     // Hide spin text and disable button
     setSpinButtonState(true);
+
+    // Consume one spin. applyRegen kept lastSpinAt = now while at max, so
+    // the regen clock starts ticking from this moment automatically.
+    gameState.spins -= 1;
 
     // Process active events first
     processEvents();
@@ -158,10 +228,12 @@ function handleSpin() {
         setSpinButtonState(false);
         showAuguryOverlay();
         presentAugury(segment);
+        renderSpinStatus();
     });
 
     gameState.turn += 1;
     updateResourceBar(gameState);
+    renderSpinStatus();
     saveState();
 }
 

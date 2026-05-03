@@ -240,6 +240,35 @@ function disableSpinButton() {
     spinButton.disabled = true;
 }
 
+// Render the spin counter / regen countdown under the wheel. Called from
+// handleSpin and once per second via startSpinTick() so the timer ticks live.
+function renderSpinStatus() {
+    const el = document.getElementById('spinStatus');
+    const spinBtn = document.getElementById('spinButton');
+    if (!el || !gameState) return;
+    applyRegen();
+    const cur = gameState.spins;
+    const max = gameState.maxSpins;
+
+    if (cur >= max) {
+        el.textContent = `⚡ ${cur} / ${max}`;
+    } else {
+        const ms = spinsRegenInMs() ?? 0;
+        const total = Math.ceil(ms / 1000);
+        const mm = String(Math.floor(total / 60)).padStart(2, "0");
+        const ss = String(total % 60).padStart(2, "0");
+        el.textContent = `⚡ ${cur} / ${max} · +1 in ${mm}:${ss}`;
+    }
+    el.classList.toggle("empty", cur <= 0);
+    if (spinBtn) spinBtn.classList.toggle("no-spins", cur <= 0);
+}
+
+let _spinTickHandle = null;
+function startSpinTick() {
+    if (_spinTickHandle) return;
+    _spinTickHandle = setInterval(renderSpinStatus, 1000);
+}
+
 // =====================================================
 // UI - Card Rendering
 // =====================================================
