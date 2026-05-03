@@ -7,7 +7,21 @@
         <link rel="stylesheet" href="css/style.css" />
     </head>
     <body>
-        <main class="app">
+        <!-- Entry menu (shown first; "Play" reveals the game) -->
+        <section id="menuScreen" class="menu-screen">
+            <div class="menu-banner">
+                <h1 class="menu-title">Feudal Lord</h1>
+                <p class="menu-tagline">Rule your demesne. Earn the favor of the people.</p>
+            </div>
+            <button id="playButton" class="menu-play">⚔️ Play</button>
+            <div class="menu-toggles">
+                <button id="musicToggle" class="menu-toggle" title="Music"><span class="icon">🎵</span></button>
+                <button id="soundToggle" class="menu-toggle" title="Sound effects"><span class="icon">🔊</span></button>
+            </div>
+            <p class="menu-footnote">Kingdom: Demesne (more kingdoms coming)</p>
+        </section>
+
+        <main class="app is-hidden" id="gameScreen">
             <header class="header">
                 <h1>Feudal Lord</h1>
                 <div class="resource-bar" id="resourceBar">

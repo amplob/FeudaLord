@@ -927,6 +927,109 @@ button.link:hover {
     }
 }
 
+/* Generic hide that removes the element from layout (used for menu vs game). */
+.is-hidden {
+    display: none !important;
+}
+
+/* Entry menu screen */
+.menu-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 32px 20px;
+    background: var(--bg-gradient);
+    color: var(--text);
+    text-align: center;
+}
+
+.menu-banner {
+    max-width: 480px;
+}
+
+.menu-title {
+    font-family: "Cinzel", serif;
+    font-size: 3rem;
+    color: var(--accent);
+    margin: 0 0 8px 0;
+    letter-spacing: 2px;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.menu-tagline {
+    color: var(--text-dim);
+    font-style: italic;
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.menu-play {
+    font-family: "Cinzel", serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 18px 64px;
+    border-radius: 12px;
+    background: radial-gradient(circle at 30% 30%, #d4af37, #8b6914);
+    border: 3px solid #f0d060;
+    color: #1a1410;
+    cursor: pointer;
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.5),
+        inset 0 2px 12px rgba(255, 255, 255, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.menu-play:hover {
+    transform: scale(1.04);
+    box-shadow:
+        0 12px 30px rgba(212, 175, 55, 0.5),
+        inset 0 2px 12px rgba(255, 255, 255, 0.3);
+}
+
+.menu-toggles {
+    display: flex;
+    gap: 14px;
+}
+
+.menu-toggle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 2px solid var(--panel-border);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.menu-toggle:hover {
+    border-color: var(--accent);
+}
+
+.menu-toggle.muted {
+    opacity: 0.45;
+}
+
+.menu-toggle.muted .icon::after {
+    content: " ✕";
+    font-size: 0.9rem;
+    color: var(--danger);
+}
+
+.menu-footnote {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
 /* Realm overlay (landscape view of built structures) */
 .realm-overlay {
     background: rgba(10, 8, 6, 0.98);

@@ -562,7 +562,36 @@ function resetGame() {
 }
 
 // =====================================================
-// START GAME
+// MENU SCREEN
 // =====================================================
+// The game stays dormant behind the entry menu until Play is clicked,
+// so the augury overlay (if a save has a pending decision) doesn't
+// flash while the menu is on screen.
 
-document.addEventListener("DOMContentLoaded", initGame);
+const MENU_PREFIX = "feudal-lord-menu-";
+
+function wireMenu() {
+    const musicBtn = document.getElementById("musicToggle");
+    const soundBtn = document.getElementById("soundToggle");
+    const playBtn = document.getElementById("playButton");
+    if (!musicBtn || !soundBtn || !playBtn) return;
+
+    const wireToggle = (btn, key) => {
+        const muted = localStorage.getItem(MENU_PREFIX + key) === "1";
+        btn.classList.toggle("muted", muted);
+        btn.addEventListener("click", () => {
+            const nowMuted = btn.classList.toggle("muted");
+            localStorage.setItem(MENU_PREFIX + key, nowMuted ? "1" : "0");
+        });
+    };
+    wireToggle(musicBtn, "music");
+    wireToggle(soundBtn, "sound");
+
+    playBtn.addEventListener("click", () => {
+        document.getElementById("menuScreen").classList.add("is-hidden");
+        document.getElementById("gameScreen").classList.remove("is-hidden");
+        initGame();
+    });
+}
+
+document.addEventListener("DOMContentLoaded", wireMenu);
