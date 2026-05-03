@@ -488,6 +488,8 @@ function endGame(message) {
 function saveState() {
     gameState.cardSystemState = getCardSystemState();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+    // Fire-and-forget Firestore mirror. cloud-save.js no-ops when not signed in.
+    if (typeof cloudSaveState === "function") cloudSaveState(gameState);
 }
 
 function loadState() {
