@@ -269,11 +269,64 @@ function _applyWheelTransform() {
 
 function _strikePointer() {
     const p = document.getElementById("wheelPointer");
-    if (!p) return;
-    p.classList.remove("struck");
-    // Force a reflow so the animation can replay back-to-back.
-    void p.offsetWidth;
-    p.classList.add("struck");
+    if (p) {
+        p.classList.remove("struck");
+        // Force a reflow so the animation can replay back-to-back.
+        void p.offsetWidth;
+        p.classList.add("struck");
+    }
+    _playPegTick();
+}
+
+// =====================================================
+// PEG TICK SOUND
+// =====================================================
+// Synthesised inline so we don't ship audio assets. Each peg crossing fires a
+// short, soft, slightly-jittered triangle-wave click. Skipped when the menu's
+// sound toggle is muted (localStorage key set by wireMenu in game.js).
+
+const SOUND_PREF_KEY = "feudal-lord-menu-sound";
+let _audioCtx = null;
+
+function _isSoundMuted() {
+    try {
+        return localStorage.getItem(SOUND_PREF_KEY) === "1";
+    } catch (_) {
+        return false;
+    }
+}
+
+function _ensureAudioCtx() {
+    if (_audioCtx) return _audioCtx;
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return null;
+    try {
+        _audioCtx = new Ctor();
+    } catch (_) {
+        _audioCtx = null;
+    }
+    return _audioCtx;
+}
+
+function _playPegTick() {
+    if (_isSoundMuted()) return;
+    const ctx = _ensureAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    // Pitch jitter so successive ticks don't sound mechanical.
+    osc.frequency.value = 1100 + Math.random() * 400;
+    // Tiny attack, ~60ms exponential decay → soft "tap".
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.08);
 }
 
 function _settleSpin() {
