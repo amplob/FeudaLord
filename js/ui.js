@@ -13,7 +13,9 @@ function updateResourceBar(state) {
     document.getElementById("foodValue").textContent = fmtNum(state.resources.food);
     document.getElementById("manpowerValue").textContent = fmtNum(state.resources.manpower);
     document.getElementById("favorValue").textContent = fmtNum(state.resources.favor);
-    document.getElementById("turnValue").textContent = state.turn;
+    // Turn now lives on the Kingdom page; refresh it if visible.
+    const turnEl = document.getElementById("kingdomTurn");
+    if (turnEl) turnEl.textContent = state.turn;
 
     updateIncomeIndicators();
 }
@@ -38,51 +40,72 @@ function updateIncomeIndicators() {
 }
 
 // =====================================================
-// UI - Properties Panel
+// UI - Kingdom page
 // =====================================================
+//
+// Replaces the old Estate modal. Shows the kingdom title + description,
+// current turn / favor goal, the active events (no filter) and the built
+// investments with a per-resource filter.
 
 let currentPropertyFilter = 'all';
 
-function renderProperties() {
-    const list = document.getElementById("propertyList");
-    if (!list) return;
+function renderKingdom() {
+    if (!gameState) return;
+    const titleEl   = document.getElementById("kingdomTitle");
+    const descEl    = document.getElementById("kingdomDescription");
+    const turnEl    = document.getElementById("kingdomTurn");
+    const goalEl    = document.getElementById("kingdomGoal");
+    const eventsEl  = document.getElementById("kingdomEvents");
+    const estateEl  = document.getElementById("kingdomEstate");
+    if (!titleEl || !eventsEl || !estateEl) return;
 
-    const activeCards = getActiveCards();
-    const filtered = filterCardsByResource(activeCards, currentPropertyFilter);
+    // Title + flavor (later: vary per chosen kingdom).
+    titleEl.textContent = "Kingdom of Demesne";
+    descEl.textContent  = "A kind and prosperous demesne where peasants till the soil and lords gather favor. Reach 500 👑 to be crowned Duke.";
+    turnEl.textContent  = gameState.turn;
+    goalEl.textContent  = `${fmtNum(gameState.resources.favor)} / 500 👑`;
 
-    if (activeCards.length === 0) {
-        list.innerHTML = '<div class="property-empty">No properties yet. Build some investments!</div>';
-        return;
+    // Events: every active event card, no filter.
+    const events = getActiveCardsByCategory("event");
+    eventsEl.innerHTML = "";
+    if (events.length === 0) {
+        eventsEl.innerHTML = '<div class="property-empty">No events active.</div>';
+    } else {
+        for (const ev of events) eventsEl.appendChild(makePropertyItem(ev));
     }
 
-    if (filtered.length === 0) {
-        list.innerHTML = `<div class="property-empty">No properties producing ${RESOURCE_ICON[currentPropertyFilter]}</div>`;
-        return;
+    // Estate: investments, filtered by the active resource tab.
+    const investments = getActiveCardsByCategory("investment");
+    const filtered = filterCardsByResource(investments, currentPropertyFilter);
+    estateEl.innerHTML = "";
+    if (investments.length === 0) {
+        estateEl.innerHTML = '<div class="property-empty">No properties yet. Build some investments!</div>';
+    } else if (filtered.length === 0) {
+        estateEl.innerHTML = `<div class="property-empty">No properties producing ${RESOURCE_ICON[currentPropertyFilter]}</div>`;
+    } else {
+        for (const inv of filtered) estateEl.appendChild(makePropertyItem(inv));
     }
+}
 
-    list.innerHTML = "";
-    filtered.forEach((card) => {
-        const item = document.createElement("div");
-        item.className = "property-item";
-        
-        // Show turns remaining for events; show level for investments > Lv.1
-        let suffix = '';
-        if (card.turnsRemaining !== null && card.turnsRemaining !== undefined) {
-            suffix = `<span class="turns-remaining">(${card.turnsRemaining} turns)</span>`;
-        } else if (card.category === "investment" && (card.level || 1) > 1) {
-            suffix = `<span class="level-badge">Lv. ${card.level}</span>`;
-        }
-
-        item.innerHTML = `
-            <div class="property-info">
-                <span class="icon">${card.icon || '🏠'}</span>
-                <span class="name">${card.name}</span>
-                ${suffix}
-            </div>
-            <span class="yield">${card.perTurn ? formatPerTurn(card.perTurn) : ''}</span>
-        `;
-        list.appendChild(item);
-    });
+// Build a single row used by both the Events and Estate sections.
+function makePropertyItem(card) {
+    const item = document.createElement("div");
+    item.className = "property-item";
+    let suffix = '';
+    if (card.turnsRemaining !== null && card.turnsRemaining !== undefined) {
+        suffix = `<span class="turns-remaining">(${card.turnsRemaining} turns)</span>`;
+    } else if (card.category === "investment" && (card.level || 1) > 1) {
+        suffix = `<span class="level-badge">Lv. ${card.level}</span>`;
+    }
+    item.innerHTML = `
+        <div class="property-info">
+            <span class="icon">${card.icon || '🏠'}</span>
+            <span class="name">${card.name}</span>
+            ${suffix}
+        </div>
+        <span class="yield">${card.perTurn ? formatPerTurn(card.perTurn) : ''}</span>
+    `;
+    return item;
 }
 
 function filterCardsByResource(cards, filter) {
@@ -96,17 +119,38 @@ function filterCardsByResource(cards, filter) {
 function setupPropertyTabs() {
     const tabs = document.getElementById('resourceTabs');
     if (!tabs) return;
-    
+
     tabs.addEventListener('click', (e) => {
         const tab = e.target.closest('.tab');
         if (!tab) return;
-        
+
         tabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
-        
+
         currentPropertyFilter = tab.dataset.filter;
-        renderProperties();
+        renderKingdom();
     });
+}
+
+// Compat alias — many call sites still call renderProperties().
+function renderProperties() { renderKingdom(); }
+
+// =====================================================
+// UI - Game page navigation
+// =====================================================
+// The game now has two pages inside #gameScreen: the wheel (default) and the
+// kingdom view. Switching between them just toggles is-hidden — both stay in
+// the DOM so listeners remain wired.
+
+function showWheelPage() {
+    document.getElementById("wheelPage")?.classList.remove("is-hidden");
+    document.getElementById("kingdomPage")?.classList.add("is-hidden");
+}
+
+function showKingdomPage() {
+    renderKingdom();
+    document.getElementById("kingdomPage")?.classList.remove("is-hidden");
+    document.getElementById("wheelPage")?.classList.add("is-hidden");
 }
 
 // =====================================================
@@ -129,23 +173,6 @@ function hideTradeOverlay() {
     document.getElementById('tradeOverlay').classList.add('hidden');
 }
 
-function showPropertiesOverlay() {
-    renderProperties();
-    document.getElementById('propertiesOverlay').classList.remove('hidden');
-}
-
-function hidePropertiesOverlay() {
-    document.getElementById('propertiesOverlay').classList.add('hidden');
-}
-
-function togglePropertiesPanel() {
-    const overlay = document.getElementById('propertiesOverlay');
-    if (overlay.classList.contains('hidden')) {
-        showPropertiesOverlay();
-    } else {
-        hidePropertiesOverlay();
-    }
-}
 
 // =====================================================
 // UI - Realm (landscape view)

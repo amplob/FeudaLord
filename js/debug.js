@@ -276,6 +276,8 @@ const SIM_MODES = [
       desc: "Add/remove investment levels (no cost — debug only)" },
     { id: "deplete",  label: "Deplete spins", action: "deplete",
       desc: "Set current spins to 0 (debug — exercises the empty-stamina UI)" },
+    { id: "fill",     label: "Fill spins",    action: "fill",
+      desc: "Restore current spins to maxSpins (debug)" },
 ];
 
 function showTestPicker() {
@@ -317,6 +319,13 @@ function showTestPicker() {
                 } else if (mode.action === "deplete") {
                     if (gameState) {
                         gameState.spins = 0;
+                        gameState.lastSpinAt = Date.now();
+                        saveState();
+                        if (typeof renderSpinStatus === "function") renderSpinStatus();
+                    }
+                } else if (mode.action === "fill") {
+                    if (gameState) {
+                        gameState.spins = gameState.maxSpins;
                         gameState.lastSpinAt = Date.now();
                         saveState();
                         if (typeof renderSpinStatus === "function") renderSpinStatus();

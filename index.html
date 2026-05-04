@@ -31,6 +31,7 @@
                 </div>
             </div>
             <p class="menu-footnote">Kingdom: Demesne (more kingdoms coming)</p>
+            <button id="menuResetButton" class="link-btn link-btn-warn">Reset progress</button>
         </section>
 
         <main class="app is-hidden" id="gameScreen">
@@ -44,8 +45,9 @@
                  debug.js when DEBUG is true. -->
             <aside id="sidebar" class="sidebar" aria-hidden="true">
                 <h2 class="sidebar-title">Menu</h2>
+                <button class="sidebar-item" data-action="spin">🎲 Spin</button>
+                <button class="sidebar-item" data-action="kingdom">🏰 Kingdom</button>
                 <button class="sidebar-item" data-action="realm">🗺️ Realm</button>
-                <button class="sidebar-item" data-action="estate">🏰 Estate</button>
                 <button class="sidebar-item" data-action="menu">🏠 Main Menu</button>
             </aside>
             <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
@@ -72,7 +74,7 @@
                 </div>
             </header>
 
-            <section class="wheel-section">
+            <section class="wheel-section game-page" id="wheelPage">
                 <div class="wheel-container">
                     <div class="wheel-pointer" id="wheelPointer">
                         <svg viewBox="0 0 32 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -95,11 +97,35 @@
                 <div id="spinStatus" class="spin-status" aria-live="polite"></div>
             </section>
 
-            <footer class="footer">
-                <div>Turn: <span id="turnValue">1</span></div>
-                <div>Goal: 500 👑</div>
-                <button id="resetButton" class="link">Reset Game</button>
-            </footer>
+            <!-- Kingdom page (replaces the old Estate modal). Shows kingdom title +
+                 description, current turn, the favor goal, active events, and the
+                 estate (built investments) with a resource filter. Hidden by
+                 default; shown via the sidebar's Kingdom item. -->
+            <section class="kingdom-page game-page is-hidden" id="kingdomPage">
+                <div class="kingdom-banner">
+                    <h2 id="kingdomTitle">Kingdom of Demesne</h2>
+                    <p id="kingdomDescription">A kind and prosperous demesne where peasants till the soil and lords gather favor. Reach 500 👑 to be crowned Duke.</p>
+                </div>
+                <div class="kingdom-stats">
+                    <div>Turn <span id="kingdomTurn">1</span></div>
+                    <div>Goal <span id="kingdomGoal">0 / 500 👑</span></div>
+                </div>
+                <div class="kingdom-section">
+                    <h3>Events</h3>
+                    <div id="kingdomEvents" class="property-list"></div>
+                </div>
+                <div class="kingdom-section">
+                    <h3>Estate</h3>
+                    <div class="resource-tabs" id="resourceTabs">
+                        <button class="tab active" data-filter="all">All</button>
+                        <button class="tab" data-filter="gold">💰</button>
+                        <button class="tab" data-filter="food">🌾</button>
+                        <button class="tab" data-filter="manpower">👥</button>
+                        <button class="tab" data-filter="favor">👑</button>
+                    </div>
+                    <div id="kingdomEstate" class="property-list"></div>
+                </div>
+            </section>
         </main>
 
         <!-- Augury Fullscreen Overlay -->
@@ -134,23 +160,6 @@
             </div>
         </div>
 
-        <!-- Properties/Estate Overlay -->
-        <div class="overlay properties-overlay hidden" id="propertiesOverlay">
-            <div class="overlay-content properties-content">
-                <div class="overlay-header">
-                    <h2>Your Estate</h2>
-                    <button class="close-btn" id="propertiesClose">✕</button>
-                </div>
-                <div class="resource-tabs" id="resourceTabs">
-                    <button class="tab active" data-filter="all">All</button>
-                    <button class="tab" data-filter="gold">💰</button>
-                    <button class="tab" data-filter="food">🌾</button>
-                    <button class="tab" data-filter="manpower">👥</button>
-                    <button class="tab" data-filter="favor">👑</button>
-                </div>
-                <div id="propertyList" class="property-list"></div>
-            </div>
-        </div>
 
         <div id="toastContainer" class="toast-container"></div>
 

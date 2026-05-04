@@ -67,18 +67,13 @@ function initGame() {
     // Event listeners
     document.getElementById("spinButton").addEventListener("click", handleSpin);
     document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
-    document.getElementById("propertiesClose").addEventListener("click", hidePropertiesOverlay);
     document.getElementById("realmClose").addEventListener("click", hideRealmOverlay);
-    document.getElementById("resetButton").addEventListener("click", resetGame);
     document.getElementById("auguryOptions").addEventListener("click", handleAuguryAction);
     wireSidebar();
 
     // Close overlays on background click
     document.getElementById('tradeOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'tradeOverlay') handleTradeClose();
-    });
-    document.getElementById('propertiesOverlay').addEventListener('click', (e) => {
-        if (e.target.id === 'propertiesOverlay') hidePropertiesOverlay();
     });
     document.getElementById('realmOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'realmOverlay') hideRealmOverlay();
@@ -609,18 +604,20 @@ function emergencySkipTurn() {
 function resetGame() {
     // Reset game state
     gameState = structuredClone(defaultState);
-    
+
     // Reset card system
     resetCardSystem();
-    
+
     // Reset UI
     enableSpinButton();
     hideAuguryOverlay();
     hideTradeOverlay();
-    hidePropertiesOverlay();
+    hideRealmOverlay();
+    showWheelPage();
     updateResourceBar(gameState);
-    renderProperties();
-    
+    renderKingdom();
+    if (typeof renderSpinStatus === "function") renderSpinStatus();
+
     // Reset property filter
     currentPropertyFilter = 'all';
     const tabs = document.getElementById('resourceTabs');
@@ -629,7 +626,7 @@ function resetGame() {
         const allTab = tabs.querySelector('[data-filter="all"]');
         if (allTab) allTab.classList.add('active');
     }
-    
+
     showToast("New reign begins!");
     saveState();
 }
@@ -666,9 +663,10 @@ function wireSidebar() {
         const action = btn.dataset.action;
         setOpen(false);
         switch (action) {
-            case "realm":  toggleRealmPanel(); break;
-            case "estate": togglePropertiesPanel(); break;
-            case "menu":   returnToMainMenu(); break;
+            case "spin":    showWheelPage(); break;
+            case "kingdom": showKingdomPage(); break;
+            case "realm":   toggleRealmPanel(); break;
+            case "menu":    returnToMainMenu(); break;
             case "test":
                 if (typeof showTestPicker === "function") showTestPicker();
                 break;
@@ -696,6 +694,7 @@ function wireMenu() {
     const musicBtn = document.getElementById("musicToggle");
     const soundBtn = document.getElementById("soundToggle");
     const playBtn = document.getElementById("playButton");
+    const resetBtn = document.getElementById("menuResetButton");
     if (!musicBtn || !soundBtn || !playBtn) return;
 
     const wireToggle = (btn, key) => {
@@ -720,7 +719,30 @@ function wireMenu() {
         }
     });
 
+    if (resetBtn) resetBtn.addEventListener("click", resetFromMenu);
+
     wireAuthUI();
+}
+
+// Wipe all save state from the entry screen. If the game has already been
+// initialized this session (Play was clicked), delegate to resetGame() so the
+// in-memory state and visible UI both reset; otherwise clear localStorage and
+// the per-user Firestore doc directly.
+async function resetFromMenu() {
+    if (!confirm("Reset all progress? This deletes your save and starts fresh.")) return;
+    if (gameState) {
+        resetGame(); // in-place reset; saveState() inside writes defaults to local + cloud.
+    } else {
+        localStorage.removeItem(STORAGE_KEY);
+        if (typeof currentUser !== "undefined" && currentUser && typeof fbDb !== "undefined") {
+            try {
+                await fbDb.collection(SAVES_COLLECTION).doc(currentUser.uid).delete();
+            } catch (e) {
+                console.error("[reset] cloud delete failed:", e);
+            }
+        }
+    }
+    alert("Progress reset.");
 }
 
 // Reflect auth state on the menu: either a "Sign in with Google" button or

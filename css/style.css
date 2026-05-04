@@ -1210,6 +1210,68 @@ button.link:hover {
     color: var(--primary);
 }
 
+.link-btn-warn {
+    color: var(--text-dim);
+}
+
+.link-btn-warn:hover {
+    color: var(--danger);
+}
+
+/* Kingdom page — replaces the old Estate modal as a first-class page. */
+.kingdom-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.kingdom-banner {
+    text-align: center;
+    padding: 12px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+}
+
+.kingdom-banner h2 {
+    margin: 0 0 6px;
+    font-family: "Cinzel", serif;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+}
+
+.kingdom-banner p {
+    margin: 0;
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 0.95rem;
+}
+
+.kingdom-stats {
+    display: flex;
+    justify-content: space-around;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: "Cinzel", serif;
+    color: var(--text);
+}
+
+.kingdom-stats span {
+    color: var(--accent);
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+.kingdom-section h3 {
+    margin: 0 0 8px;
+    font-family: "Cinzel", serif;
+    color: var(--accent);
+    letter-spacing: 1px;
+    font-size: 1.05rem;
+}
+
 /* Realm overlay (landscape view of built structures) */
 .realm-overlay {
     background: rgba(10, 8, 6, 0.98);
