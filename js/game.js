@@ -8,6 +8,17 @@ const STORAGE_KEY = "feudal-lord-save";
 // Achievements / unlocks can grow maxSpins later (held on gameState).
 const SPIN_REGEN_MS = 5 * 60 * 1000;
 
+// Build a fresh game state for a given kingdom — same defaults except for
+// starting resources, which come from the kingdom's table. The KINGDOMS
+// array (data/kingdoms.js) is the single source of difficulty.
+function buildInitialState(kingdomId) {
+    const kingdom = getKingdom(kingdomId);
+    const state = structuredClone(defaultState);
+    state.kingdomId = kingdom.id;
+    state.resources = { ...kingdom.startingResources };
+    return state;
+}
+
 const defaultState = {
     turn: 1,
     resources: {
@@ -26,6 +37,9 @@ const defaultState = {
     cardSystemState: null,
     pending: null,
     gameOver: false,
+    // Which kingdom (= difficulty / starting purse) is being played. Picked
+    // on the kingdom selection screen; null when no game has been started.
+    kingdomId: null,
 
     // Stamina (spin economy). lastSpinAt is the ms timestamp the current
     // regen interval started counting from; advances by SPIN_REGEN_MS as
@@ -561,21 +575,25 @@ function saveState() {
 
 function loadState() {
     const stored = localStorage.getItem(STORAGE_KEY);
-    
+
     if (!stored) {
         return structuredClone(defaultState);
     }
-    
+
     try {
         const parsed = JSON.parse(stored);
-        return {
+        const merged = {
             ...structuredClone(defaultState),
             ...parsed,
-            resources: { 
-                ...structuredClone(defaultState.resources), 
-                ...parsed.resources 
+            resources: {
+                ...structuredClone(defaultState.resources),
+                ...parsed.resources
             }
         };
+        // Migrate legacy saves that predate kingdoms — label them as the
+        // default kingdom so the Kingdom page renders correctly.
+        if (!merged.kingdomId) merged.kingdomId = DEFAULT_KINGDOM_ID;
+        return merged;
     } catch (error) {
         console.error("Failed to load save:", error);
         return structuredClone(defaultState);
@@ -602,8 +620,10 @@ function emergencySkipTurn() {
 }
 
 function resetGame() {
-    // Reset game state
-    gameState = structuredClone(defaultState);
+    // Reset game state — keep the current kingdom (so resources match the
+    // chosen difficulty), only wipe progress.
+    const kingdomId = gameState?.kingdomId || DEFAULT_KINGDOM_ID;
+    gameState = buildInitialState(kingdomId);
 
     // Reset card system
     resetCardSystem();
@@ -677,6 +697,7 @@ function wireSidebar() {
 function returnToMainMenu() {
     saveState();
     document.getElementById("gameScreen").classList.add("is-hidden");
+    document.getElementById("kingdomSelectScreen")?.classList.add("is-hidden");
     document.getElementById("menuScreen").classList.remove("is-hidden");
 }
 
@@ -708,20 +729,131 @@ function wireMenu() {
     wireToggle(musicBtn, "music");
     wireToggle(soundBtn, "sound");
 
-    // Idempotent: returning to the menu and clicking Play again should not
-    // re-bind every listener inside initGame.
-    playBtn.addEventListener("click", () => {
-        document.getElementById("menuScreen").classList.add("is-hidden");
-        document.getElementById("gameScreen").classList.remove("is-hidden");
-        if (!_gameStarted) {
-            _gameStarted = true;
-            initGame();
-        }
-    });
+    // Play takes the user to the kingdom selection screen; from there they
+    // pick a kingdom which kicks off (or resumes) the game.
+    playBtn.addEventListener("click", showKingdomSelect);
 
     if (resetBtn) resetBtn.addEventListener("click", resetFromMenu);
 
+    wireKingdomSelect();
     wireAuthUI();
+}
+
+// =====================================================
+// KINGDOM SELECTION
+// =====================================================
+
+function wireKingdomSelect() {
+    const screen = document.getElementById("kingdomSelectScreen");
+    const back = document.getElementById("kingdomSelectBack");
+    const list = document.getElementById("kingdomList");
+    if (!screen || !list) return;
+
+    back?.addEventListener("click", () => {
+        screen.classList.add("is-hidden");
+        document.getElementById("menuScreen").classList.remove("is-hidden");
+    });
+
+    list.addEventListener("click", (e) => {
+        const card = e.target.closest(".kingdom-card");
+        if (!card) return;
+        selectKingdom(card.dataset.kingdomId);
+    });
+}
+
+function showKingdomSelect() {
+    document.getElementById("menuScreen").classList.add("is-hidden");
+    document.getElementById("kingdomSelectScreen").classList.remove("is-hidden");
+    renderKingdomList();
+}
+
+// Render the cards. Marks the kingdom currently in localStorage with a
+// "Continue" hint so the player knows which one resumes vs. resets.
+function renderKingdomList() {
+    const list = document.getElementById("kingdomList");
+    if (!list) return;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const savedKingdom = stored
+        ? (() => { try { return JSON.parse(stored).kingdomId; } catch (_) { return null; } })()
+        : null;
+
+    list.innerHTML = "";
+    KINGDOMS.forEach((k, i) => {
+        const r = k.startingResources;
+        const isSaved = savedKingdom === k.id;
+        const card = document.createElement("button");
+        card.className = "kingdom-card";
+        card.dataset.kingdomId = k.id;
+        card.innerHTML = `
+            <div class="kingdom-card-icon">${k.icon}</div>
+            <div class="kingdom-card-body">
+                <div class="kingdom-card-level">Level ${i + 1}${isSaved ? " · Continue" : ""}</div>
+                <h3>${k.name}</h3>
+                <p>${k.description}</p>
+                <div class="kingdom-card-resources">
+                    Start: ${r.gold} 💰  ${r.food} 🌾  ${r.manpower} 👥  ${r.favor} 👑
+                </div>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+// User picked a kingdom card. If it matches the saved kingdom, resume.
+// If it differs (and a save exists), confirm before overwriting.
+function selectKingdom(kingdomId) {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    let savedKingdom = null;
+    let hasSave = false;
+    try {
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            savedKingdom = parsed.kingdomId || null;
+            hasSave = true;
+        }
+    } catch (_) {}
+    // Legacy null-kingdom saves are treated as the default kingdom so the
+    // user keeps their progress when they pick that one.
+    const effectiveSaved = savedKingdom || (hasSave ? DEFAULT_KINGDOM_ID : null);
+
+    if (effectiveSaved && effectiveSaved !== kingdomId) {
+        const k = getKingdom(kingdomId);
+        if (!confirm(`Start ${k.name}? Your current progress will be replaced.`)) return;
+    }
+
+    if (effectiveSaved !== kingdomId) {
+        // Fresh state for this kingdom (or first ever play).
+        const fresh = buildInitialState(kingdomId);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    }
+
+    // Reveal the game and load.
+    document.getElementById("kingdomSelectScreen").classList.add("is-hidden");
+    document.getElementById("gameScreen").classList.remove("is-hidden");
+
+    if (!_gameStarted) {
+        _gameStarted = true;
+        initGame();
+    } else {
+        // Game already initialized this session — re-load the new state.
+        gameState = loadState();
+        restoreCardSystemState(gameState.cardSystemState);
+        applyRegen();
+        currentPropertyFilter = 'all';
+        updateResourceBar(gameState);
+        renderKingdom();
+        renderSpinStatus();
+        showWheelPage();
+        hideAuguryOverlay();
+        hideTradeOverlay();
+        hideRealmOverlay();
+        if (gameState.gameOver) handleSavedGameOver();
+        else if (gameState.pending) {
+            showAuguryOverlay();
+            restorePendingAugury();
+        }
+        saveState();
+    }
 }
 
 // Wipe all save state from the entry screen. If the game has already been

@@ -34,6 +34,17 @@
             <button id="menuResetButton" class="link-btn link-btn-warn">Reset progress</button>
         </section>
 
+        <!-- Kingdom selection screen (between Main Menu and the game). One card
+             per KINGDOMS entry (rendered by renderKingdomList). -->
+        <section id="kingdomSelectScreen" class="kingdom-select-screen is-hidden">
+            <div class="select-banner">
+                <h2 class="menu-title">Choose your Kingdom</h2>
+                <p class="menu-tagline">Each realm starts with a different purse — pick your difficulty.</p>
+            </div>
+            <div id="kingdomList" class="kingdom-list"></div>
+            <button id="kingdomSelectBack" class="link-btn">← Back to menu</button>
+        </section>
+
         <main class="app is-hidden" id="gameScreen">
             <button id="menuBurger" class="burger-btn" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false">
                 <span></span><span></span><span></span>
@@ -172,6 +183,7 @@
         <script src="js/cloud-save.js"></script>
 
         <!-- Data files (no logic, just definitions) -->
+        <script src="js/data/kingdoms.js"></script>
         <script src="js/data/cards-investment.js"></script>
         <script src="js/data/cards-decision.js"></script>
         <script src="js/data/cards-event.js"></script>

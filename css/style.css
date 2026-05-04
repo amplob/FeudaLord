@@ -1218,6 +1218,89 @@ button.link:hover {
     color: var(--danger);
 }
 
+/* Kingdom selection screen (between Main Menu and the game). */
+.kingdom-select-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 32px 16px;
+    background: var(--bg-gradient);
+}
+
+.select-banner {
+    text-align: center;
+    max-width: 520px;
+    margin-bottom: 6px;
+}
+
+.kingdom-list {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.kingdom-card {
+    display: flex;
+    align-items: stretch;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.1s ease, border-color 0.15s ease;
+}
+
+.kingdom-card:hover,
+.kingdom-card:focus-visible {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.kingdom-card-icon {
+    font-size: 2.6rem;
+    align-self: center;
+    line-height: 1;
+}
+
+.kingdom-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.kingdom-card-level {
+    font-family: "Cinzel", serif;
+    font-size: 0.8rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.kingdom-card-body h3 {
+    margin: 0 0 4px;
+    font-family: "Cinzel", serif;
+    font-size: 1.15rem;
+    color: var(--text);
+}
+
+.kingdom-card-body p {
+    margin: 0 0 6px;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+}
+
+.kingdom-card-resources {
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
 /* Kingdom page — replaces the old Estate modal as a first-class page. */
 .kingdom-page {
     display: flex;

@@ -59,9 +59,10 @@ function renderKingdom() {
     const estateEl  = document.getElementById("kingdomEstate");
     if (!titleEl || !eventsEl || !estateEl) return;
 
-    // Title + flavor (later: vary per chosen kingdom).
-    titleEl.textContent = "Kingdom of Demesne";
-    descEl.textContent  = "A kind and prosperous demesne where peasants till the soil and lords gather favor. Reach 500 👑 to be crowned Duke.";
+    // Title + flavor — pulled from the selected kingdom (data/kingdoms.js).
+    const kingdom = getKingdom(gameState.kingdomId);
+    titleEl.textContent = `${kingdom.icon} Kingdom of ${kingdom.name}`;
+    descEl.textContent  = kingdom.description;
     turnEl.textContent  = gameState.turn;
     goalEl.textContent  = `${fmtNum(gameState.resources.favor)} / 500 👑`;
 
