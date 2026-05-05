@@ -53,6 +53,10 @@ const defaultState = {
     spins: 30,
     maxSpins: 30,
     lastSpinAt: null,
+
+    // Per-turn snapshot log for the Stats page chart. One entry per turn:
+    // { turn, resources: {...}, income: {...} }. Capped to HISTORY_MAX entries.
+    history: [],
 };
 
 let gameState = null;
@@ -87,7 +91,6 @@ function initGame() {
     document.getElementById("spinButton").addEventListener("click", handleSpin);
     document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
     document.getElementById("realmClose").addEventListener("click", hideRealmOverlay);
-    document.getElementById("statsClose").addEventListener("click", hideStatsOverlay);
     document.getElementById("auguryOptions").addEventListener("click", handleAuguryAction);
     wireSidebar();
 
@@ -98,9 +101,12 @@ function initGame() {
     document.getElementById('realmOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'realmOverlay') hideRealmOverlay();
     });
-    document.getElementById('statsOverlay').addEventListener('click', (e) => {
-        if (e.target.id === 'statsOverlay') hideStatsOverlay();
-    });
+
+    // Seed an initial history snapshot for legacy saves and brand-new games.
+    if (!gameState.history || gameState.history.length === 0) {
+        gameState.history = [];
+        recordTurnSnapshot();
+    }
     
     // Emergency close button for stuck augury
     document.getElementById('emergencyClose').addEventListener('click', emergencySkipTurn);
@@ -241,6 +247,7 @@ function handleSpin() {
         processEvents();
         applyPassiveIncome();
         gameState.turn += 1;
+        recordTurnSnapshot();
         updateResourceBar(gameState);
         renderSpinStatus();
         showAuguryOverlay();
@@ -640,6 +647,9 @@ function resetGame() {
     // Reset card system
     resetCardSystem();
 
+    // Seed the new run's history with the starting snapshot.
+    recordTurnSnapshot();
+
     // Reset UI
     enableSpinButton();
     hideAuguryOverlay();
@@ -698,7 +708,7 @@ function wireSidebar() {
             case "spin":    showWheelPage(); break;
             case "kingdom": showKingdomPage(); break;
             case "realm":   toggleRealmPanel(); break;
-            case "stats":   showStatsOverlay(); break;
+            case "stats":   showStatsPage(); break;
             case "menu":    returnToMainMenu(); break;
             case "test":
                 if (typeof showTestPicker === "function") showTestPicker();
@@ -856,6 +866,9 @@ function selectKingdom(kingdomId) {
         updateResourceBar(gameState);
         renderKingdom();
         renderSpinStatus();
+        // Trade rates are kingdom-aware; rebuild the panel so the new
+        // canonical values reach the rate display.
+        initTradeUI(handleTrade);
         showWheelPage();
         hideAuguryOverlay();
         hideTradeOverlay();

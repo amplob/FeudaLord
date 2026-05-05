@@ -214,4 +214,106 @@ const eventCards = [
         perTurnEffects: { favor: -2 },
         onExpire: null,
     },
+
+    // --- Kingdom-locked flavour events ---
+    // Each one only enters its own kingdom's draw pool (`card.kingdom` filter
+    // in isCardEligible). They use the standard eventBase formula so the per-
+    // kingdom resourceValues automatically scale the resulting unit count.
+
+    {
+        typeId: "prosperousRegion",
+        category: "event",
+        name: "Prosperous Region",
+        description: "Word of your fair rule spreads through Greenvale's villages.",
+        icon: "🌳👑",
+        tonality: "good",
+        kingdom: "greenvale",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: false,
+        maxInstances: null,
+        minTurn: 2,
+        requiresResource: null,
+
+        weight: 5,
+        absoluteChance: null,
+
+        // Instant: +4 favor (eventBase 8, qF 1, favor = 2 g-eq)
+        outputRes: "favor",
+        eventBase: 8,
+        qualityFactor: 1,
+    },
+    {
+        typeId: "fishermansSurplus",
+        category: "event",
+        name: "Fisherman's Surplus",
+        description: "The Rivermark fleets return with boats heavy with silver fish.",
+        icon: "🎣🌾",
+        tonality: "good",
+        kingdom: "rivermark",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: false,
+        maxInstances: null,
+        minTurn: 1,
+        requiresResource: null,
+
+        weight: 5,
+        absoluteChance: null,
+
+        // Instant: ~+27 food (eventBase 8, qF 1, food = 0.3 g-eq in Rivermark)
+        outputRes: "food",
+        eventBase: 8,
+        qualityFactor: 1,
+    },
+    {
+        typeId: "hiddenGoldVein",
+        category: "event",
+        name: "Hidden Gold Vein",
+        description: "Stonehold's miners strike a rich seam in the deep galleries.",
+        icon: "⛏️💰",
+        tonality: "good",
+        kingdom: "stonehold",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: false,
+        maxInstances: null,
+        minTurn: 2,
+        requiresResource: null,
+
+        weight: 5,
+        absoluteChance: null,
+
+        // Instant: ~+11 gold (eventBase 8, qF 1, gold = 0.7 g-eq in Stonehold)
+        outputRes: "gold",
+        eventBase: 8,
+        qualityFactor: 1,
+    },
+    {
+        typeId: "wolfHunt",
+        category: "event",
+        name: "Wolf Hunt",
+        description: "The Wolfsedge garrison rides out to thin the packs at the treeline.",
+        icon: "🐺⚔️",
+        tonality: "bad",
+        kingdom: "wolfsedge",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: false,
+        maxInstances: null,
+        minTurn: 1,
+        requiresResource: null,
+
+        weight: 5,
+        absoluteChance: null,
+
+        // Instant: ~-2 manpower (eventBase -8, manpower = 4 g-eq in Wolfsedge)
+        outputRes: "manpower",
+        eventBase: -8,
+        qualityFactor: 1,
+    },
 ];

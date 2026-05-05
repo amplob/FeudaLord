@@ -1355,15 +1355,169 @@ button.link:hover {
     font-size: 1.05rem;
 }
 
-/* Stats overlay */
-.stats-overlay {
-    background: rgba(10, 8, 6, 0.96);
-    z-index: 150;
+.kingdom-section h3 .hint {
+    font-family: "Crimson Text", Georgia, serif;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-weight: 400;
+    letter-spacing: 0;
+    margin-left: 6px;
+    font-style: italic;
 }
 
-.stats-content {
-    max-width: 480px;
-    width: 95%;
+.resource-value-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.resource-value {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 8px 6px;
+    text-align: center;
+}
+
+.resource-value .icon {
+    display: block;
+    font-size: 1.5rem;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.resource-value .value {
+    font-family: "Cinzel", serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.resource-value.abundant .value { color: var(--success); }
+.resource-value.scarce   .value { color: var(--danger);  }
+
+/* Stats page — first-class game page (replaces the old Stats modal). */
+.stats-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.stats-banner {
+    text-align: center;
+    padding: 12px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+}
+
+.stats-banner h2 {
+    margin: 0;
+    font-family: "Cinzel", serif;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+}
+
+.stats-section {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.stats-section h3 {
+    margin: 0 0 10px;
+    font-family: "Cinzel", serif;
+    color: var(--accent);
+    letter-spacing: 1px;
+    font-size: 1.05rem;
+}
+
+.stats-chart {
+    width: 100%;
+    aspect-ratio: 600 / 290;
+    min-height: 200px;
+}
+
+.chart-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.chart-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+.chart-grid {
+    stroke: rgba(232, 220, 200, 0.08);
+    stroke-width: 1;
+}
+
+.chart-zero {
+    stroke: rgba(232, 220, 200, 0.25);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+}
+
+.chart-axis-label {
+    fill: var(--text-dim);
+    font-size: 11px;
+    font-family: "Crimson Text", serif;
+}
+
+.chart-axis-title {
+    fill: var(--text-dim);
+    font-size: 10px;
+    font-family: "Cinzel", serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.stats-chart-legend {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px 12px;
+    margin-top: 10px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
+.legend-icon {
+    font-size: 1rem;
+    width: 18px;
+    text-align: center;
+}
+
+.legend-line {
+    display: inline-block;
+    width: 22px;
+    height: 0;
+}
+
+.legend-line.solid {
+    height: 3px;
+    border-radius: 2px;
+}
+
+.legend-line.dashed {
+    border-top: 2.5px dashed var(--c, var(--text-dim));
+}
+
+.legend-label {
+    color: var(--text-dim);
+    font-size: 0.78rem;
 }
 
 .stats-body {

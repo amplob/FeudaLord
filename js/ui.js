@@ -66,6 +66,8 @@ function renderKingdom() {
     turnEl.textContent  = gameState.turn;
     goalEl.textContent  = `${fmtNum(gameState.resources.favor)} / 500 👑`;
 
+    renderResourceValueGrid();
+
     // Events: every active event card, no filter.
     const events = getActiveCardsByCategory("event");
     eventsEl.innerHTML = "";
@@ -85,6 +87,31 @@ function renderKingdom() {
         estateEl.innerHTML = `<div class="property-empty">No properties producing ${RESOURCE_ICON[currentPropertyFilter]}</div>`;
     } else {
         for (const inv of filtered) estateEl.appendChild(makePropertyItem(inv));
+    }
+}
+
+// Show the active kingdom's per-resource canonical value as a 4-cell grid.
+// An override below the base reads as "abundant" (green ↓), above as
+// "scarce" (red ↑); equal values are shown plain. The numbers are the
+// gold-equivalent value used by every formula in the game.
+function renderResourceValueGrid() {
+    const grid = document.getElementById("kingdomResources");
+    if (!grid) return;
+    grid.innerHTML = "";
+    for (const res of ["gold", "food", "manpower", "favor"]) {
+        const value = getResourceValue(res);
+        const base = BASE_RESOURCE_VALUE[res];
+        let cls = "resource-value";
+        let arrow = "";
+        if (value < base) { cls += " abundant"; arrow = " ↓"; }
+        else if (value > base) { cls += " scarce"; arrow = " ↑"; }
+        const cell = document.createElement("div");
+        cell.className = cls;
+        cell.innerHTML = `
+            <span class="icon">${RESOURCE_ICON[res]}</span>
+            <span class="value">${value}${arrow}</span>
+        `;
+        grid.appendChild(cell);
     }
 }
 
@@ -143,15 +170,29 @@ function renderProperties() { renderKingdom(); }
 // kingdom view. Switching between them just toggles is-hidden — both stay in
 // the DOM so listeners remain wired.
 
+// All game-screen pages live side-by-side under #gameScreen; this helper
+// picks one to show and hides the rest so transitions always end clean.
+const GAME_PAGE_IDS = ["wheelPage", "kingdomPage", "statsPage"];
+
+function showGamePage(id) {
+    for (const pageId of GAME_PAGE_IDS) {
+        document.getElementById(pageId)?.classList.toggle("is-hidden", pageId !== id);
+    }
+}
+
 function showWheelPage() {
-    document.getElementById("wheelPage")?.classList.remove("is-hidden");
-    document.getElementById("kingdomPage")?.classList.add("is-hidden");
+    showGamePage("wheelPage");
 }
 
 function showKingdomPage() {
     renderKingdom();
-    document.getElementById("kingdomPage")?.classList.remove("is-hidden");
-    document.getElementById("wheelPage")?.classList.add("is-hidden");
+    showGamePage("kingdomPage");
+}
+
+function showStatsPage() {
+    renderStats();
+    renderStatsChart();
+    showGamePage("statsPage");
 }
 
 // =====================================================
@@ -406,12 +447,13 @@ function renderDecisionCard(cardInstance) {
     optionsEl.innerHTML = optionsHtml;
 }
 
-// Sum gold-equivalent value of an effects object using canonical rates.
-// gold=1, food=0.5, manpower=3, favor=2 (see RESOURCE_VALUE in cardSystem.js).
+// Sum gold-equivalent value of an effects object using the active kingdom's
+// canonical rates (defaults: gold=1, food=0.5, manpower=3, favor=2 — see
+// BASE_RESOURCE_VALUE / per-kingdom overrides in cardSystem.js).
 function goldEquivalent(effects) {
     if (!effects) return 0;
     return Object.entries(effects).reduce(
-        (sum, [res, amt]) => sum + amt * (RESOURCE_VALUE[res] || 0),
+        (sum, [res, amt]) => sum + amt * (getResourceValue(res) || 0),
         0
     );
 }

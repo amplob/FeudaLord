@@ -45,6 +45,11 @@ function isCardEligibleDebug(card) {
     if (card.requiresStaticFlag) return false;
     if (card.blockedByStaticFlag) return false;
 
+    // Kingdom-locked cards: same logic — each kingdom needs its own sim run
+    // (sim uses defaultState.kingdomId = null), so we skip them in the
+    // general balance check.
+    if (card.kingdom) return false;
+
     if (gameState.turn < card.minTurn) return false;
     if (card.isUnique && playedCardTypes.has(card.typeId)) return false;
     if (card.maxInstances !== null) {

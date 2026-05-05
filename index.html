@@ -107,6 +107,13 @@
                     </div>
                 </div>
                 <div id="spinStatus" class="spin-status" aria-live="polite"></div>
+                <!-- Daily login bonus button. Lives on the wheel page so it
+                     vanishes with the page. JS toggles .ready / .dim. -->
+                <button id="dailyButton" class="daily-button dim" type="button"
+                        aria-label="Daily blessing not yet ready">
+                    <span class="daily-icon">🎁</span>
+                    <span class="daily-countdown"></span>
+                </button>
             </section>
 
             <!-- Kingdom page (replaces the old Estate modal). Shows kingdom title +
@@ -123,6 +130,10 @@
                     <div>Goal <span id="kingdomGoal">0 / 500 👑</span></div>
                 </div>
                 <div class="kingdom-section">
+                    <h3>Resource value <span class="hint">(lower = abundant)</span></h3>
+                    <div id="kingdomResources" class="resource-value-grid"></div>
+                </div>
+                <div class="kingdom-section">
                     <h3>Events</h3>
                     <div id="kingdomEvents" class="property-list"></div>
                 </div>
@@ -137,6 +148,21 @@
                     </div>
                     <div id="kingdomEstate" class="property-list"></div>
                 </div>
+            </section>
+
+            <!-- Stats page (replaces the old Stats modal). Shows the resource
+                 history chart and the records tables. Hidden by default;
+                 shown via the sidebar's Stats item. -->
+            <section class="stats-page game-page is-hidden" id="statsPage">
+                <div class="stats-banner">
+                    <h2>📊 Stats</h2>
+                </div>
+                <div class="stats-section">
+                    <h3>Resources Over Time</h3>
+                    <div id="statsChart" class="stats-chart"></div>
+                    <div id="statsChartLegend" class="stats-chart-legend"></div>
+                </div>
+                <div id="statsBody" class="stats-body"></div>
             </section>
         </main>
 
@@ -172,18 +198,7 @@
             </div>
         </div>
 
-        <!-- Stats / Records overlay -->
-        <div class="overlay stats-overlay hidden" id="statsOverlay">
-            <div class="overlay-content stats-content">
-                <div class="overlay-header">
-                    <h2>📊 Stats</h2>
-                    <button class="close-btn" id="statsClose">✕</button>
-                </div>
-                <div id="statsBody" class="stats-body"></div>
-            </div>
-        </div>
-
-        <div id="toastContainer" class="toast-container"></div>
+<div id="toastContainer" class="toast-container"></div>
 
         <!-- Firebase compat SDKs (CDN — we have no bundler) -->
         <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>

@@ -84,6 +84,10 @@ function validateCards() {
         }
     }
 
+    const validKingdoms = (typeof KINGDOMS !== "undefined")
+        ? new Set(KINGDOMS.map(k => k.id))
+        : null;
+
     for (const c of allCards) {
         const tag = `${c.category}/${c.typeId}`;
 
@@ -93,6 +97,11 @@ function validateCards() {
         }
         for (const bk of c.blockedBy || []) {
             if (!byId.has(bk)) log(`${tag}: blockedBy "${bk}" not found`);
+        }
+
+        // Kingdom lock must reference a real kingdom.
+        if (c.kingdom && validKingdoms && !validKingdoms.has(c.kingdom)) {
+            log(`${tag}: kingdom "${c.kingdom}" — no such kingdom`);
         }
 
         // Resource keys in eligibility / payloads
@@ -244,11 +253,16 @@ function applyFlagMutations(src, { autoDerivedSets = false } = {}) {
  * Check if a card is eligible to be drawn.
  */
 function isCardEligible(card, state) {
+    // Kingdom-locked card: only eligible when its kingdom is the active one.
+    if (card.kingdom && state.kingdomId !== card.kingdom) {
+        return false;
+    }
+
     // Check minimum turn
     if (state.turn < card.minTurn) {
         return false;
     }
-    
+
     // Check if unique card already played
     if (card.isUnique && playedCardTypes.has(card.typeId)) {
         return false;
@@ -394,8 +408,12 @@ function selectCard(category, state, tonality) {
 // =====================================================
 // Canonical gold-equivalent values per unit. Conversions and
 // instant-event sizing are derived from this table.
+//
+// Kingdoms can override any subset of these via their `resourceValues`
+// (data/kingdoms.js). Lower override = "more abundant in that kingdom"
+// (cheaper to buy with other resources, more units per fixed g-eq event).
 
-const RESOURCE_VALUE = { gold: 1, food: 0.5, manpower: 3, favor: 2 };
+const BASE_RESOURCE_VALUE = { gold: 1, food: 0.5, manpower: 3, favor: 2 };
 
 // Display symbols (used by ui.js formatters).
 const RESOURCE_ICON = {
@@ -405,8 +423,28 @@ const RESOURCE_ICON = {
     favor: "👑",
 };
 
+// Kingdom-aware accessor. Reads the override from the active kingdom (if
+// any) and falls back to the base table. Used by all formulas, the trade
+// panel, and ui.js#goldEquivalent so a single switch of gameState.kingdomId
+// re-prices the whole game consistently.
+function getResourceValue(resource) {
+    if (typeof gameState !== "undefined" && gameState && gameState.kingdomId
+        && typeof getKingdom === "function") {
+        const k = getKingdom(gameState.kingdomId);
+        if (k && k.resourceValues && resource in k.resourceValues) {
+            return k.resourceValues[resource];
+        }
+    }
+    return BASE_RESOURCE_VALUE[resource];
+}
+
+// Back-compat shim: a few places (the validator's resource-name set, ui.js)
+// still want a static-looking RESOURCE_VALUE object. Keep it pointing at
+// the BASE table — its only consumer needs the *keys*, not the values.
+const RESOURCE_VALUE = BASE_RESOURCE_VALUE;
+
 function canonicalRate(from, to) {
-    return RESOURCE_VALUE[from] / RESOURCE_VALUE[to];
+    return getResourceValue(from) / getResourceValue(to);
 }
 
 function rollBulk() {
@@ -453,7 +491,7 @@ function applyTradeFormula({ inputRes, outputRes, inputBase, qualityFactor = 1, 
 function applyInstantEventFormula({ outputRes, eventBase, qualityFactor = 1, tierMultiplier = 1 }) {
     const variance = rollVariance();
     const outputAmount = round2(
-        eventBase * (1 / RESOURCE_VALUE[outputRes]) * qualityFactor * variance * tierMultiplier
+        eventBase * (1 / getResourceValue(outputRes)) * qualityFactor * variance * tierMultiplier
     );
     return { outputAmount };
 }
