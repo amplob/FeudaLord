@@ -41,6 +41,11 @@ const defaultState = {
     // on the kingdom selection screen; null when no game has been started.
     kingdomId: null,
 
+    // Monotonic version counter — incremented on every saveState. Cloud sync
+    // compares the local vs remote saveSeq on sign-in to pick the newer copy
+    // (vital on mobile, where a process kill can drop the cloud flush).
+    saveSeq: 0,
+
     // Stamina (spin economy). lastSpinAt is the ms timestamp the current
     // regen interval started counting from; advances by SPIN_REGEN_MS as
     // each regen tick is credited. Null on first ever load — populated on
@@ -574,6 +579,7 @@ function endGame(message) {
 
 function saveState() {
     gameState.cardSystemState = getCardSystemState();
+    gameState.saveSeq = (gameState.saveSeq || 0) + 1;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
     // Fire-and-forget Firestore mirror. cloud-save.js no-ops when not signed in.
     if (typeof cloudSaveState === "function") cloudSaveState(gameState);

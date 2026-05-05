@@ -35,10 +35,15 @@ async function flushCloudSave() {
     if (typeof fbDb === "undefined") return;
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return;
+    // Mirror saveSeq at the doc top-level so syncOnSignIn can compare without
+    // parsing the embedded state string.
+    let saveSeq = 0;
+    try { saveSeq = JSON.parse(stored).saveSeq || 0; } catch (_) {}
     try {
         await fbDb.collection(SAVES_COLLECTION).doc(currentUser.uid).set({
             state: stored,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            saveSeq: saveSeq,
         });
     } catch (e) {
         console.error("[cloud] save failed:", e);
@@ -82,9 +87,12 @@ async function cloudLoadState() {
     }
 }
 
-// On sign-in: pull the cloud doc. If it exists, replace localStorage with
-// it (cloud wins on conflict). If it doesn't, push the current local save
-// up so a brand-new account inherits whatever progress was made anonymously.
+// On sign-in, compare local.saveSeq vs cloud.saveSeq and reconcile:
+//   cloud > local  → pull cloud (other device is newer)
+//   local > cloud  → push local immediately (eg. last visibilitychange flush
+//                    didn't make it on mobile — the seq still tells us local
+//                    is the newer side)
+//   equal          → no-op
 //
 // Idempotent — onAuthChange fires multiple times (page load, refresh) with
 // the same uid, so we guard with lastSyncedUid.
@@ -98,19 +106,38 @@ async function syncOnSignIn(user) {
     if (user.uid === _lastSyncedUid) return;
     _lastSyncedUid = user.uid;
 
-    const cloud = await cloudLoadState();
-    if (cloud) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
-        console.log("[cloud] pulled save into localStorage");
-    } else {
-        const localStr = localStorage.getItem(STORAGE_KEY);
-        if (localStr) {
-            cloudSaveState();
-            // Force the first sync immediately so a fresh account shows up
-            // in Firestore without waiting CLOUD_DEBOUNCE_MS.
-            flushCloudSave();
-            console.log("[cloud] pushed initial localStorage save to cloud");
+    if (typeof fbDb === "undefined") return;
+
+    let cloudDoc;
+    try {
+        cloudDoc = await fbDb.collection(SAVES_COLLECTION).doc(user.uid).get();
+    } catch (e) {
+        console.error("[cloud] sync read failed:", e);
+        return;
+    }
+
+    const cloudExists = cloudDoc.exists;
+    const cloudData = cloudExists ? cloudDoc.data() : null;
+    // -1 sentinel means "no save", so anything (including saveSeq=0) wins.
+    const cloudSeq = cloudExists ? (cloudData.saveSeq || 0) : -1;
+
+    const localStr = localStorage.getItem(STORAGE_KEY);
+    let localSeq = -1;
+    if (localStr) {
+        try { localSeq = JSON.parse(localStr).saveSeq || 0; } catch (_) {}
+    }
+
+    if (cloudSeq > localSeq) {
+        if (cloudData && cloudData.state) {
+            localStorage.setItem(STORAGE_KEY, cloudData.state);
+            console.log(`[cloud] pulled save (cloudSeq=${cloudSeq} > localSeq=${localSeq})`);
         }
+    } else if (localSeq > cloudSeq) {
+        cloudSaveState();
+        await flushCloudSave();
+        console.log(`[cloud] pushed save (localSeq=${localSeq} > cloudSeq=${cloudSeq})`);
+    } else {
+        console.log(`[cloud] in sync (saveSeq=${localSeq})`);
     }
 }
 
