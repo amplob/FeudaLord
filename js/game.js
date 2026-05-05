@@ -217,33 +217,26 @@ function handleSpin() {
         return;
     }
 
-    // Hide spin text and disable button
     setSpinButtonState(true);
 
-    // Consume one spin. applyRegen kept lastSpinAt = now while at max, so
-    // the regen clock starts ticking from this moment automatically.
-    gameState.spins -= 1;
-
-    // Process active events first
-    processEvents();
-
-    // Apply passive income
-    applyPassiveIncome();
-
-    // Spin the wheel: physics loop runs in wheel.js, calls back with the
-    // landed segment once the wheel comes to rest (after peg collisions and
-    // any final bounce-back).
+    // Save-after-spin model: nothing is committed until the spin actually
+    // lands. All the turn's mutations (consume spin, tick events, apply
+    // passive income, increment turn, present augury) happen inside the
+    // wheel callback, then a single saveState() captures the whole turn.
+    // If the user closes mid-animation, the previous save is unchanged —
+    // reload restores them to where they were before clicking SPIN.
     spinWheel((segment) => {
         setSpinButtonState(false);
-        showAuguryOverlay();
-        presentAugury(segment);
+        gameState.spins -= 1;
+        processEvents();
+        applyPassiveIncome();
+        gameState.turn += 1;
+        updateResourceBar(gameState);
         renderSpinStatus();
+        showAuguryOverlay();
+        presentAugury(segment);   // sets gameState.pending (or clears it on "nothing happens")
+        saveState();              // single commit for the entire turn
     });
-
-    gameState.turn += 1;
-    updateResourceBar(gameState);
-    renderSpinStatus();
-    saveState();
 }
 
 function processEvents() {
@@ -316,13 +309,11 @@ function presentAugury(segment) {
 function presentInvestment(cardInstance, segment) {
     gameState.pending = { type: 'investment', cardInstance, segment };
     renderInvestmentCard(cardInstance, segment);
-    saveState();
 }
 
 function presentDecision(cardInstance, segment) {
     gameState.pending = { type: 'decision', cardInstance, segment };
     renderDecisionCard(cardInstance, segment);
-    saveState();
 }
 
 function presentEvent(cardInstance, segment) {
@@ -330,13 +321,11 @@ function presentEvent(cardInstance, segment) {
     // Events are "just accept": instant effects + onActivate + activation all fire on Continue.
     gameState.pending = { type: 'event', cardInstance, segment, effectsApplied: false };
     renderEventCard(cardInstance, segment);
-    saveState();
 }
 
 function presentTrade(segment) {
     gameState.pending = { type: 'trade', segment };
     renderTradeCard();
-    saveState();
 }
 
 // =====================================================
@@ -368,7 +357,6 @@ function handleAuguryAction(event) {
     } else if (type === 'investment' && action === 'skip') {
         gameState.pending = null;
         hideAuguryOverlay();
-        saveState();
     } else if (type === 'decision') {
         const optionIndex = parseInt(button.dataset.optionIndex);
         if (!isNaN(optionIndex)) {
@@ -383,7 +371,6 @@ function handleAuguryAction(event) {
     } else if (type === 'trade' && action === 'pass') {
         gameState.pending = null;
         hideAuguryOverlay();
-        saveState();
     }
 }
 
@@ -397,7 +384,8 @@ function acceptEvent(cardInstance) {
     renderProperties();
     updateIncomeIndicators();
     verifyState();
-    saveState();
+    // Save-after-spin: don't persist mid-turn. The next spin will commit, or
+    // the save happens in endGame if verifyState ended the run.
 }
 
 function handleBuildInvestment(cardInstance) {
@@ -420,7 +408,8 @@ function handleBuildInvestment(cardInstance) {
     gameState.pending = null;
     hideAuguryOverlay();
     verifyState();
-    saveState();
+    // Save-after-spin: build is part of this turn's resolution; the next
+    // spin will commit it (or endGame if it pushed us over the loss line).
 }
 
 function handleDecisionChoice(cardInstance, optionIndex) {
@@ -452,7 +441,7 @@ function handleDecisionChoice(cardInstance, optionIndex) {
     hideAuguryOverlay();
     renderProperties();
     verifyState();
-    saveState();
+    // Save-after-spin: decision is committed by the next spin's saveState.
 }
 
 // When closing the trade overlay, if we got here from the Merchant wheel slice,
@@ -500,14 +489,15 @@ function applyResourceChange(change, reason) {
         gameState.resources[resource] += amount;
         showFloating(resource, amount);
     });
-    
+
     updateResourceBar(gameState);
-    
+
     if (reason) {
         showToast(reason);
     }
-    
-    saveState();
+
+    // No saveState here — under save-after-spin, mid-turn resource changes
+    // are in-memory only. The next spin (or endGame / reset) commits.
 }
 
 function canAfford(cost) {
