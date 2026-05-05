@@ -198,6 +198,17 @@
             </div>
         </div>
 
+        <!-- Daily blessing modal (shown after a successful claim). -->
+        <div class="overlay daily-overlay hidden" id="dailyOverlay">
+            <div class="overlay-content daily-content">
+                <div class="daily-gift">🎁</div>
+                <h2>A Daily Blessing</h2>
+                <p id="dailyMessage" class="daily-message"></p>
+                <div id="dailyReward" class="daily-reward"></div>
+                <button class="primary" id="dailyContinue">Continue</button>
+            </div>
+        </div>
+
 <div id="toastContainer" class="toast-container"></div>
 
         <!-- Firebase compat SDKs (CDN — we have no bundler) -->
@@ -220,6 +231,7 @@
         <script src="js/trade.js"></script>
         <script src="js/ui.js"></script>
         <script src="js/stats.js"></script>
+        <script src="js/daily.js"></script>
         <script src="js/game.js"></script>
         <script src="js/debug.js"></script>
     </body>

@@ -283,6 +283,8 @@ const SIM_MODES = [
       desc: "Set current spins to 0 (debug — exercises the empty-stamina UI)" },
     { id: "fill",     label: "Fill spins",    action: "fill",
       desc: "Restore current spins to maxSpins (debug)" },
+    { id: "daily15s", label: "Daily login in 15s", action: "daily15s",
+      desc: "Schedules the daily blessing to be claimable 15 seconds from now" },
 ];
 
 function showTestPicker() {
@@ -334,6 +336,13 @@ function showTestPicker() {
                         gameState.lastSpinAt = Date.now();
                         saveState();
                         if (typeof renderSpinStatus === "function") renderSpinStatus();
+                    }
+                } else if (mode.action === "daily15s") {
+                    if (typeof scheduleDailyIn === "function") {
+                        scheduleDailyIn(15);
+                        if (typeof showToast === "function") {
+                            showToast("Daily blessing in 15s.");
+                        }
                     }
                 } else {
                     showSimResults(simulateMultipleRuns(SIM_RUNS, SIM_TURNS, mode.filter));

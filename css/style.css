@@ -1563,6 +1563,122 @@ button.link:hover {
     font-style: italic;
 }
 
+/* Daily login bonus button (bottom-right of the wheel page). Two visual
+   states driven by daily.js:
+     .ready — full-color, gently pulsing, larger, clickable
+     .dim   — small, translucent, grayscale, shows MM:SS countdown
+   Position relative to .wheel-section (which is a flex container — we set
+   it to relative below, the button is absolute inside it). */
+.wheel-section {
+    position: relative;
+}
+
+.daily-button {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--panel);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease,
+                width 0.2s ease, height 0.2s ease, filter 0.2s ease;
+    z-index: 10;
+    color: var(--text);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+}
+
+.daily-button.ready {
+    width: 56px;
+    height: 56px;
+    box-shadow: 0 0 14px rgba(212,175,55,0.55), 0 3px 10px rgba(0,0,0,0.4);
+    animation: dailyPulse 2.4s ease-in-out infinite;
+}
+
+.daily-button.dim {
+    width: 40px;
+    height: 40px;
+    opacity: 0.55;
+    filter: grayscale(0.6);
+    border-color: var(--panel-border);
+    animation: none;
+}
+
+.daily-button:hover {
+    transform: translateY(-2px);
+}
+
+.daily-button .daily-icon {
+    line-height: 1;
+}
+
+.daily-button.ready .daily-icon {
+    font-size: 1.6rem;
+}
+
+.daily-button.dim .daily-icon {
+    font-size: 1rem;
+    margin-top: -2px;
+}
+
+.daily-countdown {
+    font-size: 0.55rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+}
+
+.daily-button.ready .daily-countdown { display: none; }
+
+@keyframes dailyPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.06); }
+}
+
+/* Daily blessing modal — shown after the gift button is tapped. */
+.daily-overlay {
+    background: rgba(10, 8, 6, 0.85);
+    z-index: 260;
+}
+
+.daily-content {
+    max-width: 380px;
+    text-align: center;
+    padding: 28px 24px;
+}
+
+.daily-gift {
+    font-size: 3.6rem;
+    line-height: 1;
+    margin-bottom: 4px;
+    animation: dailyPulse 2s ease-in-out infinite;
+}
+
+.daily-message {
+    color: var(--text-dim);
+    font-style: italic;
+    margin: 8px 0 18px;
+    line-height: 1.4;
+}
+
+.daily-reward {
+    font-family: "Cinzel", serif;
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 18px;
+}
+
+.daily-reward-icon {
+    margin-left: 4px;
+    font-size: 1.5rem;
+}
+
 /* Realm overlay (landscape view of built structures) */
 .realm-overlay {
     background: rgba(10, 8, 6, 0.98);

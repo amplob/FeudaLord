@@ -84,6 +84,7 @@ function initGame() {
     renderProperties();
     renderSpinStatus();
     startSpinTick();
+    startDailyTick();
     initTradeUI(handleTrade);
     setupPropertyTabs();
 
@@ -92,6 +93,8 @@ function initGame() {
     document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
     document.getElementById("realmClose").addEventListener("click", hideRealmOverlay);
     document.getElementById("auguryOptions").addEventListener("click", handleAuguryAction);
+    document.getElementById("dailyButton").addEventListener("click", handleDailyClick);
+    document.getElementById("dailyContinue").addEventListener("click", hideDailyOverlay);
     wireSidebar();
 
     // Close overlays on background click
@@ -100,6 +103,9 @@ function initGame() {
     });
     document.getElementById('realmOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'realmOverlay') hideRealmOverlay();
+    });
+    document.getElementById('dailyOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'dailyOverlay') hideDailyOverlay();
     });
 
     // Seed an initial history snapshot for legacy saves and brand-new games.

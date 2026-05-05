@@ -73,6 +73,7 @@ const files = [
     "js/trade.js",
     "js/ui.js",
     "js/stats.js",
+    "js/daily.js",
     "js/game.js",
     "js/debug.js",
 ];
