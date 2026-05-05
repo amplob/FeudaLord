@@ -188,8 +188,13 @@ function spinWheel(callback) {
 }
 
 function _spinFrame(now) {
-    // Cap dt so a stalled tab doesn't teleport the wheel through every peg.
-    const dt = Math.min((now - _lastFrameTime) / 1000, 0.05);
+    // Cap dt so a stalled tab doesn't teleport the wheel through every peg,
+    // AND clamp at zero: rAF's `now` can be a few ms earlier than the
+    // performance.now() captured by spinWheel(), which would make dt negative
+    // on the first frame, push the wheel backward into a peg, and snap-settle
+    // before any visible motion. (Bug repro'd as flaky "no animation" spins.)
+    const elapsed = Math.max(0, now - _lastFrameTime);
+    const dt = Math.min(elapsed / 1000, 0.05);
     _lastFrameTime = now;
 
     // Apply friction toward 0.
