@@ -54,6 +54,11 @@ const defaultState = {
     maxSpins: 30,
     lastSpinAt: null,
 
+    // Set true once the player takes the "buy me a coffee" deal in the
+    // Spin Shop. While true, spins never deplete and the regen timer is
+    // hidden. Persists with the save like any other progression state.
+    unlimitedSpins: false,
+
     // Per-turn snapshot log for the Stats page chart. One entry per turn:
     // { turn, resources: {...}, income: {...} }. Capped to HISTORY_MAX entries.
     history: [],
@@ -93,6 +98,7 @@ function initGame() {
     document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
     document.getElementById("realmClose").addEventListener("click", hideRealmOverlay);
     document.getElementById("auguryOptions").addEventListener("click", handleAuguryAction);
+    if (typeof wireSpinShop === "function") wireSpinShop();
     document.getElementById("dailyButton").addEventListener("click", handleDailyClick);
     document.getElementById("dailyContinue").addEventListener("click", hideDailyOverlay);
     wireSidebar();
@@ -190,6 +196,13 @@ function restorePendingAugury() {
 
 function applyRegen() {
     if (!gameState) return;
+    if (gameState.unlimitedSpins) {
+        // Keep the bucket pinned to full so any UI that still reads
+        // gameState.spins shows a consistent value.
+        gameState.spins = gameState.maxSpins;
+        gameState.lastSpinAt = Date.now();
+        return;
+    }
     const now = Date.now();
     if (gameState.lastSpinAt == null) {
         gameState.lastSpinAt = now;
@@ -213,6 +226,7 @@ function applyRegen() {
 }
 
 function spinsRegenInMs() {
+    if (gameState.unlimitedSpins) return null;
     if (gameState.spins >= gameState.maxSpins) return null;
     const elapsed = Date.now() - (gameState.lastSpinAt || Date.now());
     return Math.max(0, SPIN_REGEN_MS - (elapsed % SPIN_REGEN_MS));
@@ -229,12 +243,15 @@ function handleSpin() {
     }
 
     applyRegen();
-    if (gameState.spins <= 0) {
-        const ms = spinsRegenInMs();
-        const total = Math.ceil((ms ?? 0) / 1000);
-        const mm = String(Math.floor(total / 60)).padStart(2, "0");
-        const ss = String(total % 60).padStart(2, "0");
-        showToast(`Out of spins. Next +1 in ${mm}:${ss}.`);
+    if (!gameState.unlimitedSpins && gameState.spins <= 0) {
+        // Out of spins → drop the player straight into the Spin Shop
+        // instead of a toast. Both options (free ad / paid unlimited) are
+        // one tap away.
+        if (typeof openSpinShop === "function") {
+            openSpinShop();
+        } else {
+            showToast("Out of spins.");
+        }
         return;
     }
 
@@ -248,7 +265,7 @@ function handleSpin() {
     // reload restores them to where they were before clicking SPIN.
     spinWheel((segment) => {
         setSpinButtonState(false);
-        gameState.spins -= 1;
+        if (!gameState.unlimitedSpins) gameState.spins -= 1;
         recordSpin();
         processEvents();
         applyPassiveIncome();

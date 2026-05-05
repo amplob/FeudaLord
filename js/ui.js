@@ -319,7 +319,9 @@ function renderSpinStatus() {
     const cur = gameState.spins;
     const max = gameState.maxSpins;
 
-    if (cur >= max) {
+    if (gameState.unlimitedSpins) {
+        el.textContent = `⚡ ∞ · 🕵️ deal sealed`;
+    } else if (cur >= max) {
         el.textContent = `⚡ ${cur} / ${max}`;
     } else {
         const ms = spinsRegenInMs() ?? 0;
@@ -328,8 +330,12 @@ function renderSpinStatus() {
         const ss = String(total % 60).padStart(2, "0");
         el.textContent = `⚡ ${cur} / ${max} · +1 in ${mm}:${ss}`;
     }
-    el.classList.toggle("empty", cur <= 0);
-    if (spinBtn) spinBtn.classList.toggle("no-spins", cur <= 0);
+    const empty = !gameState.unlimitedSpins && cur <= 0;
+    el.classList.toggle("empty", empty);
+    if (spinBtn) spinBtn.classList.toggle("no-spins", empty);
+
+    // Keep the Spin Shop's status line in sync while it's open.
+    if (typeof refreshSpinShop === "function") refreshSpinShop();
 }
 
 let _spinTickHandle = null;

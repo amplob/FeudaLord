@@ -283,6 +283,10 @@ const SIM_MODES = [
       desc: "Set current spins to 0 (debug — exercises the empty-stamina UI)" },
     { id: "fill",     label: "Fill spins",    action: "fill",
       desc: "Restore current spins to maxSpins (debug)" },
+    { id: "toggleUnlimited", label: "Toggle unlimited spins", action: "toggleUnlimited",
+      // Function so the description reflects current state when the picker
+      // is re-opened (the picker rebuilds its body each show).
+      desc: () => `currently: ${gameState?.unlimitedSpins ? "unlimited ∞" : "limited"} — tap to switch` },
     { id: "daily15s", label: "Daily login in 15s", action: "daily15s",
       desc: "Schedules the daily blessing to be claimable 15 seconds from now" },
 ];
@@ -310,49 +314,73 @@ function showTestPicker() {
         overlay.addEventListener("click", (e) => {
             if (e.target.id === "testPickerOverlay") overlay.classList.add("hidden");
         });
-
-        const body = document.getElementById("testPickerBody");
-        for (const mode of SIM_MODES) {
-            const btn = document.createElement("button");
-            btn.className = "option";
-            const heading = mode.action
-                ? mode.label
-                : `${mode.label} ${SIM_RUNS}×${SIM_TURNS}`;
-            btn.innerHTML = `<strong>${heading}</strong><span style="color:#aaa;font-size:0.9rem;">${mode.desc}</span>`;
-            btn.addEventListener("click", () => {
-                overlay.classList.add("hidden");
-                if (mode.action === "inspect") {
-                    showInvestmentInspector();
-                } else if (mode.action === "deplete") {
-                    if (gameState) {
-                        gameState.spins = 0;
-                        gameState.lastSpinAt = Date.now();
-                        saveState();
-                        if (typeof renderSpinStatus === "function") renderSpinStatus();
-                    }
-                } else if (mode.action === "fill") {
-                    if (gameState) {
-                        gameState.spins = gameState.maxSpins;
-                        gameState.lastSpinAt = Date.now();
-                        saveState();
-                        if (typeof renderSpinStatus === "function") renderSpinStatus();
-                    }
-                } else if (mode.action === "daily15s") {
-                    if (typeof scheduleDailyIn === "function") {
-                        scheduleDailyIn(15);
-                        if (typeof showToast === "function") {
-                            showToast("Daily blessing in 15s.");
-                        }
-                    }
-                } else {
-                    showSimResults(simulateMultipleRuns(SIM_RUNS, SIM_TURNS, mode.filter));
-                }
-            });
-            body.appendChild(btn);
-        }
     }
 
+    // Rebuild the body every open so dynamic descriptions (e.g. the
+    // unlimited-spins toggle) reflect current state.
+    renderTestPickerBody(overlay);
     overlay.classList.remove("hidden");
+}
+
+function renderTestPickerBody(overlay) {
+    const body = document.getElementById("testPickerBody");
+    if (!body) return;
+    body.innerHTML = "";
+    for (const mode of SIM_MODES) {
+        const btn = document.createElement("button");
+        btn.className = "option";
+        const heading = mode.action
+            ? mode.label
+            : `${mode.label} ${SIM_RUNS}×${SIM_TURNS}`;
+        const desc = typeof mode.desc === "function" ? mode.desc() : mode.desc;
+        btn.innerHTML = `<strong>${heading}</strong><span style="color:#aaa;font-size:0.9rem;">${desc}</span>`;
+        btn.addEventListener("click", () => {
+            overlay.classList.add("hidden");
+            if (mode.action === "inspect") {
+                showInvestmentInspector();
+            } else if (mode.action === "deplete") {
+                if (gameState) {
+                    gameState.spins = 0;
+                    gameState.lastSpinAt = Date.now();
+                    saveState();
+                    if (typeof renderSpinStatus === "function") renderSpinStatus();
+                }
+            } else if (mode.action === "fill") {
+                if (gameState) {
+                    gameState.spins = gameState.maxSpins;
+                    gameState.lastSpinAt = Date.now();
+                    saveState();
+                    if (typeof renderSpinStatus === "function") renderSpinStatus();
+                }
+            } else if (mode.action === "toggleUnlimited") {
+                if (gameState) {
+                    gameState.unlimitedSpins = !gameState.unlimitedSpins;
+                    if (gameState.unlimitedSpins) {
+                        gameState.spins = gameState.maxSpins;
+                    }
+                    gameState.lastSpinAt = Date.now();
+                    saveState();
+                    if (typeof renderSpinStatus === "function") renderSpinStatus();
+                    if (typeof refreshSpinShop === "function") refreshSpinShop();
+                    if (typeof showToast === "function") {
+                        showToast(gameState.unlimitedSpins
+                            ? "🕵️ Unlimited spins on."
+                            : "Unlimited spins off.");
+                    }
+                }
+            } else if (mode.action === "daily15s") {
+                if (typeof scheduleDailyIn === "function") {
+                    scheduleDailyIn(15);
+                    if (typeof showToast === "function") {
+                        showToast("Daily blessing in 15s.");
+                    }
+                }
+            } else {
+                showSimResults(simulateMultipleRuns(SIM_RUNS, SIM_TURNS, mode.filter));
+            }
+        });
+        body.appendChild(btn);
+    }
 }
 
 // -----------------------------------------------------

@@ -1728,7 +1728,8 @@ button.link:hover {
     filter: grayscale(1);
 }
 
-/* Spin stamina counter (under the wheel). */
+/* Spin stamina counter (under the wheel). Doubles as the entry point to
+   the Spin Shop overlay — it's a button, hover/active state included. */
 .spin-status {
     font-family: "Cinzel", serif;
     font-size: 0.95rem;
@@ -1741,16 +1742,191 @@ button.link:hover {
     text-align: center;
     box-shadow: var(--shadow);
     margin-top: 4px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+}
+
+.spin-status:hover {
+    border-color: var(--accent);
+}
+
+.spin-status:active {
+    transform: translateY(1px);
 }
 
 .spin-status.empty {
     color: var(--danger);
     border-color: var(--danger);
+    animation: spinStatusEmpty 1.6s ease-in-out infinite;
+}
+
+@keyframes spinStatusEmpty {
+    0%, 100% { box-shadow: var(--shadow); }
+    50%      { box-shadow: var(--shadow), 0 0 0 2px rgba(155,44,44,0.35); }
 }
 
 .spin-center.no-spins {
     opacity: 0.55;
     cursor: not-allowed;
+}
+
+/* Spin Shop overlay — opened from #spinStatus or auto when SPIN is tapped
+   with 0 spins. Two CTAs: free ad refill, paid unlimited deal. */
+.spin-shop-overlay {
+    background: rgba(10, 8, 6, 0.92);
+    z-index: 200;
+}
+
+.spin-shop-content {
+    max-width: 420px;
+    width: 95%;
+    padding: 20px 22px 22px;
+}
+
+.spin-shop-status {
+    text-align: center;
+    margin: 4px 0 16px;
+}
+
+.spin-shop-status .status-line {
+    font-family: "Cinzel", serif;
+    font-size: 1.05rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+}
+
+.spin-shop-status .status-line.muted {
+    margin-top: 2px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+}
+
+.shop-offer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+    font-family: "Crimson Text", Georgia, serif;
+    transition: border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.shop-offer:hover {
+    transform: translateY(-1px);
+}
+
+.shop-offer:active {
+    transform: translateY(1px);
+}
+
+.shop-offer:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.shop-offer .offer-icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+.shop-offer .offer-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.shop-offer .offer-title {
+    font-family: "Cinzel", serif;
+    font-size: 1rem;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.shop-offer .offer-desc {
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.3;
+}
+
+.shop-offer .offer-tag {
+    flex: 0 0 auto;
+    font-family: "Cinzel", serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 6px;
+    letter-spacing: 1px;
+}
+
+.shop-offer .offer-tag-free {
+    background: rgba(46, 125, 50, 0.18);
+    color: var(--success);
+    border: 1px solid rgba(46, 125, 50, 0.5);
+}
+
+.shop-offer .offer-tag-premium {
+    background: rgba(212, 175, 55, 0.16);
+    color: var(--accent);
+    border: 1px solid rgba(212, 175, 55, 0.5);
+}
+
+/* Free ad: cool & approachable. */
+.shop-offer.ad-offer:hover {
+    border-color: var(--success);
+    box-shadow: 0 0 14px rgba(46, 125, 50, 0.25);
+}
+
+/* Spy deal: dim, mysterious. Tilted slightly to feel "off-the-record". */
+.shop-offer.spy-offer {
+    background: linear-gradient(160deg, #1d1814 0%, #2a221a 60%, #1d1814 100%);
+    border-color: #3d3228;
+    transform: rotate(-0.6deg);
+}
+
+.shop-offer.spy-offer:hover {
+    transform: rotate(0deg) translateY(-1px);
+    border-color: var(--accent);
+    box-shadow: 0 0 16px rgba(212, 175, 55, 0.35);
+}
+
+.shop-offer.spy-offer .offer-icon {
+    font-size: 2.2rem;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6));
+    transition: transform 0.2s ease;
+}
+
+.shop-offer.spy-offer:hover .offer-icon {
+    transform: rotate(-8deg) scale(1.08);
+}
+
+.shop-offer.spy-offer .offer-title {
+    font-style: italic;
+    color: #e0c870;
+}
+
+.spy-aside {
+    display: block;
+    margin-top: 4px;
+    font-style: italic;
+    color: var(--text-dim);
+    font-size: 0.82rem;
+}
+
+.spin-shop-footnote {
+    margin: 10px 0 0;
+    text-align: center;
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 0.85rem;
 }
 
 /* Investment inspector rows (debug) */

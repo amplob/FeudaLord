@@ -106,7 +106,8 @@
                         <button id="spinButton" class="spin-center">SPIN</button>
                     </div>
                 </div>
-                <div id="spinStatus" class="spin-status" aria-live="polite"></div>
+                <button id="spinStatus" class="spin-status" type="button"
+                        aria-live="polite" aria-label="Open the spin shop"></button>
                 <!-- Daily login bonus button. Lives on the wheel page so it
                      vanishes with the page. JS toggles .ready / .dim. -->
                 <button id="dailyButton" class="daily-button dim" type="button"
@@ -187,6 +188,49 @@
             </div>
         </div>
 
+        <!-- Spin Shop Overlay — opened from the spin counter or when SPIN
+             is tapped with 0 spins. Two CTAs: a free ad refill and a
+             one-time "buy me a coffee" deal that links to an external
+             platform and unlocks unlimited spins. -->
+        <div class="overlay spin-shop-overlay hidden" id="spinShopOverlay">
+            <div class="overlay-content spin-shop-content">
+                <div class="overlay-header">
+                    <h2>⚡ Spin Shop</h2>
+                    <button class="close-btn" id="spinShopClose">✕</button>
+                </div>
+
+                <div class="spin-shop-status" id="spinShopStatus">
+                    <div class="status-line"><span id="spinShopCount">0 / 30</span> spins</div>
+                    <div class="status-line muted" id="spinShopRegen">Regenerating…</div>
+                </div>
+
+                <button class="shop-offer ad-offer" id="watchAdButton" type="button">
+                    <div class="offer-icon">🎬</div>
+                    <div class="offer-body">
+                        <div class="offer-title">Watch a short ad</div>
+                        <div class="offer-desc">Refill back to <strong>30 / 30</strong> spins.</div>
+                    </div>
+                    <div class="offer-tag offer-tag-free">Free</div>
+                </button>
+
+                <button class="shop-offer spy-offer" id="spyDealButton" type="button">
+                    <div class="offer-icon">🕵️</div>
+                    <div class="offer-body">
+                        <div class="offer-title">Pssst… fancy a deal?</div>
+                        <div class="offer-desc">
+                            Buy me a coffee, get <strong>unlimited spins forever</strong>.
+                            <span class="spy-aside">*opens trench coat*</span>
+                        </div>
+                    </div>
+                    <div class="offer-tag offer-tag-premium">€1.99</div>
+                </button>
+
+                <p class="spin-shop-footnote" id="spinShopUnlimitedNote" hidden>
+                    🕵️ The deal is sealed — spins are unlimited, friend.
+                </p>
+            </div>
+        </div>
+
         <!-- Realm Overlay (landscape view of built structures) -->
         <div class="overlay realm-overlay hidden" id="realmOverlay">
             <div class="overlay-content realm-content">
@@ -232,6 +276,7 @@
         <script src="js/ui.js"></script>
         <script src="js/stats.js"></script>
         <script src="js/daily.js"></script>
+        <script src="js/spinShop.js"></script>
         <script src="js/game.js"></script>
         <script src="js/debug.js"></script>
     </body>
