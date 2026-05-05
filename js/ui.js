@@ -17,6 +17,13 @@ function updateResourceBar(state) {
     const turnEl = document.getElementById("kingdomTurn");
     if (turnEl) turnEl.textContent = state.turn;
 
+    // Mark cells whose resource is in cascade decay (<= 0) so the player
+    // can see at a glance why their turn-start toast is firing.
+    for (const res of ["gold", "food", "manpower", "favor"]) {
+        const cell = document.querySelector(`.resource[data-resource="${res}"]`);
+        if (cell) cell.classList.toggle("in-decay", state.resources[res] <= 0);
+    }
+
     updateIncomeIndicators();
 }
 

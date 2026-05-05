@@ -62,6 +62,12 @@ const defaultState = {
     // Per-turn snapshot log for the Stats page chart. One entry per turn:
     // { turn, resources: {...}, income: {...} }. Capped to HISTORY_MAX entries.
     history: [],
+
+    // Which decay cascades have already been announced to the player. Keys
+    // are trigger resource ids ("gold" / "food" / "manpower"); presence
+    // means the rising-edge toast has fired and we shouldn't repeat it
+    // until the resource recovers above zero.
+    activeDecays: {},
 };
 
 let gameState = null;
@@ -269,14 +275,73 @@ function handleSpin() {
         recordSpin();
         processEvents();
         applyPassiveIncome();
+        // Cascade decay fires AFTER passive income has had a chance to refill
+        // — only resources still ≤ 0 then take a hit.
+        applyDecayEffects();
         gameState.turn += 1;
         recordTurnSnapshot();
         updateResourceBar(gameState);
         renderSpinStatus();
+        // Decay or events may have crossed the favor threshold. If so, end
+        // the run instead of presenting a card.
+        verifyState();
+        if (gameState.gameOver) {
+            saveState();
+            return;
+        }
         showAuguryOverlay();
         presentAugury(segment);   // sets gameState.pending (or clears it on "nothing happens")
         saveState();              // single commit for the entire turn
     });
+}
+
+// =====================================================
+// DECAY (negative-resource cascade)
+// =====================================================
+// When a resource sits at ≤ 0 the realm bleeds: each rule below applies
+// its penalty every turn for as long as the trigger resource stays
+// negative. Rules are independent and stack — being broke and starving at
+// the same time inflicts both penalties this turn.
+//
+// The first time a cascade activates we toast the player so they understand
+// what's happening; subsequent turns apply silently. When the resource
+// recovers above zero we silently clear the announcement so the next dip
+// triggers a fresh notification.
+
+const DECAY_RULES = {
+    gold: {
+        effects: { food: -2, manpower: -0.33, favor: -0.5 },
+        message: "💸 Empty coffers — the realm bleeds: −2 food, −0.33 manpower, −0.5 favor / turn.",
+    },
+    food: {
+        effects: { manpower: -1 },
+        message: "🥀 Famine claims the weak: −1 manpower / turn.",
+    },
+    manpower: {
+        effects: { gold: -1, food: -1, favor: -0.5 },
+        message: "🏚️ Few hands left to till and defend: −1 gold, −1 food, −0.5 favor / turn.",
+    },
+};
+
+function applyDecayEffects() {
+    if (!gameState.activeDecays) gameState.activeDecays = {};
+    for (const [trigger, rule] of Object.entries(DECAY_RULES)) {
+        const isActive = gameState.resources[trigger] <= 0;
+        if (isActive) {
+            // Rising-edge announcement — once per cascade entry.
+            if (!gameState.activeDecays[trigger]) {
+                showToast(rule.message);
+                gameState.activeDecays[trigger] = true;
+            }
+            // Penalty applies every turn while the cascade is active. No
+            // reason argument so the per-turn drain stays silent.
+            applyResourceChange(rule.effects);
+        } else if (gameState.activeDecays[trigger]) {
+            // Recovery is silent — no toast, just clear the announce flag so
+            // the next dip will re-announce.
+            delete gameState.activeDecays[trigger];
+        }
+    }
 }
 
 function processEvents() {
@@ -561,25 +626,16 @@ function negateEffects(effects) {
 // =====================================================
 
 function verifyState() {
-    const { gold, food, manpower, favor } = gameState.resources;
-    
+    const favor = gameState.resources.favor;
+
     if (favor >= 500) {
         endGame("🎉 The people crown you Duke!");
         return;
     }
-    if (gold < 0) {
-        endGame("💸 Bankruptcy! You lose your lands.");
-        return;
-    }
-    if (food < 0) {
-        endGame("🥀 Famine! The people starve.");
-        return;
-    }
-    if (manpower <= 0) {
-        endGame("🏚️ Your lands are abandoned.");
-        return;
-    }
-    if (favor <= -50) {
+    // Only favor ends the run now. Other resources going negative inflict the
+    // cascade penalties from applyDecayEffects, which over time push favor
+    // toward this threshold.
+    if (favor < 0) {
         endGame("⚔️ Revolution! The people overthrow you.");
     }
 }

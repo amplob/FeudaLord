@@ -199,6 +199,14 @@ body {
     flex-wrap: wrap;
 }
 
+/* Cascade-decay state — the resource is at/below zero and bleeding others
+   each turn. Red border + tinted text + soft danger glow. */
+.resource.in-decay {
+    border-color: var(--danger);
+    color: var(--danger);
+    box-shadow: var(--shadow), 0 0 12px rgba(155, 44, 44, 0.45);
+}
+
 .income-indicator {
     font-size: 0.85rem;
     font-weight: 700;
