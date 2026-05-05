@@ -82,6 +82,7 @@ function initGame() {
     document.getElementById("spinButton").addEventListener("click", handleSpin);
     document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
     document.getElementById("realmClose").addEventListener("click", hideRealmOverlay);
+    document.getElementById("statsClose").addEventListener("click", hideStatsOverlay);
     document.getElementById("auguryOptions").addEventListener("click", handleAuguryAction);
     wireSidebar();
 
@@ -91,6 +92,9 @@ function initGame() {
     });
     document.getElementById('realmOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'realmOverlay') hideRealmOverlay();
+    });
+    document.getElementById('statsOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'statsOverlay') hideStatsOverlay();
     });
     
     // Emergency close button for stuck augury
@@ -228,6 +232,7 @@ function handleSpin() {
     spinWheel((segment) => {
         setSpinButtonState(false);
         gameState.spins -= 1;
+        recordSpin();
         processEvents();
         applyPassiveIncome();
         gameState.turn += 1;
@@ -491,6 +496,7 @@ function applyResourceChange(change, reason) {
     });
 
     updateResourceBar(gameState);
+    updateBestResources(gameState.resources);
 
     if (reason) {
         showToast(reason);
@@ -544,10 +550,20 @@ function verifyState() {
 }
 
 function endGame(message) {
+    const wasAlreadyOver = gameState.gameOver;
     gameState.gameOver = true;
     disableSpinButton();
+
+    // Record the game's outcome in player stats — only the first time we
+    // transition into game-over (verifyState can fire on every resource
+    // change, so this guard prevents duplicate counting).
+    if (!wasAlreadyOver) {
+        const won = (gameState.resources?.favor || 0) >= 500;
+        recordGameEnd(won, gameState.kingdomId);
+    }
+
     saveState();
-    
+
     showAuguryOverlay();
     renderGameOver(message);
 }
@@ -676,6 +692,7 @@ function wireSidebar() {
             case "spin":    showWheelPage(); break;
             case "kingdom": showKingdomPage(); break;
             case "realm":   toggleRealmPanel(); break;
+            case "stats":   showStatsOverlay(); break;
             case "menu":    returnToMainMenu(); break;
             case "test":
                 if (typeof showTestPicker === "function") showTestPicker();

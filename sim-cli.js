@@ -64,6 +64,7 @@ const ctx = vm.createContext({
 });
 
 const files = [
+    "js/data/kingdoms.js",
     "js/data/cards-investment.js",
     "js/data/cards-decision.js",
     "js/data/cards-event.js",
@@ -71,6 +72,7 @@ const files = [
     "js/wheel.js",
     "js/trade.js",
     "js/ui.js",
+    "js/stats.js",
     "js/game.js",
     "js/debug.js",
 ];

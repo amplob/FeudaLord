@@ -59,6 +59,7 @@
                 <button class="sidebar-item" data-action="spin">🎲 Spin</button>
                 <button class="sidebar-item" data-action="kingdom">🏰 Kingdom</button>
                 <button class="sidebar-item" data-action="realm">🗺️ Realm</button>
+                <button class="sidebar-item" data-action="stats">📊 Stats</button>
                 <button class="sidebar-item" data-action="menu">🏠 Main Menu</button>
             </aside>
             <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
@@ -171,6 +172,16 @@
             </div>
         </div>
 
+        <!-- Stats / Records overlay -->
+        <div class="overlay stats-overlay hidden" id="statsOverlay">
+            <div class="overlay-content stats-content">
+                <div class="overlay-header">
+                    <h2>📊 Stats</h2>
+                    <button class="close-btn" id="statsClose">✕</button>
+                </div>
+                <div id="statsBody" class="stats-body"></div>
+            </div>
+        </div>
 
         <div id="toastContainer" class="toast-container"></div>
 
@@ -193,6 +204,7 @@
         <script src="js/wheel.js"></script>
         <script src="js/trade.js"></script>
         <script src="js/ui.js"></script>
+        <script src="js/stats.js"></script>
         <script src="js/game.js"></script>
         <script src="js/debug.js"></script>
     </body>

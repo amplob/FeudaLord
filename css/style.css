@@ -1355,6 +1355,60 @@ button.link:hover {
     font-size: 1.05rem;
 }
 
+/* Stats overlay */
+.stats-overlay {
+    background: rgba(10, 8, 6, 0.96);
+    z-index: 150;
+}
+
+.stats-content {
+    max-width: 480px;
+    width: 95%;
+}
+
+.stats-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.stats-block h3 {
+    margin: 0 0 8px;
+    font-family: "Cinzel", serif;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--panel-border);
+    color: var(--text);
+}
+
+.stats-table tr:last-child td {
+    border-bottom: none;
+}
+
+.stats-table td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.stats-table td.muted {
+    color: var(--text-dim);
+    text-align: center;
+    font-style: italic;
+}
+
 /* Realm overlay (landscape view of built structures) */
 .realm-overlay {
     background: rgba(10, 8, 6, 0.98);
