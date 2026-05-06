@@ -17,29 +17,31 @@
 // Operations are no-ops when the user isn't signed in. Failures log to
 // console but don't block gameplay (localStorage is the source of truth).
 //
-// Cloud writes are *debounced*: every saveState() call schedules a flush
-// CLOUD_DEBOUNCE_MS later, and the timer resets on each new save so a
-// burst of saves only produces one cloud write at the end. We also flush
-// eagerly when the tab is hidden (visibilitychange / pagehide).
+// Web policy: every cloudSaveState() flushes immediately (no debounce),
+// and every visibilitychange→shown re-pulls from the cloud. This makes
+// cross-device debugging match the natural mental model: spin on phone,
+// open desktop tab, see the new state.
+// Native policy: still no debounce, integrity-event flushes only.
 // =====================================================
 
 const SAVES_COLLECTION = "saves";
-const CLOUD_DEBOUNCE_MS = 30000;
 
-let _cloudTimer = null;
+let _cloudFlushInFlight = false;
 const _dirtyKingdoms = new Set();
 
 // Push the dirty kingdoms' localStorage slots → Firestore. Reads localStorage
 // at flush time so we always send the freshest snapshot. Uses set with merge
 // so untouched kingdom slots stay intact.
 async function flushCloudSave() {
-    if (_cloudTimer) { clearTimeout(_cloudTimer); _cloudTimer = null; }
     if (_dirtyKingdoms.size === 0) return;
     if (typeof currentUser === "undefined" || !currentUser) return;
     if (typeof fbDb === "undefined") return;
+    if (_cloudFlushInFlight) return; // a flush is already running; it'll pick up new dirty entries on its next tick if we re-call after it resolves
+    _cloudFlushInFlight = true;
 
     const updates = {};
-    for (const kingdomId of _dirtyKingdoms) {
+    const batch = Array.from(_dirtyKingdoms);
+    for (const kingdomId of batch) {
         const stored = localStorage.getItem(storageKeyFor(kingdomId));
         if (!stored) continue;
         let saveSeq = 0;
@@ -48,34 +50,32 @@ async function flushCloudSave() {
         updates[`saveSeqs.${kingdomId}`] = saveSeq;
     }
     updates.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-    _dirtyKingdoms.clear();
 
     try {
         await fbDb.collection(SAVES_COLLECTION).doc(currentUser.uid).set(updates, { merge: true });
+        // Only clear the entries we actually flushed; any new dirty entries
+        // queued during the await are kept for the next call.
+        for (const kid of batch) _dirtyKingdoms.delete(kid);
     } catch (e) {
         console.error("[cloud] save failed:", e);
+    } finally {
+        _cloudFlushInFlight = false;
     }
 }
 
-// Mark the active kingdom dirty and (on web) schedule a debounced flush.
-// Per-platform strategy:
-//   web-desktop / web-mobile : debounce CLOUD_DEBOUNCE_MS, plus an eager
-//       flush on visibilitychange / pagehide. Browser localStorage can be
-//       evicted, so a regular trickle to the cloud is the backup.
-//   capacitor-android        : no debounce. Local storage on native sits
-//       behind SharedPreferences and only clears on uninstall, so the
-//       cloud is just for cross-device. Flushes only fire at integrity
-//       events (visibility-hide, sign-in/out, game-over, kingdom switch).
+// Mark the active kingdom dirty and flush immediately (web) or wait for an
+// integrity-event flush (native). Per-turn read/write makes cross-device
+// debugging straightforward.
 function cloudSaveState(/* state */) {
     if (typeof currentUser === "undefined" || !currentUser) return;
     if (!gameState || !gameState.kingdomId) return;
     _dirtyKingdoms.add(gameState.kingdomId);
 
-    // On native, skip the debounce timer — integrity-event flushes carry it.
+    // On native, skip eager flushes — integrity events (visibility-hide,
+    // sign-in/out, game-over, kingdom switch) carry the writes.
     if (typeof IS_NATIVE !== "undefined" && IS_NATIVE) return;
 
-    if (_cloudTimer) clearTimeout(_cloudTimer);
-    _cloudTimer = setTimeout(flushCloudSave, CLOUD_DEBOUNCE_MS);
+    flushCloudSave();
 }
 
 // Delete a single kingdom slot from the cloud doc. Used by the per-kingdom
@@ -94,40 +94,23 @@ async function cloudDeleteKingdom(kingdomId) {
     }
 }
 
-// Force-flush when the tab loses visibility or unloads. visibilitychange is
-// the most reliable signal on mobile (browsers can kill backgrounded tabs
-// without firing beforeunload); pagehide covers same-tab navigation.
-if (typeof document !== "undefined") {
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden && _dirtyKingdoms.size > 0) flushCloudSave();
-    });
-    window.addEventListener("pagehide", () => {
-        if (_dirtyKingdoms.size > 0) flushCloudSave();
-    });
-}
+// =====================================================
+// PULL FROM CLOUD
+// =====================================================
+// pullCloudState(uid) reads the cloud doc and overwrites localStorage for
+// any kingdom whose cloud saveSeq is strictly newer than local. Returns
+// true when at least one slot was overwritten — callers may want to reload
+// the page so the in-memory state matches the new localStorage.
 
-// On sign-in, reconcile each kingdom slot independently:
-//   cloud.saveSeqs[k] > local.saveSeq   → pull cloud into local
-//   local.saveSeq    > cloud.saveSeqs[k] → mark local dirty (push on flush)
-// Migrates legacy single-state docs (`{state, saveSeq}`) into the new map.
-let _lastSyncedUid = null;
-
-async function syncOnSignIn(user) {
-    if (!user) {
-        _lastSyncedUid = null;
-        return;
-    }
-    if (user.uid === _lastSyncedUid) return;
-    _lastSyncedUid = user.uid;
-
-    if (typeof fbDb === "undefined") return;
+async function pullCloudState(uid) {
+    if (typeof fbDb === "undefined") return false;
 
     let cloudDoc;
     try {
-        cloudDoc = await fbDb.collection(SAVES_COLLECTION).doc(user.uid).get();
+        cloudDoc = await fbDb.collection(SAVES_COLLECTION).doc(uid).get();
     } catch (e) {
-        console.error("[cloud] sync read failed:", e);
-        return;
+        console.error("[cloud] pull failed:", e);
+        return false;
     }
 
     let cloudData = cloudDoc.exists ? cloudDoc.data() : null;
@@ -155,6 +138,7 @@ async function syncOnSignIn(user) {
         ...((typeof KINGDOMS !== "undefined") ? KINGDOMS.map(k => k.id) : []),
     ]);
 
+    let pulled = false;
     for (const kid of allKingdomIds) {
         const localStr = localStorage.getItem(storageKeyFor(kid));
         let localSeq = -1;
@@ -166,12 +150,51 @@ async function syncOnSignIn(user) {
         if (cloudSeq > localSeq) {
             localStorage.setItem(storageKeyFor(kid), cloudStates[kid]);
             console.log(`[cloud] pulled ${kid} (cloudSeq=${cloudSeq} > localSeq=${localSeq})`);
+            pulled = true;
         } else if (localSeq > cloudSeq) {
             _dirtyKingdoms.add(kid);
             console.log(`[cloud] queued ${kid} push (localSeq=${localSeq} > cloudSeq=${cloudSeq})`);
         }
     }
+    return pulled;
+}
 
+// Force-flush when the tab loses visibility or unloads, and pull when the
+// tab becomes visible again — that's how a different-device update reaches
+// this tab without a manual refresh.
+if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", async () => {
+        if (document.hidden) {
+            if (_dirtyKingdoms.size > 0) flushCloudSave();
+            return;
+        }
+        if (typeof currentUser !== "undefined" && currentUser) {
+            const changed = await pullCloudState(currentUser.uid);
+            // Reload so in-memory gameState matches the freshly-pulled local
+            // storage. Only fires when the cloud actually had something newer.
+            if (changed) location.reload();
+            else if (_dirtyKingdoms.size > 0) flushCloudSave();
+        }
+    });
+    window.addEventListener("pagehide", () => {
+        if (_dirtyKingdoms.size > 0) flushCloudSave();
+    });
+}
+
+// On sign-in, reconcile each kingdom slot independently:
+//   cloud.saveSeqs[k] > local.saveSeq   → pull cloud into local
+//   local.saveSeq    > cloud.saveSeqs[k] → mark local dirty (push on flush)
+let _lastSyncedUid = null;
+
+async function syncOnSignIn(user) {
+    if (!user) {
+        _lastSyncedUid = null;
+        return;
+    }
+    if (user.uid === _lastSyncedUid) return;
+    _lastSyncedUid = user.uid;
+
+    await pullCloudState(user.uid);
     if (_dirtyKingdoms.size > 0) {
         await flushCloudSave();
     }

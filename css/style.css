@@ -235,13 +235,14 @@ body {
 }
 
 /* Background variant of the realm canvas: fills the wheel page behind every
-   foreground element. No border, no aspect-ratio constraint, structures
-   stay positioned by percentage so they remap to whatever the section's
-   aspect ratio happens to be. */
-.realm-bg {
+   foreground element. Doubled-class selector so this rule beats the legacy
+   `.realm-canvas` block (which sets position:relative + aspect-ratio 4/3
+   further down in this file). */
+.realm-canvas.realm-bg {
     position: absolute;
     inset: 0;
     width: auto;
+    height: auto;
     aspect-ratio: auto;
     border: none;
     border-radius: 0;
