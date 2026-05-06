@@ -332,7 +332,11 @@ body {
     font-size: 0.95rem;
     letter-spacing: 1px;
     cursor: pointer;
-    box-shadow: 
+    /* The "SPIN" label was getting an I-beam cursor on hover because the
+       button text was selectable. Disable selection so the pointer stays. */
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow:
         0 4px 15px rgba(0,0,0,0.4),
         inset 0 2px 10px rgba(255,255,255,0.3);
     transition: all 0.2s ease;
