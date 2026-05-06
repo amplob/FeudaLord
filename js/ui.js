@@ -179,7 +179,7 @@ function renderProperties() { renderKingdom(); }
 
 // All game-screen pages live side-by-side under #gameScreen; this helper
 // picks one to show and hides the rest so transitions always end clean.
-const GAME_PAGE_IDS = ["wheelPage", "kingdomPage", "statsPage", "realmPage"];
+const GAME_PAGE_IDS = ["wheelPage", "kingdomPage", "statsPage"];
 
 function showGamePage(id) {
     for (const pageId of GAME_PAGE_IDS) {
@@ -188,6 +188,12 @@ function showGamePage(id) {
 }
 
 function showWheelPage() {
+    // Default Wheel view: the spin UI is on, the realm sits in the background.
+    // renderRealm() refreshes the backdrop so newly-built structures show up
+    // when the player returns from an augury or another page.
+    renderRealm();
+    document.getElementById("wheelPage")?.classList.remove("realm-view");
+    syncEyeButton();
     showGamePage("wheelPage");
 }
 
@@ -335,9 +341,31 @@ function renderRealm() {
     }
 }
 
-function showRealmPage() {
+// Sidebar entry: jump to the wheel page in immersive realm-only view (no
+// wheel, no spin, no pointer). Eye button can flip back.
+function showRealmView() {
     renderRealm();
-    showGamePage("realmPage");
+    showGamePage("wheelPage");
+    document.getElementById("wheelPage")?.classList.add("realm-view");
+    syncEyeButton();
+}
+
+// Eye-button toggle: flip between "wheel + realm bg" and "realm only".
+function toggleRealmView() {
+    const page = document.getElementById("wheelPage");
+    if (!page) return;
+    const turningOn = !page.classList.contains("realm-view");
+    if (turningOn) renderRealm();
+    page.classList.toggle("realm-view", turningOn);
+    syncEyeButton();
+}
+
+function syncEyeButton() {
+    const btn = document.getElementById("eyeButton");
+    const page = document.getElementById("wheelPage");
+    if (!btn || !page) return;
+    const on = page.classList.contains("realm-view");
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
 }
 
 // =====================================================

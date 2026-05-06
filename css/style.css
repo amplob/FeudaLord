@@ -229,6 +229,78 @@ body {
     gap: 16px;
     flex: 1;
     justify-content: center;
+    position: relative; /* anchor for .realm-bg, eye/daily buttons */
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+/* Background variant of the realm canvas: fills the wheel page behind every
+   foreground element. No border, no aspect-ratio constraint, structures
+   stay positioned by percentage so they remap to whatever the section's
+   aspect ratio happens to be. */
+.realm-bg {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    aspect-ratio: auto;
+    border: none;
+    border-radius: 0;
+    z-index: 0;
+}
+
+/* Foreground elements over the realm bg: wheel + buttons sit above. */
+.wheel-section .wheel-container,
+.wheel-section #spinStatus,
+.wheel-section .daily-button,
+.wheel-section .eye-button {
+    position: relative;
+    z-index: 2;
+}
+
+/* "Realm view" toggled by the eye button: hides the wheel/spin/pointer/spin-
+   status/daily so the player sees only the landscape. The eye button stays
+   visible (otherwise there'd be no way back). */
+.wheel-section.realm-view .wheel-container,
+.wheel-section.realm-view #spinStatus,
+.wheel-section.realm-view #dailyButton {
+    visibility: hidden;
+}
+
+/* Eye toggle button — same shape as the daily-blessing chip, sits to its
+   left. Pressed state mirrors the daily-button's "ready" pulse direction. */
+.eye-button {
+    position: absolute;
+    right: 70px;          /* daily-button is right:14, ~56px wide → 70 leaves a small gap */
+    bottom: 14px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--panel-border);
+    background: var(--panel);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--text);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    z-index: 10;
+}
+
+.eye-button:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.eye-button[aria-pressed="true"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(212,175,55,0.55), 0 3px 10px rgba(0,0,0,0.4);
+}
+
+.eye-icon {
+    font-size: 1.1rem;
+    line-height: 1;
 }
 
 .wheel-container {
@@ -1722,35 +1794,10 @@ button.link:hover {
     font-size: 1.5rem;
 }
 
-/* Realm page (landscape view of built structures). Lives inside #gameScreen
-   alongside the wheel/kingdom/stats pages and is shown via showRealmPage().
-   The canvas itself is the same shape regardless of kingdom — only the
-   backdrop swap (.realm-canvas[data-kingdom="..."]) differs. */
-.realm-page {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.realm-banner {
-    text-align: center;
-}
-
-.realm-banner h2 {
-    margin: 0 0 4px;
-    font-family: "Cinzel", serif;
-    color: var(--accent);
-    letter-spacing: 1.2px;
-    font-size: 1.3rem;
-}
-
-.realm-banner .hint {
-    color: var(--text-dim);
-    font-size: 0.9rem;
-    margin: 0;
-    font-style: italic;
-}
-
+/* Realm canvas: lives behind the wheel on the wheel page (realm-bg variant)
+   and stretches to fill its container. The default sizing/border below was
+   inherited from the legacy modal layout — overridden by .realm-bg for the
+   integrated view. */
 .realm-canvas {
     position: relative;
     width: 100%;

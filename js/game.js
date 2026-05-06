@@ -128,7 +128,10 @@ function initGame() {
     if (typeof wireSpinShop === "function") wireSpinShop();
     document.getElementById("dailyButton").addEventListener("click", handleDailyClick);
     document.getElementById("dailyContinue").addEventListener("click", hideDailyOverlay);
+    document.getElementById("eyeButton").addEventListener("click", toggleRealmView);
     wireSidebar();
+    // Render the realm landscape behind the wheel on first paint.
+    renderRealm();
 
     // Close overlays on background click
     document.getElementById('tradeOverlay').addEventListener('click', (e) => {
@@ -672,6 +675,10 @@ function endGame(message) {
     }
 
     saveState();
+    // Game-over is an integrity event — push the final state to cloud now
+    // instead of waiting for the debounce timer (no-op on native, which
+    // doesn't schedule one in the first place).
+    if (typeof flushCloudSave === "function") flushCloudSave();
 
     showAuguryOverlay();
     renderGameOver(message);
@@ -810,7 +817,7 @@ function wireSidebar() {
         switch (action) {
             case "spin":    showWheelPage(); break;
             case "kingdom": showKingdomPage(); break;
-            case "realm":   showRealmPage(); break;
+            case "realm":   showRealmView(); break;
             case "stats":   showStatsPage(); break;
             case "menu":    returnToMainMenu(); break;
             case "test":

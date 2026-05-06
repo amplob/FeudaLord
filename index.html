@@ -86,6 +86,11 @@
             </header>
 
             <section class="wheel-section game-page" id="wheelPage">
+                <!-- Realm landscape sits behind the wheel as a backdrop. The
+                     eye button (below) toggles .realm-view on this section,
+                     which hides the wheel/pointer/spin/spin-status/daily so
+                     the player can see the full landscape. -->
+                <div id="realmCanvas" class="realm-canvas realm-bg"></div>
                 <div class="wheel-container">
                     <div class="wheel-pointer" id="wheelPointer">
                         <svg viewBox="0 0 32 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -107,6 +112,12 @@
                 </div>
                 <button id="spinStatus" class="spin-status" type="button"
                         aria-live="polite" aria-label="Open the spin shop"></button>
+                <!-- Eye toggle: hides wheel/spin/pointer to reveal the full
+                     realm landscape. Sits next to the daily-blessing button. -->
+                <button id="eyeButton" class="eye-button" type="button"
+                        aria-label="Toggle realm view" aria-pressed="false">
+                    <span class="eye-icon">👁️</span>
+                </button>
                 <!-- Daily login bonus button. Lives on the wheel page so it
                      vanishes with the page. JS toggles .ready / .dim. -->
                 <button id="dailyButton" class="daily-button dim" type="button"
@@ -165,15 +176,6 @@
                 <div id="statsBody" class="stats-body"></div>
             </section>
 
-            <!-- Realm page: landscape view of built structures, with a per-kingdom
-                 backdrop and structure layout (selected via canvas data-kingdom). -->
-            <section class="realm-page game-page is-hidden" id="realmPage">
-                <div class="realm-banner">
-                    <h2 id="realmTitle">Realm of <span id="realmKingdomName">…</span></h2>
-                    <p id="realmTagline" class="hint"></p>
-                </div>
-                <div id="realmCanvas" class="realm-canvas"></div>
-            </section>
         </main>
 
         <!-- Augury Fullscreen Overlay -->
@@ -258,6 +260,7 @@
         <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+        <script src="js/platform.js"></script>
         <script src="js/firebase-init.js"></script>
         <script src="js/auth.js"></script>
         <script src="js/cloud-save.js"></script>
