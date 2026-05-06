@@ -57,12 +57,23 @@ async function flushCloudSave() {
     }
 }
 
-// Schedule a debounced cloud sync for the active kingdom. Called from
-// saveState() in game.js. Multiple calls within CLOUD_DEBOUNCE_MS coalesce.
+// Mark the active kingdom dirty and (on web) schedule a debounced flush.
+// Per-platform strategy:
+//   web-desktop / web-mobile : debounce CLOUD_DEBOUNCE_MS, plus an eager
+//       flush on visibilitychange / pagehide. Browser localStorage can be
+//       evicted, so a regular trickle to the cloud is the backup.
+//   capacitor-android        : no debounce. Local storage on native sits
+//       behind SharedPreferences and only clears on uninstall, so the
+//       cloud is just for cross-device. Flushes only fire at integrity
+//       events (visibility-hide, sign-in/out, game-over, kingdom switch).
 function cloudSaveState(/* state */) {
     if (typeof currentUser === "undefined" || !currentUser) return;
     if (!gameState || !gameState.kingdomId) return;
     _dirtyKingdoms.add(gameState.kingdomId);
+
+    // On native, skip the debounce timer — integrity-event flushes carry it.
+    if (typeof IS_NATIVE !== "undefined" && IS_NATIVE) return;
+
     if (_cloudTimer) clearTimeout(_cloudTimer);
     _cloudTimer = setTimeout(flushCloudSave, CLOUD_DEBOUNCE_MS);
 }

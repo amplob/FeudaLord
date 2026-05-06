@@ -44,7 +44,10 @@ history is visible.
    force a payment — pick wisely".
 3. **PWA manifest + service worker.** Required for "Add to Home
    Screen" on mobile and the precursor to a Capacitor / Bubblewrap
-   wrapper for the Play Store.
+   wrapper for the Play Store. Platform detection already lives in
+   `js/platform.js` (web-desktop / web-mobile / capacitor-android);
+   `cloudSaveState` already skips the debounce on native, so when the
+   wrap lands the cloud-write savings come for free.
 4. **Game-over screen polish.** Stats screen exists but the loss/win
    modal is still terse. Show turns survived, peak favor, investments
    built, and a clean "Try again" CTA.
