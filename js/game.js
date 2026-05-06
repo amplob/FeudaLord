@@ -2,7 +2,29 @@
 // FEUDAL LORD - GAME LOGIC
 // =====================================================
 
-const STORAGE_KEY = "feudal-lord-save";
+// Each kingdom has its own localStorage slot — switching kingdoms is now a
+// silent save+swap rather than an overwrite. Cloud-save mirrors the same
+// per-kingdom layout into a Firestore map.
+const STORAGE_KEY_PREFIX = "feudal-lord-save";
+const STORAGE_KEY = STORAGE_KEY_PREFIX; // legacy alias (used by syncOnSignIn for migration)
+function storageKeyFor(kingdomId) { return `${STORAGE_KEY_PREFIX}-${kingdomId}`; }
+
+// Move a pre-multi-save single-slot save into its kingdom-specific slot.
+// Runs once on DOMContentLoaded; no-op after that. Quiet on failure.
+function migrateLegacySave() {
+    const legacy = localStorage.getItem(STORAGE_KEY_PREFIX);
+    if (!legacy) return;
+    try {
+        const parsed = JSON.parse(legacy);
+        const kid = parsed.kingdomId || DEFAULT_KINGDOM_ID;
+        const newKey = storageKeyFor(kid);
+        if (!localStorage.getItem(newKey)) {
+            localStorage.setItem(newKey, legacy);
+            console.log(`[migrate] moved legacy save → ${newKey}`);
+        }
+        localStorage.removeItem(STORAGE_KEY_PREFIX);
+    } catch (_) { /* ignore corrupt legacy */ }
+}
 
 // Spin stamina: one spin regenerates every SPIN_REGEN_MS, capped at maxSpins.
 // Achievements / unlocks can grow maxSpins later (held on gameState).
@@ -664,20 +686,19 @@ function endGame(message) {
 // =====================================================
 
 function saveState() {
+    if (!gameState || !gameState.kingdomId) return;
     gameState.cardSystemState = getCardSystemState();
     gameState.saveSeq = (gameState.saveSeq || 0) + 1;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+    localStorage.setItem(storageKeyFor(gameState.kingdomId), JSON.stringify(gameState));
     // Fire-and-forget Firestore mirror. cloud-save.js no-ops when not signed in.
     if (typeof cloudSaveState === "function") cloudSaveState(gameState);
 }
 
-function loadState() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-
-    if (!stored) {
-        return structuredClone(defaultState);
-    }
-
+// Read a kingdom's slot from localStorage. Returns null when there's no
+// save for that kingdom (caller falls back to buildInitialState).
+function loadStateFor(kingdomId) {
+    const stored = localStorage.getItem(storageKeyFor(kingdomId));
+    if (!stored) return null;
     try {
         const parsed = JSON.parse(stored);
         const merged = {
@@ -688,14 +709,22 @@ function loadState() {
                 ...parsed.resources
             }
         };
-        // Migrate legacy saves that predate kingdoms — label them as the
-        // default kingdom so the Kingdom page renders correctly.
-        if (!merged.kingdomId) merged.kingdomId = DEFAULT_KINGDOM_ID;
+        // Defensive: any save without a kingdomId belongs to its slot.
+        if (!merged.kingdomId) merged.kingdomId = kingdomId;
         return merged;
     } catch (error) {
         console.error("Failed to load save:", error);
-        return structuredClone(defaultState);
+        return null;
     }
+}
+
+// Back-compat helper — used only by initGame as a fallback when entering
+// without going through selectKingdom (shouldn't happen in normal flow).
+function loadState() {
+    if (gameState && gameState.kingdomId) {
+        return loadStateFor(gameState.kingdomId) || buildInitialState(gameState.kingdomId);
+    }
+    return structuredClone(defaultState);
 }
 
 function emergencySkipTurn() {
@@ -814,10 +843,13 @@ const MENU_PREFIX = "feudal-lord-menu-";
 let _gameStarted = false;
 
 function wireMenu() {
+    // Move any pre-multi-save localStorage entry to its kingdom slot before
+    // anything else reads from storage.
+    migrateLegacySave();
+
     const musicBtn = document.getElementById("musicToggle");
     const soundBtn = document.getElementById("soundToggle");
     const playBtn = document.getElementById("playButton");
-    const resetBtn = document.getElementById("menuResetButton");
     if (!musicBtn || !soundBtn || !playBtn) return;
 
     const wireToggle = (btn, key) => {
@@ -832,10 +864,8 @@ function wireMenu() {
     wireToggle(soundBtn, "sound");
 
     // Play takes the user to the kingdom selection screen; from there they
-    // pick a kingdom which kicks off (or resumes) the game.
+    // pick a kingdom (and per-kingdom resets live on the kingdom cards).
     playBtn.addEventListener("click", showKingdomSelect);
-
-    if (resetBtn) resetBtn.addEventListener("click", resetFromMenu);
 
     wireKingdomSelect();
     wireAuthUI();
@@ -857,6 +887,13 @@ function wireKingdomSelect() {
     });
 
     list.addEventListener("click", (e) => {
+        // Per-kingdom reset takes precedence over the card click.
+        const resetBtn = e.target.closest("[data-reset]");
+        if (resetBtn) {
+            e.stopPropagation();
+            resetKingdom(resetBtn.dataset.reset);
+            return;
+        }
         const card = e.target.closest(".kingdom-card");
         if (!card) return;
         selectKingdom(card.dataset.kingdomId);
@@ -869,67 +906,55 @@ function showKingdomSelect() {
     renderKingdomList();
 }
 
-// Render the cards. Marks the kingdom currently in localStorage with a
-// "Continue" hint so the player knows which one resumes vs. resets.
+// Render the cards. Each kingdom that has its own save shows a "Continue"
+// hint and a per-kingdom Reset button (the global menu reset is gone now
+// that progress is per-kingdom).
 function renderKingdomList() {
     const list = document.getElementById("kingdomList");
     if (!list) return;
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const savedKingdom = stored
-        ? (() => { try { return JSON.parse(stored).kingdomId; } catch (_) { return null; } })()
-        : null;
 
     list.innerHTML = "";
     KINGDOMS.forEach((k, i) => {
         const r = k.startingResources;
-        const isSaved = savedKingdom === k.id;
-        const card = document.createElement("button");
-        card.className = "kingdom-card";
-        card.dataset.kingdomId = k.id;
+        const hasSave = localStorage.getItem(storageKeyFor(k.id)) !== null;
+        const card = document.createElement("div");
+        card.className = "kingdom-row";
         card.innerHTML = `
-            <div class="kingdom-card-icon">${k.icon}</div>
-            <div class="kingdom-card-body">
-                <div class="kingdom-card-level">Level ${i + 1}${isSaved ? " · Continue" : ""}</div>
-                <h3>${k.name}</h3>
-                <p>${k.description}</p>
-                <div class="kingdom-card-resources">
-                    Start: ${r.gold} 💰  ${r.food} 🌾  ${r.manpower} 👥  ${r.favor} 👑
+            <button class="kingdom-card" data-kingdom-id="${k.id}">
+                <div class="kingdom-card-icon">${k.icon}</div>
+                <div class="kingdom-card-body">
+                    <div class="kingdom-card-level">Level ${i + 1}${hasSave ? " · Continue" : ""}</div>
+                    <h3>${k.name}</h3>
+                    <p>${k.description}</p>
+                    <div class="kingdom-card-resources">
+                        Start: ${r.gold} 💰  ${r.food} 🌾  ${r.manpower} 👥  ${r.favor} 👑
+                    </div>
                 </div>
-            </div>
+            </button>
+            ${hasSave ? `<button class="kingdom-reset" data-reset="${k.id}" title="Reset ${k.name}" aria-label="Reset ${k.name}">🗑️</button>` : ""}
         `;
         list.appendChild(card);
     });
 }
 
-// User picked a kingdom card. If it matches the saved kingdom, resume.
-// If it differs (and a save exists), confirm before overwriting.
+// User picked a kingdom card. Per-kingdom saves now coexist, so we silently
+// commit the current kingdom (if any) and load whatever's stored for the
+// target — no overwrite warning. A fresh kingdom with no save starts new.
 function selectKingdom(kingdomId) {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    let savedKingdom = null;
-    let hasSave = false;
-    try {
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            savedKingdom = parsed.kingdomId || null;
-            hasSave = true;
-        }
-    } catch (_) {}
-    // Legacy null-kingdom saves are treated as the default kingdom so the
-    // user keeps their progress when they pick that one.
-    const effectiveSaved = savedKingdom || (hasSave ? DEFAULT_KINGDOM_ID : null);
-
-    if (effectiveSaved && effectiveSaved !== kingdomId) {
-        const k = getKingdom(kingdomId);
-        if (!confirm(`Start ${k.name}? Your current progress will be replaced.`)) return;
+    // Persist the kingdom we're leaving so its progress isn't lost.
+    if (gameState && gameState.kingdomId && gameState.kingdomId !== kingdomId) {
+        saveState();
+        if (typeof flushCloudSave === "function") flushCloudSave();
     }
 
-    if (effectiveSaved !== kingdomId) {
-        // Fresh state for this kingdom (or first ever play).
-        const fresh = buildInitialState(kingdomId);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    // Load the target's save, or build a fresh state if it's brand new.
+    let next = loadStateFor(kingdomId);
+    if (!next) {
+        next = buildInitialState(kingdomId);
     }
+    gameState = next;
 
-    // Reveal the game and load.
+    // Reveal the game.
     document.getElementById("kingdomSelectScreen").classList.add("is-hidden");
     document.getElementById("gameScreen").classList.remove("is-hidden");
 
@@ -937,16 +962,14 @@ function selectKingdom(kingdomId) {
         _gameStarted = true;
         initGame();
     } else {
-        // Game already initialized this session — re-load the new state.
-        gameState = loadState();
+        // Game already wired this session — refresh UI for the new state.
         restoreCardSystemState(gameState.cardSystemState);
         applyRegen();
         currentPropertyFilter = 'all';
         updateResourceBar(gameState);
         renderKingdom();
         renderSpinStatus();
-        // Trade rates are kingdom-aware; rebuild the panel so the new
-        // canonical values reach the rate display.
+        // Trade rates are kingdom-aware; rebuild for the new canonical values.
         initTradeUI(handleTrade);
         showWheelPage();
         hideAuguryOverlay();
@@ -956,30 +979,31 @@ function selectKingdom(kingdomId) {
         else if (gameState.pending) {
             showAuguryOverlay();
             restorePendingAugury();
+        } else {
+            enableSpinButton();
         }
         saveState();
     }
 }
 
-// Wipe all save state from the entry screen. If the game has already been
-// initialized this session (Play was clicked), delegate to resetGame() so the
-// in-memory state and visible UI both reset; otherwise clear localStorage and
-// the per-user Firestore doc directly.
-async function resetFromMenu() {
-    if (!confirm("Reset all progress? This deletes your save and starts fresh.")) return;
-    if (gameState) {
-        resetGame(); // in-place reset; saveState() inside writes defaults to local + cloud.
-    } else {
-        localStorage.removeItem(STORAGE_KEY);
-        if (typeof currentUser !== "undefined" && currentUser && typeof fbDb !== "undefined") {
-            try {
-                await fbDb.collection(SAVES_COLLECTION).doc(currentUser.uid).delete();
-            } catch (e) {
-                console.error("[reset] cloud delete failed:", e);
-            }
-        }
+// Wipe a single kingdom's save (localStorage + cloud). Triggered by the 🗑️
+// on the kingdom selection card. If the kingdom is currently loaded, the
+// in-memory gameState and visible UI also reset to that kingdom's defaults.
+async function resetKingdom(kingdomId) {
+    const k = getKingdom(kingdomId);
+    if (!confirm(`Reset ${k.name}? Your save for this kingdom will be deleted.`)) return;
+
+    localStorage.removeItem(storageKeyFor(kingdomId));
+    if (typeof cloudDeleteKingdom === "function") {
+        try { await cloudDeleteKingdom(kingdomId); } catch (_) {}
     }
-    alert("Progress reset.");
+
+    if (gameState && gameState.kingdomId === kingdomId) {
+        gameState = buildInitialState(kingdomId);
+        if (typeof resetCardSystem === "function") resetCardSystem();
+    }
+
+    renderKingdomList();
 }
 
 // Reflect auth state on the menu: either a "Sign in with Google" button or
