@@ -1722,15 +1722,33 @@ button.link:hover {
     font-size: 1.5rem;
 }
 
-/* Realm overlay (landscape view of built structures) */
-.realm-overlay {
-    background: rgba(10, 8, 6, 0.98);
-    z-index: 150;
+/* Realm page (landscape view of built structures). Lives inside #gameScreen
+   alongside the wheel/kingdom/stats pages and is shown via showRealmPage().
+   The canvas itself is the same shape regardless of kingdom — only the
+   backdrop swap (.realm-canvas[data-kingdom="..."]) differs. */
+.realm-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
-.realm-content {
-    max-width: 720px;
-    width: 95%;
+.realm-banner {
+    text-align: center;
+}
+
+.realm-banner h2 {
+    margin: 0 0 4px;
+    font-family: "Cinzel", serif;
+    color: var(--accent);
+    letter-spacing: 1.2px;
+    font-size: 1.3rem;
+}
+
+.realm-banner .hint {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin: 0;
+    font-style: italic;
 }
 
 .realm-canvas {
@@ -1740,6 +1758,8 @@ button.link:hover {
     border: 2px solid var(--panel-border);
     border-radius: 8px;
     overflow: hidden;
+    /* Default: greenvale palette (lush valley → river). Per-kingdom rules
+       below override this. */
     background: linear-gradient(180deg,
         #6e8caf 0%,         /* sky */
         #6e8caf 22%,
@@ -1749,6 +1769,60 @@ button.link:hover {
         #5b7e2b 70%,
         #3b5998 78%,        /* river edge */
         #2c4174 100%);      /* deep water */
+}
+
+/* Greenvale — lush, sunlit, plenty of green and a wide river. */
+.realm-canvas[data-kingdom="greenvale"] {
+    background: linear-gradient(180deg,
+        #a3c4dd 0%,         /* warm pale sky */
+        #a3c4dd 20%,
+        #4d6b3c 20%,        /* hilly tree-line */
+        #8aa05a 30%,        /* sunny meadow */
+        #6f9444 60%,
+        #4f7e2c 73%,
+        #3b5998 80%,        /* river */
+        #1f3060 100%);
+}
+
+/* Rivermark — bustling river port: cool sky, tall cliffs, wide blue water. */
+.realm-canvas[data-kingdom="rivermark"] {
+    background: linear-gradient(180deg,
+        #aac7df 0%,         /* hazy port sky */
+        #aac7df 18%,
+        #6c5d48 18%,        /* coastal cliff shadow */
+        #b6a087 28%,        /* sun-warmed cliff */
+        #8aa05a 38%,        /* short grass */
+        #6e8e44 52%,
+        #2f5278 60%,        /* harbour */
+        #244562 80%,
+        #142b4a 100%);      /* deep blue */
+}
+
+/* Stonehold — spartan keep on rocky soil: stormy sky, gray crags, sparse. */
+.realm-canvas[data-kingdom="stonehold"] {
+    background: linear-gradient(180deg,
+        #6e7785 0%,         /* overcast sky */
+        #6e7785 22%,
+        #38343a 22%,        /* mountain shadow */
+        #6f6760 32%,        /* rock face */
+        #8a7e72 42%,        /* talus / scree */
+        #69605a 60%,        /* high barren */
+        #4f5a55 80%,        /* slate riverbed */
+        #2e3737 100%);
+}
+
+/* Wolfsedge — frontier outpost on the wild marches: dusk light, snowy
+   peaks, dark woods, icy river. */
+.realm-canvas[data-kingdom="wolfsedge"] {
+    background: linear-gradient(180deg,
+        #404868 0%,         /* dusk sky */
+        #404868 18%,
+        #d4dde9 18%,        /* snowy peak band */
+        #8895a8 26%,        /* shadowed slope */
+        #2c3a2c 38%,        /* dark pine forest */
+        #1f3024 56%,
+        #44525c 76%,        /* icy river */
+        #1a2730 100%);
 }
 
 .realm-structure {

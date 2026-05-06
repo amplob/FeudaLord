@@ -179,7 +179,7 @@ function renderProperties() { renderKingdom(); }
 
 // All game-screen pages live side-by-side under #gameScreen; this helper
 // picks one to show and hides the rest so transitions always end clean.
-const GAME_PAGE_IDS = ["wheelPage", "kingdomPage", "statsPage"];
+const GAME_PAGE_IDS = ["wheelPage", "kingdomPage", "statsPage", "realmPage"];
 
 function showGamePage(id) {
     for (const pageId of GAME_PAGE_IDS) {
@@ -224,43 +224,106 @@ function hideTradeOverlay() {
 
 
 // =====================================================
-// UI - Realm (landscape view)
+// UI - Realm (per-kingdom landscape page)
 // =====================================================
 //
-// Each investment has a fixed coordinate on a 4:3 canvas (percentages of
-// width/height, anchored at the icon's center). When the structure is built
-// the emoji shows in full color; when not, it shows as a grey silhouette so
-// the player can see what's left to claim. Coordinates are tuned to the
-// landscape backdrop bands defined in style.css (.realm-canvas).
-const STRUCTURE_LAYOUT = {
-    goldmine:     { left: 15, top: 15 },
-    stoneQuarry:  { left: 78, top: 18 },
-    royalKeep:    { left: 50, top: 30 },
-    barracks:     { left: 22, top: 50 },
-    cathedral:    { left: 50, top: 53 },
-    vineyard:     { left: 78, top: 50 },
-    market:       { left: 38, top: 65 },
-    tradeCaravan: { left: 15, top: 73 },
-    watermill:    { left: 28, top: 87 },
-    fishingBoats: { left: 78, top: 90 },
+// Each kingdom gets its own structure layout on a 4:3 canvas (percentages of
+// width/height, anchored at the icon's center). The canvas backdrop is
+// keyed off `data-kingdom` so every realm has its own gradient (defined in
+// style.css). Built structures show full color; un-built show as a grey
+// silhouette so the player can see what's left to claim. Adding a new
+// kingdom: extend KINGDOMS and add an entry here + a matching CSS rule.
+const REALM_LAYOUTS = {
+    // Lush peaceful valley — symmetric, river at the bottom.
+    greenvale: {
+        goldmine:     { left: 15, top: 15 },
+        stoneQuarry:  { left: 78, top: 18 },
+        royalKeep:    { left: 50, top: 30 },
+        barracks:     { left: 22, top: 50 },
+        cathedral:    { left: 50, top: 53 },
+        vineyard:     { left: 78, top: 50 },
+        market:       { left: 38, top: 65 },
+        tradeCaravan: { left: 15, top: 73 },
+        watermill:    { left: 28, top: 87 },
+        fishingBoats: { left: 78, top: 90 },
+    },
+    // Bustling river port — keep nestled inland, market & caravan along the
+    // docks, fishing boats prominent on the wider water band.
+    rivermark: {
+        royalKeep:    { left: 35, top: 22 },
+        cathedral:    { left: 65, top: 26 },
+        goldmine:     { left: 15, top: 38 },
+        stoneQuarry:  { left: 85, top: 38 },
+        vineyard:     { left: 50, top: 48 },
+        barracks:     { left: 18, top: 60 },
+        market:       { left: 50, top: 64 },
+        tradeCaravan: { left: 82, top: 60 },
+        watermill:    { left: 22, top: 82 },
+        fishingBoats: { left: 70, top: 88 },
+    },
+    // Spartan keep on rocky soil — structures perched on ledges, no
+    // vineyard/water role, watermill clings to a thin gully.
+    stonehold: {
+        royalKeep:    { left: 50, top: 22 },
+        stoneQuarry:  { left: 18, top: 26 },
+        goldmine:     { left: 82, top: 28 },
+        barracks:     { left: 32, top: 46 },
+        cathedral:    { left: 68, top: 46 },
+        market:       { left: 50, top: 60 },
+        tradeCaravan: { left: 20, top: 70 },
+        vineyard:     { left: 80, top: 70 },
+        watermill:    { left: 40, top: 84 },
+        fishingBoats: { left: 75, top: 88 },
+    },
+    // Frontier outpost on the wild marches — sparse, with the keep dominant
+    // and the rest scattered in the cold expanse.
+    wolfsedge: {
+        royalKeep:    { left: 50, top: 26 },
+        barracks:     { left: 30, top: 38 },
+        stoneQuarry:  { left: 75, top: 36 },
+        goldmine:     { left: 18, top: 52 },
+        cathedral:    { left: 60, top: 54 },
+        tradeCaravan: { left: 82, top: 56 },
+        vineyard:     { left: 38, top: 64 },
+        market:       { left: 65, top: 70 },
+        watermill:    { left: 25, top: 82 },
+        fishingBoats: { left: 75, top: 88 },
+    },
 };
+
+function realmLayoutFor(kingdomId) {
+    return REALM_LAYOUTS[kingdomId] || REALM_LAYOUTS.greenvale;
+}
 
 function renderRealm() {
     const canvas = document.getElementById("realmCanvas");
     if (!canvas) return;
+
+    const kingdomId = (typeof gameState !== "undefined" && gameState && gameState.kingdomId)
+        || (typeof DEFAULT_KINGDOM_ID !== "undefined" ? DEFAULT_KINGDOM_ID : "greenvale");
+    const kingdom = (typeof getKingdom === "function") ? getKingdom(kingdomId) : null;
+
+    canvas.dataset.kingdom = kingdomId;
+
+    const titleEl   = document.getElementById("realmKingdomName");
+    const taglineEl = document.getElementById("realmTagline");
+    if (titleEl && kingdom)   titleEl.textContent = kingdom.name;
+    if (taglineEl && kingdom) taglineEl.textContent = kingdom.description || "";
+
+    const layout = realmLayoutFor(kingdomId);
     const built = new Map(getBuiltStructures().map(s => [s.typeId, s]));
     canvas.innerHTML = "";
     for (const card of investmentCards) {
-        const layout = STRUCTURE_LAYOUT[card.typeId];
-        if (!layout) continue;
+        const pos = layout[card.typeId];
+        if (!pos) continue;
         const struct = built.get(card.typeId);
         const isBuilt = !!struct;
         const level = struct ? (struct.level || 1) : 0;
 
         const node = document.createElement("div");
         node.className = `realm-structure${isBuilt ? "" : " empty"}`;
-        node.style.left = `${layout.left}%`;
-        node.style.top = `${layout.top}%`;
+        node.style.left = `${pos.left}%`;
+        node.style.top  = `${pos.top}%`;
         node.title = isBuilt && level > 1
             ? `${card.name} (Lv. ${level})`
             : card.name;
@@ -272,22 +335,9 @@ function renderRealm() {
     }
 }
 
-function showRealmOverlay() {
+function showRealmPage() {
     renderRealm();
-    document.getElementById('realmOverlay').classList.remove('hidden');
-}
-
-function hideRealmOverlay() {
-    document.getElementById('realmOverlay').classList.add('hidden');
-}
-
-function toggleRealmPanel() {
-    const overlay = document.getElementById('realmOverlay');
-    if (overlay.classList.contains('hidden')) {
-        showRealmOverlay();
-    } else {
-        hideRealmOverlay();
-    }
+    showGamePage("realmPage");
 }
 
 // =====================================================

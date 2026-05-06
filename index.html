@@ -164,6 +164,16 @@
                 </div>
                 <div id="statsBody" class="stats-body"></div>
             </section>
+
+            <!-- Realm page: landscape view of built structures, with a per-kingdom
+                 backdrop and structure layout (selected via canvas data-kingdom). -->
+            <section class="realm-page game-page is-hidden" id="realmPage">
+                <div class="realm-banner">
+                    <h2 id="realmTitle">Realm of <span id="realmKingdomName">…</span></h2>
+                    <p id="realmTagline" class="hint"></p>
+                </div>
+                <div id="realmCanvas" class="realm-canvas"></div>
+            </section>
         </main>
 
         <!-- Augury Fullscreen Overlay -->
@@ -230,16 +240,6 @@
             </div>
         </div>
 
-        <!-- Realm Overlay (landscape view of built structures) -->
-        <div class="overlay realm-overlay hidden" id="realmOverlay">
-            <div class="overlay-content realm-content">
-                <div class="overlay-header">
-                    <h2>Your Realm</h2>
-                    <button class="close-btn" id="realmClose">✕</button>
-                </div>
-                <div id="realmCanvas" class="realm-canvas"></div>
-            </div>
-        </div>
 
         <!-- Daily blessing modal (shown after a successful claim). -->
         <div class="overlay daily-overlay hidden" id="dailyOverlay">

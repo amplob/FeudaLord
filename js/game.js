@@ -124,7 +124,6 @@ function initGame() {
     // Event listeners
     document.getElementById("spinButton").addEventListener("click", handleSpin);
     document.getElementById("tradeClose").addEventListener("click", handleTradeClose);
-    document.getElementById("realmClose").addEventListener("click", hideRealmOverlay);
     document.getElementById("auguryOptions").addEventListener("click", handleAuguryAction);
     if (typeof wireSpinShop === "function") wireSpinShop();
     document.getElementById("dailyButton").addEventListener("click", handleDailyClick);
@@ -134,9 +133,6 @@ function initGame() {
     // Close overlays on background click
     document.getElementById('tradeOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'tradeOverlay') handleTradeClose();
-    });
-    document.getElementById('realmOverlay').addEventListener('click', (e) => {
-        if (e.target.id === 'realmOverlay') hideRealmOverlay();
     });
     document.getElementById('dailyOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'dailyOverlay') hideDailyOverlay();
@@ -762,7 +758,6 @@ function resetGame() {
     enableSpinButton();
     hideAuguryOverlay();
     hideTradeOverlay();
-    hideRealmOverlay();
     showWheelPage();
     updateResourceBar(gameState);
     renderKingdom();
@@ -815,7 +810,7 @@ function wireSidebar() {
         switch (action) {
             case "spin":    showWheelPage(); break;
             case "kingdom": showKingdomPage(); break;
-            case "realm":   toggleRealmPanel(); break;
+            case "realm":   showRealmPage(); break;
             case "stats":   showStatsPage(); break;
             case "menu":    returnToMainMenu(); break;
             case "test":
@@ -974,7 +969,6 @@ function selectKingdom(kingdomId) {
         showWheelPage();
         hideAuguryOverlay();
         hideTradeOverlay();
-        hideRealmOverlay();
         if (gameState.gameOver) handleSavedGameOver();
         else if (gameState.pending) {
             showAuguryOverlay();
