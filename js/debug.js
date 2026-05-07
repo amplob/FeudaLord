@@ -515,3 +515,57 @@ function addDebugButton() {
 }
 
 document.addEventListener("DOMContentLoaded", addDebugButton);
+
+// -----------------------------------------------------
+// Debug: per-type augury triggers on the wheel page
+// -----------------------------------------------------
+// While DEBUG is on, the wheel page gets a small column of round buttons
+// (one per slice type) at the top-left. Clicking one fires an augury of
+// that type with a real slice picked at random from wheelSegments — same
+// path the real spin uses, just without the wheel animation or the
+// stamina/turn bookkeeping. Useful for hammering a single card type to
+// test its UI.
+
+const DEBUG_AUGURY_TYPES = [
+    { type: "decision",   icon: "🎭", title: "Force decision"      },
+    { type: "investment", icon: "🔨", title: "Force investment"    },
+    { type: "event",      icon: "❓", title: "Force event"         },
+    { type: "trade",      icon: "⚖️", title: "Force insider trade" },
+    { type: "merchant",   icon: "🛒", title: "Force merchant"      },
+];
+
+function addDebugAuguryButtons() {
+    if (!DEBUG) return;
+    const wheelSection = document.querySelector(".wheel-section");
+    if (!wheelSection) return;
+    if (wheelSection.querySelector(".debug-buttons")) return;
+
+    const container = document.createElement("div");
+    container.className = "debug-buttons";
+
+    for (const { type, icon, title } of DEBUG_AUGURY_TYPES) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "debug-btn";
+        btn.textContent = icon;
+        btn.title = title;
+        btn.addEventListener("click", () => debugTriggerAugury(type));
+        container.appendChild(btn);
+    }
+    wheelSection.appendChild(container);
+}
+
+function debugTriggerAugury(type) {
+    if (typeof gameState === "undefined" || !gameState) return;
+    if (gameState.pending) return; // don't override an already-open augury
+    if (typeof wheelSegments === "undefined" || !wheelSegments.length) return;
+
+    const candidates = wheelSegments.filter(s => s.type === type);
+    if (!candidates.length) return;
+
+    const segment = candidates[Math.floor(Math.random() * candidates.length)];
+    if (typeof showAuguryOverlay === "function") showAuguryOverlay();
+    if (typeof presentAugury === "function") presentAugury(segment);
+}
+
+document.addEventListener("DOMContentLoaded", addDebugAuguryButtons);
