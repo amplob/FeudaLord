@@ -10,7 +10,10 @@ const CATEGORY_ICON = {
     investment: "🔨",
     decision: "🎭",
     event: "❓",
+    // "trade" = insider trade in the kingdom — open, no timer, fixed rates.
     trade: "⚖️",
+    // "merchant" = wandering merchant — single random offer, timer to accept.
+    merchant: "🛒",
 };
 
 // All cards combined (populated on init)

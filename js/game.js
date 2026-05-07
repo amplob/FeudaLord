@@ -401,11 +401,18 @@ function applyPassiveIncome() {
 // =====================================================
 
 function presentAugury(segment) {
-    // Wheel slice maps directly to a category (investment / decision / event / trade).
-    // Tonality ("good"/"neutral"/"bad") filters the event pool; multiplier scales
-    // payouts (decisions) and event magnitudes (events). Trade is a fixed flow,
-    // not drawn from the card pool.
+    // Wheel slice maps directly to a category (investment / decision / event /
+    // trade / merchant). Tonality ("good"/"neutral"/"bad") filters the event
+    // pool; multiplier scales payouts (decisions) and event magnitudes
+    // (events). Trade and merchant are fixed flows, not drawn from the card
+    // pool.
     if (segment.type === 'trade') {
+        presentTrade(segment);
+        return;
+    }
+    if (segment.type === 'merchant') {
+        // TODO: wire the timed merchant offer mini-game. Falls back to the
+        // standard trade panel for now so the slice is functional.
         presentTrade(segment);
         return;
     }

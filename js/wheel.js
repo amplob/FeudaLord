@@ -6,16 +6,17 @@
 // To modify the wheel, just edit this array!
 // =====================================================
 
-// 8 equal-sized slices (45° each). Each slice has a TYPE (what category of
+// 10 equal-sized slices (36° each). Each slice has a TYPE (what category of
 // card it draws) and a TONALITY (good/neutral/bad), which influences:
 //   - Which cards are eligible (events are filtered by tonality).
 //   - A sliceMultiplier that amplifies the resulting numbers (bigger payouts
 //     on good slices, harsher terms on bad slices). Decisions multiply their
 //     qualityFactor; events scale eventBase and ongoing effects (sign preserved).
-// Layout counts: 3 decisions (1 good, 1 neutral, 1 bad), 2 events (1 good,
-// 1 bad), 2 investments (neutral), 1 trade (neutral). Probabilities: decision
-// 37.5%, event 25%, investment 25%, trade 12.5%. Interleaved so two slices of
-// the same type never sit adjacent.
+// Layout counts: 5 decisions (1 good, 3 neutral, 1 bad), 2 events (1 good,
+// 1 bad), 2 investments (neutral), 1 trade (insider — fixed rates, no timer)
+// and 1 merchant (wandering — single random offer with timer). Probabilities:
+// decision 50%, event 20%, investment 20%, trade 10%, merchant 10%.
+// Interleaved so two slices of the same type never sit adjacent.
 // Icons come from CATEGORY_ICON (cardSystem.js) so the wheel and the card
 // titles stay consistent. Labels are display-only text (no emoji here).
 const wheelConfig = [
@@ -23,8 +24,10 @@ const wheelConfig = [
     { type: "investment", tonality: "neutral", multiplier: 1.0, label: "Invest",    color: "#7a6a55" },
     { type: "decision",   tonality: "good",    multiplier: 1.3, label: "Fortune",   color: "#4a9b3e" },
     { type: "event",      tonality: "bad",     multiplier: 1.2, label: "Ill Omen",  color: "#8b1a1a" },
+    { type: "trade",      tonality: "neutral", multiplier: 1.0, label: "Insider",   color: "#3b5998" },
+    { type: "decision",   tonality: "neutral", multiplier: 1.0, label: "Decision",  color: "#b8860b" },
     { type: "investment", tonality: "neutral", multiplier: 1.0, label: "Invest",    color: "#7a6a55" },
-    { type: "trade",      tonality: "neutral", multiplier: 1.0, label: "Merchant",  color: "#3b5998" },
+    { type: "merchant",   tonality: "neutral", multiplier: 1.0, label: "Merchant",  color: "#b8650d" },
     { type: "decision",   tonality: "bad",     multiplier: 0.7, label: "Curse",     color: "#5c0f0f" },
     { type: "event",      tonality: "good",    multiplier: 1.2, label: "Good Omen", color: "#6ba850" },
 ];

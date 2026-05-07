@@ -135,7 +135,9 @@ function simulateSingleRun(numTurns, sliceTypeFilter = null) {
         const slice = slicePool[Math.floor(Math.random() * slicePool.length)];
         const { type: wheelResult, tonality, multiplier: sliceMultiplier } = slice;
 
-        if (wheelResult === "trade") {
+        if (wheelResult === "trade" || wheelResult === "merchant") {
+            // Sim doesn't model trade rates or merchant offers — treat both
+            // as no-op turns for balance purposes.
             gameState.turn += 1;
             continue;
         }
