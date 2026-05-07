@@ -617,6 +617,49 @@ function renderTradeCard() {
     `;
 }
 
+// Merchant offer card: shows "X 🌾 → Y 💰" on a green button whose fill
+// drains left-to-right over MERCHANT_DECISION_MS. The animation is driven
+// by a CSS transition on transform: scaleX, anchored at the right edge so
+// the *left* side of the green empties first (the player can sense how
+// much time is left without reading a number).
+function renderMerchantCard(offer) {
+    document.getElementById('emergencyClose').style.display = 'none';
+
+    const titleEl = document.getElementById("auguryTitle");
+    const descEl = document.getElementById("auguryDescription");
+    const optionsEl = document.getElementById("auguryOptions");
+
+    titleEl.textContent = `${CATEGORY_ICON.merchant} A Merchant Approaches`;
+    descEl.textContent = "A wandering trader makes a single offer. Decide quickly — they will not wait.";
+
+    const fromIcon = RESOURCE_ICON[offer.fromRes];
+    const toIcon   = RESOURCE_ICON[offer.toRes];
+
+    optionsEl.innerHTML = `
+        <div class="card-icon large">${CATEGORY_ICON.merchant}</div>
+        <div class="card-actions">
+            <button data-action="merchantTrade" class="primary merchant-trade">
+                <span class="merchant-trade-fill"></span>
+                <span class="merchant-trade-label">${offer.fromAmt}${fromIcon} → ${offer.toAmt}${toIcon}</span>
+            </button>
+            <button data-action="merchantPass" class="secondary">Pass</button>
+        </div>
+    `;
+
+    // Kick off the drain animation on the next frame so the transition fires
+    // (CSS transitions only animate when the *changed* state is applied
+    // after the element is already in the DOM with the *initial* state).
+    const fill = optionsEl.querySelector('.merchant-trade-fill');
+    if (fill) {
+        fill.style.transform = 'scaleX(1)';
+        fill.style.transition = 'none';
+        // Force reflow so the transition starts from the full state.
+        void fill.offsetWidth;
+        fill.style.transition = 'transform 6s linear';
+        fill.style.transform = 'scaleX(0)';
+    }
+}
+
 function renderGameOver(message) {
     // Hide emergency close for game over
     document.getElementById('emergencyClose').style.display = 'none';

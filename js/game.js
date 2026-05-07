@@ -183,18 +183,34 @@ function restorePendingAugury() {
     
     const { type, cardInstance } = gameState.pending;
 
-    // Trade pseudo-card has no cardInstance; everything else requires one.
-    if (type !== 'trade' && (!cardInstance || !cardInstance.name)) {
+    // Trade and merchant pseudo-cards have no cardInstance; everything else
+    // requires one.
+    if (type !== 'trade' && type !== 'merchant' && (!cardInstance || !cardInstance.name)) {
         console.warn("Invalid pending state detected, clearing...");
         gameState.pending = null;
         hideAuguryOverlay();
         saveState();
         return;
     }
-    
+
     try {
         if (type === 'trade') {
             renderTradeCard();
+        } else if (type === 'merchant') {
+            // Restore the timed offer with a fresh 6s window — saving the
+            // remaining time would be slightly nicer but adds save-format
+            // complexity for little practical gain (most reloads won't be
+            // mid-merchant).
+            const offer = gameState.pending.offer;
+            if (!offer) throw new Error("Merchant pending without offer");
+            renderMerchantCard(offer);
+            if (_merchantTimerId) clearTimeout(_merchantTimerId);
+            _merchantTimerId = setTimeout(() => {
+                _merchantTimerId = null;
+                if (gameState.pending && gameState.pending.type === "merchant") {
+                    handleMerchantAction("pass");
+                }
+            }, MERCHANT_DECISION_MS);
         } else if (type === 'investment' && cardInstance) {
             renderInvestmentCard(cardInstance);
         } else if (type === 'decision' && cardInstance) {
@@ -411,9 +427,7 @@ function presentAugury(segment) {
         return;
     }
     if (segment.type === 'merchant') {
-        // TODO: wire the timed merchant offer mini-game. Falls back to the
-        // standard trade panel for now so the slice is functional.
-        presentTrade(segment);
+        presentMerchant(segment);
         return;
     }
 
@@ -462,6 +476,92 @@ function presentTrade(segment) {
 }
 
 // =====================================================
+// MERCHANT (timed random offer)
+// =====================================================
+// A wandering merchant offers a single trade with a 6s deadline. 70% of
+// offers are favorable (output gold-eq > input gold-eq) so the player has
+// real incentive to read and decide; 30% are bad deals dressed up as a
+// trade. Sometimes (25%) both sides of the trade are the same resource —
+// a trivial "is Y > X?" sanity check.
+
+const MERCHANT_DECISION_MS = 6000;
+const MERCHANT_FAVORABLE_PROB = 0.70;
+const MERCHANT_SAME_RESOURCE_PROB = 0.25;
+
+let _merchantTimerId = null;
+
+function generateMerchantOffer() {
+    const resources = ["gold", "food", "manpower", "favor"];
+    const fromRes = resources[Math.floor(Math.random() * resources.length)];
+
+    let toRes;
+    if (Math.random() < MERCHANT_SAME_RESOURCE_PROB) {
+        toRes = fromRes;
+    } else {
+        const others = resources.filter(r => r !== fromRes);
+        toRes = others[Math.floor(Math.random() * others.length)];
+    }
+
+    // Input value in gold-equivalent: 4–12g. Converted to whole units.
+    const inputGoldEq = 4 + Math.random() * 8;
+    const fromAmt = Math.max(1, Math.round(inputGoldEq / RESOURCE_VALUE[fromRes]));
+
+    // Favorable: 1.05x – 1.40x. Unfavorable: 0.55x – 0.95x.
+    const favorable = Math.random() < MERCHANT_FAVORABLE_PROB;
+    const ratio = favorable
+        ? 1.05 + Math.random() * 0.35
+        : 0.55 + Math.random() * 0.40;
+
+    // Recompute from the actual rounded fromAmt so the displayed output
+    // ratio matches what the player would compute mentally.
+    const inputValue = fromAmt * RESOURCE_VALUE[fromRes];
+    const toAmt = Math.max(1, Math.round((inputValue * ratio) / RESOURCE_VALUE[toRes]));
+
+    return { fromRes, fromAmt, toRes, toAmt, favorable };
+}
+
+function presentMerchant(segment) {
+    const offer = generateMerchantOffer();
+    gameState.pending = { type: "merchant", offer, segment };
+    renderMerchantCard(offer);
+
+    // Auto-pass if the player doesn't decide in time.
+    if (_merchantTimerId) clearTimeout(_merchantTimerId);
+    _merchantTimerId = setTimeout(() => {
+        _merchantTimerId = null;
+        // Only auto-pass if we're still on the merchant card (player might
+        // have switched apps, opened another overlay, etc).
+        if (gameState.pending && gameState.pending.type === "merchant") {
+            handleMerchantAction("pass");
+        }
+    }, MERCHANT_DECISION_MS);
+}
+
+function handleMerchantAction(action) {
+    if (_merchantTimerId) { clearTimeout(_merchantTimerId); _merchantTimerId = null; }
+    if (!gameState.pending || gameState.pending.type !== "merchant") return;
+    const { offer } = gameState.pending;
+
+    if (action === "trade") {
+        // Same-resource offers collapse to a single net delta so we don't
+        // first subtract then add and double-count the float animations.
+        const delta = {};
+        if (offer.fromRes === offer.toRes) {
+            delta[offer.fromRes] = offer.toAmt - offer.fromAmt;
+        } else {
+            delta[offer.fromRes] = -offer.fromAmt;
+            delta[offer.toRes]   =  offer.toAmt;
+        }
+        applyResourceChange(delta, "Merchant deal accepted");
+    }
+
+    gameState.pending = null;
+    hideAuguryOverlay();
+    verifyState();
+    // Save-after-spin: the next spin's saveState commits this.
+}
+
+// =====================================================
 // ACTION HANDLERS
 // =====================================================
 
@@ -504,6 +604,8 @@ function handleAuguryAction(event) {
     } else if (type === 'trade' && action === 'pass') {
         gameState.pending = null;
         hideAuguryOverlay();
+    } else if (type === 'merchant' && (action === 'merchantTrade' || action === 'merchantPass')) {
+        handleMerchantAction(action === 'merchantTrade' ? 'trade' : 'pass');
     }
 }
 
