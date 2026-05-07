@@ -605,8 +605,8 @@ function renderTradeCard() {
     const descEl = document.getElementById("auguryDescription");
     const optionsEl = document.getElementById("auguryOptions");
 
-    titleEl.textContent = `${CATEGORY_ICON.trade} A Merchant Approaches`;
-    descEl.textContent = "A caravan of traders arrives at your gates, offering their wares.";
+    titleEl.textContent = `${CATEGORY_ICON.trade} Insider Trade`;
+    descEl.textContent = "Your stewards open the kingdom's coffers — settle a trade at the realm's standing rates.";
 
     optionsEl.innerHTML = `
         <div class="card-icon large">${CATEGORY_ICON.trade}</div>
