@@ -921,10 +921,20 @@ button.link:hover {
     font-size: 1rem;
     white-space: nowrap;
     flex-shrink: 0;
+    /* Black outline so the delta stays legible against the gold/yellow
+       decision-button gradient. text-shadow at the four cardinals fakes a
+       cheap stroke that works in every browser. */
+    text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
 }
 
-.decision-btn .option-assess.positive { color: #4caf50; }
-.decision-btn .option-assess.negative { color: #e53935; }
+/* Darker shades than before so the colour doesn't blend into yellow even
+   on washed-out displays. */
+.decision-btn .option-assess.positive { color: #1b5e20; }
+.decision-btn .option-assess.negative { color: #b71c1c; }
 
 /* Fate Result */
 .fate-result {
