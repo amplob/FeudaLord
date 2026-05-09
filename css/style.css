@@ -249,6 +249,28 @@ body {
     z-index: 0;
 }
 
+/* The kingdom map SVG fills its parent canvas. preserveAspectRatio is set
+   to xMidYMid slice in the markup, so the map crops at the edges instead
+   of letterboxing. */
+#realmMap {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Each building <g> has class "b" and id "b-<svgId>". renderRealm() toggles
+   the "b-off" class to hide unbuilt structures. Fades for a soft transition
+   when an investment activates. */
+#realmMap .b {
+    transition: opacity 0.45s ease;
+}
+#realmMap .b-off {
+    opacity: 0;
+    pointer-events: none;
+}
+
 /* Foreground elements over the realm bg sit above with z-index:2. The
    in-flow elements (wheel-container, spinStatus) also need position:relative
    for z-index to take effect. The overlay buttons (daily/eye/debug-buttons)

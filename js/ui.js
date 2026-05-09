@@ -326,6 +326,28 @@ function realmLayoutFor(kingdomId) {
     return REALM_LAYOUTS[kingdomId] || REALM_LAYOUTS.greenvale;
 }
 
+// Investment typeId → SVG building-group id. The artwork ships with shorter
+// ids than the schema typeIds; this map bridges them.
+const TYPE_TO_SVG_ID = {
+    fishermen:      "fishermen",
+    tollGate:       "tollgate",
+    shrine:         "shrine",
+    trainingGround: "training",
+    orchard:        "orchard",
+    tradingSquare:  "trading",
+    tavern:         "tavern",
+    watermill:      "watermill",
+    goldmine:       "goldmine",
+    market:         "market",
+    huntingLodge:   "hunting",
+    cattleFarm:     "cattle",
+    sanatorium:     "sanatorium",
+    watchtower:     "watchtower",
+    dock:           "dock",
+    stoneQuarry:    "quarry",
+    cathedral:      "cathedral",
+};
+
 function renderRealm() {
     const canvas = document.getElementById("realmCanvas");
     if (!canvas) return;
@@ -341,28 +363,13 @@ function renderRealm() {
     if (titleEl && kingdom)   titleEl.textContent = kingdom.name;
     if (taglineEl && kingdom) taglineEl.textContent = kingdom.description || "";
 
-    const layout = realmLayoutFor(kingdomId);
-    const built = new Map(getBuiltStructures().map(s => [s.typeId, s]));
-    canvas.innerHTML = "";
+    const built = new Set(getBuiltStructures().map(s => s.typeId));
     for (const card of investmentCards) {
-        const pos = layout[card.typeId];
-        if (!pos) continue;
-        const struct = built.get(card.typeId);
-        const isBuilt = !!struct;
-        const level = struct ? (struct.level || 1) : 0;
-
-        const node = document.createElement("div");
-        node.className = `realm-structure${isBuilt ? "" : " empty"}`;
-        node.style.left = `${pos.left}%`;
-        node.style.top  = `${pos.top}%`;
-        node.title = isBuilt && level > 1
-            ? `${card.name} (Lv. ${level})`
-            : card.name;
-        node.innerHTML = `
-            <span class="icon">${card.icon}</span>
-            ${level > 1 ? `<span class="level-badge">Lv. ${level}</span>` : ""}
-        `;
-        canvas.appendChild(node);
+        const svgId = TYPE_TO_SVG_ID[card.typeId];
+        if (!svgId) continue;
+        const el = document.getElementById("b-" + svgId);
+        if (!el) continue;
+        el.classList.toggle("b-off", !built.has(card.typeId));
     }
 }
 
