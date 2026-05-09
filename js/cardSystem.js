@@ -261,9 +261,17 @@ function isCardEligible(card, state) {
         return false;
     }
 
-    // Check minimum turn
-    if (state.turn < card.minTurn) {
+    // Check minimum turn (legacy gating, kept for non-investment cards)
+    if (card.minTurn !== undefined && state.turn < card.minTurn) {
         return false;
+    }
+
+    // Check passive income requirements (replaces minTurn for investments)
+    if (card.requiresIncome) {
+        const income = calculateTotalPassiveIncome();
+        for (const [resource, amount] of Object.entries(card.requiresIncome)) {
+            if ((income[resource] || 0) < amount) return false;
+        }
     }
 
     // Check if unique card already played
