@@ -261,11 +261,13 @@ body {
 
 /* Debug-only column of "force this slice type" buttons. Mirrors the daily
    blessing chip's shape but smaller and dimmer so it stays out of the way.
-   Hidden when DEBUG is off (debug.js never inserts the column). */
+   Pinned to the leftmost edge of the wheel section — almost flush with the
+   border so it doesn't crowd the realm canvas. Hidden when DEBUG is off
+   (debug.js never inserts the column). */
 .debug-buttons {
     position: absolute;
     top: 14px;
-    left: 14px;
+    left: 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -312,12 +314,13 @@ body {
     visibility: hidden;
 }
 
-/* Eye toggle button — same shape as the daily-blessing chip, sits to its
-   left. Pressed state mirrors the daily-button's "ready" pulse direction. */
+/* Eye toggle button — same shape as the daily-blessing chip, stacked
+   directly above it (right-aligned column at the bottom-right corner).
+   Pressed state mirrors the daily-button's "ready" pulse direction. */
 .eye-button {
     position: absolute;
-    right: 70px;          /* daily-button is right:14, ~56px wide → 70 leaves a small gap */
-    bottom: 14px;
+    right: 14px;
+    bottom: 78px;         /* daily-button bottom:14 + max height 56 + 8px gap */
     width: 40px;
     height: 40px;
     border-radius: 50%;
