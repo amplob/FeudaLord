@@ -249,14 +249,21 @@ body {
     z-index: 0;
 }
 
-/* Foreground elements over the realm bg: wheel + buttons sit above. */
+/* Foreground elements over the realm bg sit above with z-index:2. The
+   in-flow elements (wheel-container, spinStatus) also need position:relative
+   for z-index to take effect. The overlay buttons (daily/eye/debug-buttons)
+   already set their own `position: absolute`, so don't override that here. */
 .wheel-section .wheel-container,
 .wheel-section #spinStatus,
 .wheel-section .daily-button,
 .wheel-section .eye-button,
 .wheel-section .debug-buttons {
-    position: relative;
     z-index: 2;
+}
+
+.wheel-section .wheel-container,
+.wheel-section #spinStatus {
+    position: relative;
 }
 
 /* Debug-only column of "force this slice type" buttons. Mirrors the daily
