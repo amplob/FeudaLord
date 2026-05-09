@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>The Kingdom of Ardwyn</title>
+<link rel="stylesheet" href="kingdom.css">
+</head>
+<body>
+<div class="frame">
+  <div class="titlebar">
+    <h1>The Kingdom of <em>Ardwyn</em></h1>
+    <span class="meta">Royal Survey</span>
+  </div>
+  <div class="stage">
+<svg id="map" viewBox="0 0 1000 1600" preserveAspectRatio="xMidYMid slice" aria-label="Kingdom map vertical">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#d8e3e6" />
+          <stop offset="1" stop-color="#ecd9b8" />
+        </linearGradient>
+        <linearGradient id="riverGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#84b1bb" />
+          <stop offset="1" stop-color="#3f6c7e" />
+        </linearGradient>
+        <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a4ba78" />
+          <stop offset="1" stop-color="#7d9a55" />
+        </linearGradient>
+
+        <symbol id="pine" overflow="visible">
+          <rect x="-2.5" y="-4" width="5" height="12" fill="#5a3d24" />
+          <polygon points="0,-44 -14,-8 14,-8" fill="#3f5e3a" />
+          <polygon points="0,-44 -10,-22 10,-22" fill="#577d4f" />
+          <polygon points="0,-44 -5,-30 5,-30" fill="#7a9c63" />
+        </symbol>
+        <symbol id="tree" overflow="visible">
+          <rect x="-3" y="-2" width="6" height="14" fill="#5a3d24" />
+          <circle cx="0" cy="-18" r="17" fill="#3f5e3a" />
+          <circle cx="-5" cy="-22" r="11" fill="#577d4f" />
+          <circle cx="6" cy="-16" r="8" fill="#7a9c63" opacity=".7" />
+        </symbol>
+        <symbol id="bush" overflow="visible">
+          <ellipse cx="-5" cy="-3" rx="9" ry="7" fill="#577d4f" />
+          <ellipse cx="6" cy="-3" rx="8" ry="6" fill="#3f5e3a" />
+          <ellipse cx="0" cy="-8" rx="7" ry="5" fill="#7a9c63" />
+        </symbol>
+        <symbol id="rock" overflow="visible">
+          <polygon points="-12,3 -8,-7 0,-10 8,-7 12,3" fill="#7e7768" />
+          <polygon points="-12,3 -8,-7 -2,-9 -2,3" fill="#b3aa9a" />
+        </symbol>
+        <symbol id="cloud" overflow="visible">
+          <ellipse cx="0" cy="0" rx="30" ry="9" fill="#f5ede0" opacity=".9" />
+          <ellipse cx="-16" cy="3" rx="18" ry="8" fill="#f5ede0" opacity=".9" />
+          <ellipse cx="18" cy="3" rx="20" ry="9" fill="#f5ede0" opacity=".9" />
+          <ellipse cx="2" cy="-7" rx="14" ry="6" fill="#f5ede0" opacity=".9" />
+        </symbol>
+        <symbol id="apple" overflow="visible">
+          <rect x="-2" y="-2" width="4" height="10" fill="#5a3d24" />
+          <circle cx="0" cy="-12" r="11" fill="#577d4f" />
+          <circle cx="-3" cy="-16" r="6" fill="#7a9c63" />
+          <circle cx="-5" cy="-10" r="1.6" fill="#b03a2e" />
+          <circle cx="4" cy="-13" r="1.6" fill="#b03a2e" />
+          <circle cx="2" cy="-8" r="1.6" fill="#b03a2e" />
+          <circle cx="-2" cy="-15" r="1.6" fill="#b03a2e" />
+        </symbol>
+        <symbol id="cow" overflow="visible">
+          <ellipse cx="0" cy="0" rx="14" ry="7" fill="#f5ede0" />
+          <rect x="-13" y="0" width="3" height="8" fill="#f5ede0" />
+          <rect x="10" y="0" width="3" height="8" fill="#f5ede0" />
+          <ellipse cx="-10" cy="-5" rx="5" ry="4" fill="#f5ede0" />
+          <ellipse cx="3" cy="-2" rx="5" ry="3" fill="#3a2e1a" />
+          <ellipse cx="-3" cy="2" rx="4" ry="3" fill="#3a2e1a" />
+          <circle cx="-12" cy="-5" r="1" fill="#3a2e1a" />
+        </symbol>
+        <symbol id="wave" overflow="visible">
+          <path d="M-20 0 Q-10 -3 0 0 T20 0" stroke="#a3c5cd" stroke-width="2" fill="none" opacity=".7" stroke-linecap="round"/>
+        </symbol>
+      </defs>
+
+      <!-- ════════════ SKY ════════════ -->
+      <rect width="1000" height="1600" fill="url(#sky)" />
+
+      <!-- Sun -->
+      <circle cx="780" cy="120" r="50" fill="#f4d77a" opacity=".55" />
+      <circle cx="780" cy="120" r="34" fill="#f8e3a0" />
+
+      <!-- Clouds -->
+      <use href="#cloud" x="170" y="100" />
+      <use href="#cloud" x="450" y="70" transform="scale(.85)" style="transform-origin:450px 70px" />
+      <use href="#cloud" x="600" y="180" transform="scale(.7)" style="transform-origin:600px 180px" />
+
+      <!-- Birds -->
+      <g stroke="#3e4860" stroke-width="2.4" fill="none" stroke-linecap="round">
+        <path d="M340 150 q5 -6 10 0 q5 -6 10 0" />
+        <path d="M420 175 q5 -6 10 0 q5 -6 10 0" />
+        <path d="M560 130 q5 -6 10 0 q5 -6 10 0" />
+      </g>
+
+      <!-- ════════════ FAR MOUNTAINS ════════════ -->
+      <path d="M0 380 L100 200 L200 290 L300 180 L420 280 L540 160 L660 270 L780 200 L880 290 L1000 230 L1000 460 L0 460 Z"
+            fill="#8794a8" />
+      <g fill="#eaeae0" opacity=".8">
+        <polygon points="100,200 82,232 118,232" />
+        <polygon points="300,180 282,212 318,212" />
+        <polygon points="540,160 520,196 560,196" />
+        <polygon points="780,200 760,232 800,232" />
+      </g>
+
+      <!-- ════════════ NEAR MOUNTAINS ════════════ -->
+      <path d="M0 460 L70 340 L180 410 L300 320 L430 420 L560 350 L700 430 L830 360 L950 430 L1000 410 L1000 510 L0 510 Z"
+            fill="#5e6c80" />
+      <g fill="#3e4860" opacity=".55">
+        <polygon points="70,340 180,410 70,410" />
+        <polygon points="300,320 430,420 300,420" />
+        <polygon points="560,350 700,430 560,430" />
+        <polygon points="830,360 950,430 830,430" />
+      </g>
+      <g fill="#7a8aa0" opacity=".55">
+        <polygon points="70,340 180,410 180,460 -10,460" />
+        <polygon points="300,320 430,420 430,460 300,460" />
+        <polygon points="560,350 700,430 700,460 560,460" />
+      </g>
+      <g>
+        <use href="#pine" x="40"  y="475" transform="scale(.7)" style="transform-origin:40px 475px" />
+        <use href="#pine" x="110" y="480" transform="scale(.6)" style="transform-origin:110px 480px" />
+        <use href="#pine" x="380" y="486" transform="scale(.55)" style="transform-origin:380px 486px" />
+        <use href="#pine" x="610" y="478" transform="scale(.6)" style="transform-origin:610px 478px" />
+        <use href="#pine" x="900" y="488" transform="scale(.55)" style="transform-origin:900px 488px" />
+        <use href="#pine" x="970" y="478" transform="scale(.65)" style="transform-origin:970px 478px" />
+      </g>
+
+      <!-- ════════════ HILLS / FOOTHILLS ════════════ -->
+      <path d="M0 480 Q200 462 400 475 T800 470 T1000 475 L1000 540 L0 540 Z" fill="#8aa074" />
+      <path d="M0 510 Q300 498 600 510 T1000 506 L1000 560 L0 560 Z" fill="#94ae6c" opacity=".75"/>
+
+      <!-- ════════════ GRASS PLAINS (large vertical band) ════════════ -->
+      <rect x="0" y="540" width="1000" height="760" fill="url(#grassGrad)" />
+      <!-- field patches scattered -->
+      <ellipse cx="240" cy="850" rx="160" ry="32" fill="#8aa860" opacity=".5" />
+      <ellipse cx="760" cy="900" rx="170" ry="36" fill="#8aa860" opacity=".5" />
+      <ellipse cx="500" cy="1050" rx="220" ry="40" fill="#8aa860" opacity=".45" />
+      <ellipse cx="220" cy="1180" rx="160" ry="32" fill="#7a9858" opacity=".5" />
+      <ellipse cx="780" cy="1200" rx="160" ry="34" fill="#7a9858" opacity=".5" />
+
+      <!-- ROADS — main S-curve from mountain pass down to riverbank -->
+      <g>
+        <path d="M488 478 Q470 580 480 700 Q500 820 470 940 Q450 1080 480 1200 Q495 1280 500 1300"
+              fill="none" stroke="#a8895b" stroke-width="30" stroke-linecap="round" />
+        <path d="M488 478 Q470 580 480 700 Q500 820 470 940 Q450 1080 480 1200 Q495 1280 500 1300"
+              fill="none" stroke="#cdb27a" stroke-width="20" stroke-linecap="round" />
+        <!-- right branch (mid plains) -->
+        <path d="M477 720 Q620 730 760 740 Q830 745 880 750"
+              fill="none" stroke="#a8895b" stroke-width="20" stroke-linecap="round" />
+        <path d="M477 720 Q620 730 760 740 Q830 745 880 750"
+              fill="none" stroke="#cdb27a" stroke-width="13" stroke-linecap="round" />
+        <!-- left branch (mid plains) -->
+        <path d="M477 760 Q330 770 200 780 Q140 783 90 786"
+              fill="none" stroke="#a8895b" stroke-width="20" stroke-linecap="round" />
+        <path d="M477 760 Q330 770 200 780 Q140 783 90 786"
+              fill="none" stroke="#cdb27a" stroke-width="13" stroke-linecap="round" />
+        <!-- right branch (lower plains) -->
+        <path d="M468 1110 Q580 1120 700 1130 Q780 1135 850 1140"
+              fill="none" stroke="#a8895b" stroke-width="20" stroke-linecap="round" />
+        <path d="M468 1110 Q580 1120 700 1130 Q780 1135 850 1140"
+              fill="none" stroke="#cdb27a" stroke-width="13" stroke-linecap="round" />
+        <!-- left branch (lower plains) -->
+        <path d="M468 1090 Q340 1100 220 1110 Q150 1115 90 1118"
+              fill="none" stroke="#a8895b" stroke-width="20" stroke-linecap="round" />
+        <path d="M468 1090 Q340 1100 220 1110 Q150 1115 90 1118"
+              fill="none" stroke="#cdb27a" stroke-width="13" stroke-linecap="round" />
+      </g>
+
+      <!-- ════════════ RIVERBANK ════════════ -->
+      <path d="M0 1290 Q250 1278 500 1298 T1000 1290 L1000 1330 L0 1330 Z" fill="#d8c089" />
+      <path d="M0 1318 Q300 1308 600 1322 T1000 1316 L1000 1332 L0 1332 Z" fill="#c1a973" opacity=".7"/>
+
+      <!-- ════════════ RIVER ════════════ -->
+      <rect x="0" y="1322" width="1000" height="280" fill="url(#riverGrad)" />
+      <g>
+        <use href="#wave" x="100" y="1370" />
+        <use href="#wave" x="240" y="1390" />
+        <use href="#wave" x="380" y="1410" />
+        <use href="#wave" x="600" y="1390" />
+        <use href="#wave" x="760" y="1430" />
+        <use href="#wave" x="900" y="1400" />
+        <use href="#wave" x="160" y="1480" />
+        <use href="#wave" x="380" y="1500" />
+        <use href="#wave" x="600" y="1490" />
+        <use href="#wave" x="820" y="1520" />
+        <use href="#wave" x="120" y="1560" />
+        <use href="#wave" x="500" y="1560" />
+        <use href="#wave" x="880" y="1560" />
+      </g>
+      <!-- Reeds -->
+      <g stroke="#5a7a3e" stroke-width="2" stroke-linecap="round" fill="none">
+        <line x1="40" y1="1326" x2="38" y2="1308" />
+        <line x1="48" y1="1326" x2="50" y2="1306" />
+        <line x1="56" y1="1326" x2="54" y2="1310" />
+        <line x1="280" y1="1330" x2="278" y2="1310" />
+        <line x1="290" y1="1330" x2="292" y2="1313" />
+        <line x1="690" y1="1330" x2="688" y2="1310" />
+        <line x1="700" y1="1330" x2="702" y2="1313" />
+        <line x1="950" y1="1326" x2="948" y2="1308" />
+        <line x1="960" y1="1326" x2="962" y2="1308" />
+      </g>
+
+      <!-- Decorative trees, bushes, rocks scattered through plains -->
+      <g>
+        <use href="#tree" x="70"  y="600" transform="scale(.85)" style="transform-origin:70px 600px" />
+        <use href="#tree" x="370" y="555" transform="scale(.7)" style="transform-origin:370px 555px" />
+        <use href="#tree" x="610" y="555" transform="scale(.75)" style="transform-origin:610px 555px" />
+        <use href="#tree" x="940" y="600" transform="scale(.85)" style="transform-origin:940px 600px" />
+        <use href="#tree" x="50"  y="870" transform="scale(.8)" style="transform-origin:50px 870px" />
+        <use href="#tree" x="940" y="870" transform="scale(.8)" style="transform-origin:940px 870px" />
+        <use href="#tree" x="60"  y="1230" transform="scale(.9)" style="transform-origin:60px 1230px" />
+        <use href="#tree" x="940" y="1230" transform="scale(.9)" style="transform-origin:940px 1230px" />
+        <use href="#bush" x="40"  y="1290" />
+        <use href="#bush" x="350" y="1290" />
+        <use href="#bush" x="650" y="1290" />
+        <use href="#bush" x="960" y="1290" />
+        <use href="#rock" x="930" y="1280" />
+        <use href="#rock" x="40"  y="1180" transform="scale(.8)" style="transform-origin:40px 1180px" />
+      </g>
+
+      <!-- ════════════════════════════════════════════ -->
+      <!-- ════════════   BUILDINGS  ═════════════════ -->
+      <!-- (Reusing the horizontal coords + translate.) -->
+      <!-- ════════════════════════════════════════════ -->
+
+      <!-- 1. WATCHTOWER (orig 1365,300 → new ~820,200) -->
+      <g class="b" id="b-watchtower" transform="translate(-545,-100)">
+        <polygon points="1335,378 1395,378 1410,408 1320,408" fill="#7e7768" />
+        <rect x="1348" y="240" width="34" height="160" fill="#cfc8b8" />
+        <rect x="1348" y="240" width="10" height="160" fill="#a39c8a" opacity=".7" />
+        <rect x="1345" y="290" width="40" height="3" fill="#7e7768" />
+        <rect x="1345" y="340" width="40" height="3" fill="#7e7768" />
+        <rect x="1361" y="305" width="3" height="10" fill="#241f17" />
+        <rect x="1361" y="355" width="3" height="10" fill="#241f17" />
+        <rect x="1340" y="222" width="50" height="22" fill="#cfc8b8" />
+        <g fill="#cfc8b8">
+          <rect x="1340" y="212" width="8" height="14" />
+          <rect x="1352" y="212" width="8" height="14" />
+          <rect x="1364" y="212" width="8" height="14" />
+          <rect x="1376" y="212" width="8" height="14" />
+        </g>
+        <rect x="1340" y="240" width="50" height="3" fill="#7e7768" />
+        <line x1="1365" y1="212" x2="1365" y2="180" stroke="#3a2e1a" stroke-width="2" />
+        <polygon points="1365,182 1395,188 1365,196" fill="#b03a2e" />
+      </g>
+
+      <!-- 2. GOLDMINE (orig 200,470 → new ~180,430) -->
+      <g class="b" id="b-goldmine" transform="translate(-20,-40)">
+        <polygon points="150,470 250,440 270,500 130,500" fill="#3e4860" opacity=".7" />
+        <path d="M170 470 Q200 430 230 470 L230 495 L170 495 Z" fill="#1e1a12" />
+        <rect x="166" y="465" width="6" height="32" fill="#7a4e2a" />
+        <rect x="228" y="465" width="6" height="32" fill="#7a4e2a" />
+        <rect x="162" y="460" width="76" height="6" fill="#7a4e2a" />
+        <rect x="180" y="494" width="80" height="2" fill="#7e7768" />
+        <rect x="180" y="498" width="80" height="2" fill="#7e7768" />
+        <line x1="186" y1="492" x2="186" y2="500" stroke="#5a3d24" stroke-width="1.4" />
+        <line x1="200" y1="492" x2="200" y2="500" stroke="#5a3d24" stroke-width="1.4" />
+        <line x1="214" y1="492" x2="214" y2="500" stroke="#5a3d24" stroke-width="1.4" />
+        <line x1="240" y1="492" x2="240" y2="500" stroke="#5a3d24" stroke-width="1.4" />
+        <rect x="244" y="478" width="22" height="14" fill="#7a4e2a" />
+        <rect x="244" y="478" width="22" height="3" fill="#5a3d24" />
+        <circle cx="248" cy="494" r="3" fill="#241f17" />
+        <circle cx="262" cy="494" r="3" fill="#241f17" />
+        <circle cx="252" cy="478" r="2.5" fill="#d8b34a" />
+        <circle cx="258" cy="476" r="2" fill="#f1d97a" />
+        <circle cx="262" cy="479" r="1.8" fill="#d8b34a" />
+        <polygon points="270,495 280,485 290,495" fill="#d8b34a" />
+        <polygon points="282,495 290,488 298,495" fill="#f1d97a" />
+      </g>
+
+      <!-- 3. STONE QUARRY (orig 1090,450 → new ~680,420) -->
+      <g class="b" id="b-quarry" transform="translate(-410,-30)">
+        <polygon points="1010,470 1180,470 1180,500 1010,500" fill="#b3aa9a" />
+        <polygon points="1030,440 1170,440 1170,470 1030,470" fill="#cfc8b8" />
+        <polygon points="1050,415 1150,415 1150,440 1050,440" fill="#dfd8c8" />
+        <line x1="1010" y1="470" x2="1180" y2="470" stroke="#7e7768" stroke-width="2" />
+        <line x1="1030" y1="440" x2="1170" y2="440" stroke="#7e7768" stroke-width="2" />
+        <rect x="1020" y="488" width="22" height="12" fill="#cfc8b8" stroke="#7e7768" />
+        <rect x="1046" y="488" width="22" height="12" fill="#dfd8c8" stroke="#7e7768" />
+        <rect x="1033" y="476" width="22" height="12" fill="#b3aa9a" stroke="#7e7768" />
+        <line x1="1100" y1="415" x2="1100" y2="395" stroke="#5a3d24" stroke-width="2" />
+        <line x1="1100" y1="395" x2="1115" y2="395" stroke="#5a3d24" stroke-width="2" />
+        <line x1="1115" y1="395" x2="1115" y2="408" stroke="#3a2e1a" stroke-width="1" />
+        <rect x="1112" y="408" width="6" height="6" fill="#cfc8b8" stroke="#7e7768" />
+      </g>
+
+      <!-- 4. TOLL GATE (orig 820,455 → new ~480,460) -->
+      <g class="b" id="b-tollgate" transform="translate(-340,5)">
+        <rect x="789" y="438" width="9" height="42" fill="#5a3d24" />
+        <rect x="838" y="438" width="9" height="42" fill="#5a3d24" />
+        <rect x="784" y="432" width="69" height="9" fill="#7a4e2a" />
+        <rect x="789" y="448" width="58" height="4" fill="#b97e4a" />
+        <path d="M810 432 L828 432 L828 446 Q819 452 810 446 Z" fill="#b03a2e" stroke="#3a2e1a" stroke-width="1" />
+        <line x1="819" y1="434" x2="819" y2="448" stroke="#f1dfa6" stroke-width="1.4" />
+        <line x1="813" y1="439" x2="825" y2="439" stroke="#f1dfa6" stroke-width="1.4" />
+        <rect x="844" y="450" width="22" height="22" fill="#b97e4a" />
+        <polygon points="842,450 868,450 855,440" fill="#74281d" />
+        <rect x="850" y="458" width="6" height="8" fill="#241f17" />
+        <rect x="858" y="458" width="6" height="6" fill="#74281d" />
+      </g>
+
+      <!-- 5. SHRINE (orig 270,576 → new ~170,580) -->
+      <g class="b" id="b-shrine" transform="translate(-100,4)">
+        <ellipse cx="270" cy="586" rx="46" ry="10" fill="#8aa860" opacity=".7" />
+        <rect x="248" y="566" width="44" height="20" fill="#cfc8b8" />
+        <rect x="248" y="566" width="44" height="3" fill="#a39c8a" />
+        <rect x="252" y="540" width="5" height="26" fill="#dfd8c8" />
+        <rect x="283" y="540" width="5" height="26" fill="#dfd8c8" />
+        <polygon points="246,540 294,540 270,524" fill="#b3aa9a" />
+        <rect x="262" y="552" width="16" height="14" fill="#7e7768" />
+        <line x1="270" y1="552" x2="270" y2="546" stroke="#b97e4a" stroke-width="2" />
+        <ellipse cx="270" cy="544" rx="2" ry="3" fill="#f4d77a" />
+        <line x1="270" y1="524" x2="270" y2="514" stroke="#3a2e1a" stroke-width="2" />
+        <line x1="266" y1="518" x2="274" y2="518" stroke="#3a2e1a" stroke-width="2" />
+      </g>
+
+      <!-- 6. CATHEDRAL (orig 490,560 → new ~480,580) -->
+      <g class="b" id="b-cathedral" transform="translate(-10,20)">
+        <rect x="430" y="540" width="120" height="58" fill="#dfd8c8" />
+        <polygon points="424,540 556,540 540,520 440,520" fill="#74281d" />
+        <line x1="430" y1="530" x2="550" y2="530" stroke="#9c3a2c" stroke-width="1" />
+        <rect x="475" y="525" width="34" height="73" fill="#dfd8c8" />
+        <polygon points="470,525 514,525 502,505 482,505" fill="#74281d" />
+        <rect x="478" y="490" width="28" height="40" fill="#cfc8b8" />
+        <polygon points="476,490 508,490 492,460" fill="#74281d" />
+        <polygon points="492,460 488,455 496,455" fill="#74281d" />
+        <line x1="492" y1="460" x2="492" y2="442" stroke="#3a2e1a" stroke-width="1.5" />
+        <line x1="488" y1="446" x2="496" y2="446" stroke="#3a2e1a" stroke-width="1.5" />
+        <circle cx="492" cy="510" r="6" fill="#74281d" />
+        <circle cx="492" cy="510" r="6" fill="none" stroke="#f4d77a" stroke-width="1" />
+        <line x1="486" y1="510" x2="498" y2="510" stroke="#f4d77a" stroke-width=".7" />
+        <line x1="492" y1="504" x2="492" y2="516" stroke="#f4d77a" stroke-width=".7" />
+        <g fill="#74281d">
+          <path d="M442 562 q4 -10 8 0 z" />
+          <path d="M460 562 q4 -10 8 0 z" />
+          <path d="M520 562 q4 -10 8 0 z" />
+          <path d="M538 562 q4 -10 8 0 z" />
+        </g>
+        <path d="M488 598 q4 -16 12 0 z" fill="#5a3d24" />
+        <rect x="430" y="528" width="14" height="70" fill="#cfc8b8" />
+        <polygon points="429,528 445,528 437,514" fill="#74281d" />
+        <rect x="536" y="528" width="14" height="70" fill="#cfc8b8" />
+        <polygon points="535,528 551,528 543,514" fill="#74281d" />
+      </g>
+
+      <!-- 7. SANATORIUM (orig 1257,565 → new ~810,600) -->
+      <g class="b" id="b-sanatorium" transform="translate(-447,35)">
+        <rect x="1218" y="540" width="78" height="50" fill="#f1e7d2" />
+        <polygon points="1213,540 1301,540 1290,518 1224,518" fill="#9c3a2c" />
+        <rect x="1280" y="510" width="6" height="14" fill="#7e7768" />
+        <rect x="1248" y="528" width="18" height="18" fill="#f1e7d2" stroke="#3a2e1a" stroke-width="1" />
+        <rect x="1254" y="532" width="6" height="10" fill="#b03a2e" />
+        <rect x="1250" y="535" width="14" height="4" fill="#b03a2e" />
+        <g fill="#84b1bb" stroke="#3a2e1a" stroke-width=".8">
+          <rect x="1224" y="552" width="10" height="12" />
+          <rect x="1240" y="552" width="10" height="12" />
+          <rect x="1280" y="552" width="10" height="12" />
+        </g>
+        <rect x="1258" y="568" width="14" height="22" fill="#5a3d24" />
+        <line x1="1265" y1="568" x2="1265" y2="590" stroke="#3a2e1a" stroke-width=".8" />
+      </g>
+
+      <!-- 8. TRAINING GROUND (orig 1430,700 → new ~480,950) -->
+      <g class="b" id="b-training" transform="translate(-950,250)">
+        <ellipse cx="1430" cy="700" rx="80" ry="22" fill="#cdb27a" />
+        <g stroke="#5a3d24" stroke-width="2.5" fill="none">
+          <line x1="1360" y1="708" x2="1360" y2="690" />
+          <line x1="1380" y1="710" x2="1380" y2="692" />
+          <line x1="1400" y1="712" x2="1400" y2="694" />
+          <line x1="1460" y1="712" x2="1460" y2="694" />
+          <line x1="1485" y1="710" x2="1485" y2="692" />
+          <line x1="1505" y1="708" x2="1505" y2="690" />
+          <line x1="1356" y1="698" x2="1410" y2="703" />
+          <line x1="1456" y1="703" x2="1510" y2="698" />
+        </g>
+        <circle cx="1395" cy="678" r="14" fill="#f1e7d2" stroke="#3a2e1a" stroke-width="1" />
+        <circle cx="1395" cy="678" r="10" fill="#84b1bb" />
+        <circle cx="1395" cy="678" r="6" fill="#b03a2e" />
+        <circle cx="1395" cy="678" r="2" fill="#f4d77a" />
+        <line x1="1395" y1="692" x2="1395" y2="710" stroke="#5a3d24" stroke-width="3" />
+        <line x1="1390" y1="676" x2="1410" y2="671" stroke="#3a2e1a" stroke-width="1.4" />
+        <polygon points="1410,671 1413,668 1413,673" fill="#3a2e1a" />
+        <rect x="1444" y="668" width="4" height="32" fill="#5a3d24" />
+        <ellipse cx="1446" cy="670" rx="9" ry="8" fill="#b97e4a" />
+        <rect x="1438" y="678" width="16" height="16" fill="#7a4e2a" />
+        <line x1="1438" y1="685" x2="1454" y2="685" stroke="#3a2e1a" stroke-width=".8" />
+        <line x1="1475" y1="700" x2="1475" y2="678" stroke="#cfc8b8" stroke-width="2.5" />
+        <line x1="1469" y1="678" x2="1481" y2="678" stroke="#cfc8b8" stroke-width="2.5" />
+        <polygon points="1473,678 1477,678 1475,672" fill="#5a3d24" />
+      </g>
+
+      <!-- 9. TRADING SQUARE (orig 660,610 → new ~480,760) -->
+      <g class="b" id="b-trading" transform="translate(-180,150)">
+        <ellipse cx="660" cy="618" rx="64" ry="14" fill="#cfc8b8" />
+        <ellipse cx="660" cy="618" rx="64" ry="14" fill="none" stroke="#a39c8a" stroke-width="1"/>
+        <rect x="610" y="568" width="100" height="40" fill="#dfd8c8" />
+        <polygon points="606,568 714,568 706,556 614,556" fill="#b3aa9a" />
+        <line x1="606" y1="568" x2="714" y2="568" stroke="#7e7768" stroke-width="1.2" />
+        <g fill="#f1e7d2">
+          <rect x="618" y="572" width="6" height="32" />
+          <rect x="638" y="572" width="6" height="32" />
+          <rect x="658" y="572" width="6" height="32" />
+          <rect x="678" y="572" width="6" height="32" />
+          <rect x="698" y="572" width="6" height="32" />
+        </g>
+        <g fill="#7e7768" opacity=".5">
+          <rect x="618" y="601" width="6" height="3" />
+          <rect x="638" y="601" width="6" height="3" />
+          <rect x="658" y="601" width="6" height="3" />
+          <rect x="678" y="601" width="6" height="3" />
+          <rect x="698" y="601" width="6" height="3" />
+        </g>
+        <ellipse cx="660" cy="624" rx="14" ry="4" fill="#84b1bb" />
+        <ellipse cx="660" cy="622" rx="14" ry="4" fill="none" stroke="#7e7768" stroke-width="1" />
+        <rect x="658" y="616" width="4" height="6" fill="#a39c8a" />
+        <circle cx="660" cy="614" r="3" fill="#a39c8a" />
+        <circle cx="635" cy="616" r="2" fill="#b03a2e" />
+        <circle cx="688" cy="617" r="2" fill="#3f6c7e" />
+      </g>
+
+      <!-- 10. MARKET (orig 1050,600 → new ~180,940) -->
+      <g class="b" id="b-market" transform="translate(-870,340)">
+        <rect x="990" y="588" width="36" height="22" fill="#b97e4a" />
+        <rect x="986" y="582" width="44" height="8" fill="#b03a2e" />
+        <rect x="990" y="582" width="6" height="8" fill="#f1e7d2" />
+        <rect x="1002" y="582" width="6" height="8" fill="#f1e7d2" />
+        <rect x="1014" y="582" width="6" height="8" fill="#f1e7d2" />
+        <line x1="986" y1="588" x2="1030" y2="588" stroke="#3a2e1a" stroke-width="1" />
+        <circle cx="1000" cy="595" r="2.5" fill="#b03a2e" />
+        <circle cx="1008" cy="595" r="2.5" fill="#b03a2e" />
+        <circle cx="1016" cy="595" r="2.5" fill="#f4d77a" />
+        <rect x="1036" y="592" width="36" height="22" fill="#b97e4a" />
+        <rect x="1032" y="586" width="44" height="8" fill="#3f6c7e" />
+        <rect x="1036" y="586" width="6" height="8" fill="#f1e7d2" />
+        <rect x="1048" y="586" width="6" height="8" fill="#f1e7d2" />
+        <rect x="1060" y="586" width="6" height="8" fill="#f1e7d2" />
+        <line x1="1032" y1="592" x2="1076" y2="592" stroke="#3a2e1a" stroke-width="1" />
+        <ellipse cx="1046" cy="600" rx="3" ry="1.5" fill="#cdb27a" />
+        <ellipse cx="1056" cy="600" rx="3" ry="1.5" fill="#cdb27a" />
+        <ellipse cx="1066" cy="600" rx="3" ry="1.5" fill="#cdb27a" />
+        <rect x="1078" y="598" width="10" height="14" fill="#7a4e2a" />
+        <rect x="1078" y="601" width="10" height="2" fill="#3a2e1a" />
+        <rect x="1078" y="608" width="10" height="2" fill="#3a2e1a" />
+      </g>
+
+      <!-- 11. TAVERN (orig 620,680 → new ~180,760) -->
+      <g class="b" id="b-tavern" transform="translate(-440,80)">
+        <rect x="588" y="660" width="62" height="44" fill="#f1e7d2" />
+        <g stroke="#5a3d24" stroke-width="2.4" fill="none">
+          <rect x="588" y="660" width="62" height="44" />
+          <line x1="619" y1="660" x2="619" y2="704" />
+          <line x1="588" y1="682" x2="650" y2="682" />
+          <line x1="588" y1="660" x2="619" y2="682" />
+          <line x1="650" y1="660" x2="619" y2="682" />
+        </g>
+        <polygon points="582,660 656,660 642,640 596,640" fill="#74281d" />
+        <line x1="588" y1="650" x2="650" y2="650" stroke="#9c3a2c" stroke-width="1" />
+        <rect x="630" y="630" width="6" height="14" fill="#7e7768" />
+        <ellipse cx="633" cy="624" rx="4" ry="3" fill="#cfc8b8" opacity=".7" />
+        <ellipse cx="636" cy="618" rx="3" ry="2.5" fill="#cfc8b8" opacity=".5" />
+        <rect x="612" y="688" width="14" height="16" fill="#5a3d24" />
+        <circle cx="623" cy="697" r="0.8" fill="#f4d77a" />
+        <rect x="594" y="688" width="8" height="8" fill="#f4d77a" stroke="#5a3d24" stroke-width=".8" />
+        <line x1="598" y1="688" x2="598" y2="696" stroke="#5a3d24" stroke-width=".5" />
+        <line x1="594" y1="692" x2="602" y2="692" stroke="#5a3d24" stroke-width=".5" />
+        <rect x="634" y="688" width="8" height="8" fill="#f4d77a" stroke="#5a3d24" stroke-width=".8" />
+        <line x1="638" y1="688" x2="638" y2="696" stroke="#5a3d24" stroke-width=".5" />
+        <line x1="634" y1="692" x2="642" y2="692" stroke="#5a3d24" stroke-width=".5" />
+        <line x1="654" y1="660" x2="666" y2="660" stroke="#3a2e1a" stroke-width="1.8" />
+        <line x1="666" y1="660" x2="666" y2="676" stroke="#3a2e1a" stroke-width="1.2" />
+        <rect x="660" y="676" width="14" height="12" fill="#3a2e1a" />
+        <rect x="664" y="679" width="6" height="7" fill="#f4d77a" />
+        <rect x="670" y="681" width="2" height="3" fill="none" stroke="#f4d77a" stroke-width=".8" />
+        <ellipse cx="667" cy="678" rx="3" ry=".8" fill="#f5ede0" />
+      </g>
+
+      <!-- 12. HUNTING LODGE (orig 1205,690 → new ~810,770) -->
+      <g class="b" id="b-hunting" transform="translate(-395,80)">
+        <use href="#pine" x="1158" y="715" transform="scale(.65)" style="transform-origin:1158px 715px" />
+        <use href="#pine" x="1242" y="718" transform="scale(.6)" style="transform-origin:1242px 718px" />
+        <rect x="1175" y="680" width="60" height="30" fill="#7a4e2a" />
+        <g stroke="#5a3d24" stroke-width="1" fill="none">
+          <line x1="1175" y1="687" x2="1235" y2="687" />
+          <line x1="1175" y1="694" x2="1235" y2="694" />
+          <line x1="1175" y1="701" x2="1235" y2="701" />
+          <line x1="1175" y1="708" x2="1235" y2="708" />
+        </g>
+        <g fill="#5a3d24">
+          <circle cx="1175" cy="687" r="2" />
+          <circle cx="1175" cy="694" r="2" />
+          <circle cx="1175" cy="701" r="2" />
+          <circle cx="1235" cy="687" r="2" />
+          <circle cx="1235" cy="694" r="2" />
+          <circle cx="1235" cy="701" r="2" />
+        </g>
+        <polygon points="1170,680 1240,680 1226,660 1184,660" fill="#3a2e1a" />
+        <polygon points="1170,680 1240,680 1226,672 1184,672" fill="#241f17" opacity=".5" />
+        <rect x="1218" y="652" width="6" height="14" fill="#7e7768" />
+        <rect x="1198" y="694" width="14" height="16" fill="#3a2e1a" />
+        <g stroke="#f1e7d2" stroke-width="1.5" fill="none" stroke-linecap="round">
+          <path d="M1202 692 q-3 -4 -6 -5 q-1 -2 -3 -2" />
+          <path d="M1208 692 q3 -4 6 -5 q1 -2 3 -2" />
+          <path d="M1199 689 q-1 -2 -3 -2" />
+          <path d="M1211 689 q1 -2 3 -2" />
+        </g>
+        <rect x="1180" y="694" width="10" height="8" fill="#f4d77a" stroke="#3a2e1a" stroke-width=".8" />
+      </g>
+
+      <!-- 13. ORCHARD (orig 200,710 → new ~180,1130) -->
+      <g class="b" id="b-orchard" transform="translate(-20,420)">
+        <ellipse cx="200" cy="710" rx="130" ry="34" fill="#cdb27a" opacity=".5" />
+        <use href="#apple" x="120" y="700" />
+        <use href="#apple" x="170" y="700" />
+        <use href="#apple" x="220" y="700" />
+        <use href="#apple" x="270" y="700" />
+        <use href="#apple" x="145" y="730" />
+        <use href="#apple" x="195" y="730" />
+        <use href="#apple" x="245" y="730" />
+        <use href="#apple" x="295" y="730" />
+      </g>
+
+      <!-- 14. CATTLE FARM (orig 1010,720 → new ~700,1130) -->
+      <g class="b" id="b-cattle" transform="translate(-310,410)">
+        <g stroke="#7a4e2a" stroke-width="2.2" fill="none">
+          <line x1="855" y1="755" x2="855" y2="745" />
+          <line x1="880" y1="757" x2="880" y2="747" />
+          <line x1="905" y1="759" x2="905" y2="749" />
+          <line x1="930" y1="761" x2="930" y2="751" />
+          <line x1="955" y1="763" x2="955" y2="753" />
+          <line x1="855" y1="752" x2="965" y2="760" />
+          <line x1="855" y1="748" x2="965" y2="755" />
+        </g>
+        <use href="#cow" x="888" y="755" transform="scale(.8)" style="transform-origin:888px 755px" />
+        <use href="#cow" x="935" y="760" transform="scale(.7)" style="transform-origin:935px 760px" />
+        <rect x="975" y="700" width="64" height="44" fill="#9c3a2c" />
+        <polygon points="970,700 1044,700 1030,672 984,672" fill="#74281d" />
+        <rect x="998" y="718" width="18" height="26" fill="#3a2e1a" />
+        <line x1="1007" y1="718" x2="1007" y2="744" stroke="#7a4e2a" stroke-width="1" />
+        <line x1="998" y1="718" x2="1016" y2="744" stroke="#f1e7d2" stroke-width="1.5" />
+        <line x1="1016" y1="718" x2="998" y2="744" stroke="#f1e7d2" stroke-width="1.5" />
+        <rect x="1003" y="680" width="8" height="10" fill="#f4d77a" />
+      </g>
+
+      <!-- 15. WATERMILL (orig 290,790 → new ~180,1290) -->
+      <g class="b" id="b-watermill" transform="translate(-110,500)">
+        <rect x="252" y="770" width="64" height="46" fill="#cfc8b8" />
+        <g stroke="#5a3d24" stroke-width="2" fill="none">
+          <rect x="252" y="770" width="64" height="46" />
+          <line x1="284" y1="770" x2="284" y2="816" />
+          <line x1="252" y1="792" x2="316" y2="792" />
+        </g>
+        <polygon points="246,770 322,770 308,748 260,748" fill="#74281d" />
+        <line x1="252" y1="760" x2="316" y2="760" stroke="#9c3a2c" stroke-width=".8" />
+        <rect x="296" y="740" width="6" height="14" fill="#7e7768" />
+        <rect x="262" y="800" width="12" height="16" fill="#5a3d24" />
+        <rect x="294" y="798" width="10" height="10" fill="#f4d77a" stroke="#5a3d24" stroke-width=".8" />
+        <circle cx="328" cy="816" r="22" fill="#7a4e2a" />
+        <circle cx="328" cy="816" r="22" fill="none" stroke="#3a2e1a" stroke-width="1.5" />
+        <circle cx="328" cy="816" r="6" fill="#3a2e1a" />
+        <g stroke="#3a2e1a" stroke-width="1.5">
+          <line x1="328" y1="794" x2="328" y2="838" />
+          <line x1="306" y1="816" x2="350" y2="816" />
+          <line x1="312" y1="800" x2="344" y2="832" />
+          <line x1="312" y1="832" x2="344" y2="800" />
+        </g>
+        <g fill="#5a3d24">
+          <rect x="326" y="792" width="4" height="4" />
+          <rect x="326" y="836" width="4" height="4" />
+          <rect x="304" y="814" width="4" height="4" />
+          <rect x="348" y="814" width="4" height="4" />
+        </g>
+        <ellipse cx="328" cy="838" rx="22" ry="3" fill="#f5ede0" opacity=".7" />
+      </g>
+
+      <!-- 16. DOCK (orig 820,825 → new ~490,1330) -->
+      <g class="b" id="b-dock" transform="translate(-330,505)">
+        <rect x="780" y="822" width="80" height="10" fill="#b97e4a" />
+        <rect x="780" y="832" width="80" height="3" fill="#5a3d24" opacity=".7" />
+        <line x1="800" y1="822" x2="800" y2="832" stroke="#5a3d24" stroke-width="1" />
+        <line x1="820" y1="822" x2="820" y2="832" stroke="#5a3d24" stroke-width="1" />
+        <line x1="840" y1="822" x2="840" y2="832" stroke="#5a3d24" stroke-width="1" />
+        <rect x="788" y="832" width="5" height="22" fill="#5a3d24" />
+        <rect x="828" y="832" width="5" height="26" fill="#5a3d24" />
+        <rect x="852" y="832" width="5" height="30" fill="#5a3d24" />
+        <ellipse cx="797" cy="822" rx="6" ry="2" fill="#cdb27a" />
+        <ellipse cx="797" cy="820" rx="5" ry="1.5" fill="#a8895b" />
+        <rect x="838" y="812" width="14" height="12" fill="#7a4e2a" />
+        <line x1="838" y1="818" x2="852" y2="818" stroke="#3a2e1a" stroke-width=".8" />
+        <line x1="845" y1="812" x2="845" y2="824" stroke="#3a2e1a" stroke-width=".8" />
+        <line x1="784" y1="822" x2="784" y2="800" stroke="#3a2e1a" stroke-width="2" />
+        <rect x="780" y="794" width="8" height="8" fill="#f4d77a" stroke="#3a2e1a" stroke-width=".8" />
+      </g>
+
+      <!-- 17. FISHERMEN (orig 1290,910 → new ~820,1450) -->
+      <g class="b" id="b-fishermen" transform="translate(-470,540)">
+        <path d="M1240 900 Q1280 925 1340 900 L1330 916 Q1280 932 1250 916 Z" fill="#7a4e2a" />
+        <path d="M1240 900 Q1280 925 1340 900" fill="none" stroke="#5a3d24" stroke-width="1.5" />
+        <line x1="1255" y1="908" x2="1325" y2="908" stroke="#5a3d24" stroke-width="1" />
+        <line x1="1290" y1="900" x2="1290" y2="858" stroke="#5a3d24" stroke-width="2" />
+        <polygon points="1290,860 1303,864 1290,868" fill="#b03a2e" />
+        <circle cx="1268" cy="892" r="3.5" fill="#3a2e1a" />
+        <rect x="1265" y="894" width="6" height="9" fill="#3f6c7e" />
+        <line x1="1270" y1="893" x2="1244" y2="870" stroke="#3a2e1a" stroke-width="1.4" />
+        <line x1="1244" y1="870" x2="1238" y2="906" stroke="#3a2e1a" stroke-width=".8" />
+        <circle cx="1238" cy="906" r="1.6" fill="#b03a2e" />
+        <path d="M1320 906 Q1340 920 1360 916 Q1370 922 1380 918"
+              stroke="#f5ede0" stroke-width="1" fill="none" opacity=".7" />
+        <g stroke="#f5ede0" stroke-width=".7" fill="none" opacity=".6">
+          <line x1="1325" y1="909" x2="1330" y2="918" />
+          <line x1="1340" y1="912" x2="1346" y2="920" />
+          <line x1="1356" y1="916" x2="1362" y2="922" />
+        </g>
+        <use href="#wave" x="1230" y="930" />
+        <use href="#wave" x="1340" y="930" />
+      </g>
+    </svg>
+  </div>
+  <div class="legend">
+    <span>17 holdings · 3 biomes</span>
+    <span>Toggle from the panel →</span>
+  </div>
+</div>
+
+<aside id="panel" class="panel"></aside>
+
+<script src="kingdom.js"></script>
+</body>
+</html>
