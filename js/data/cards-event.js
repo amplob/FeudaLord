@@ -316,4 +316,81 @@ const eventCards = [
         eventBase: -8,
         qualityFactor: 1,
     },
+
+    // --- Shortage events: auto-triggered when a resource hits ≤ 0 ---
+    // These are not drawn from the wheel (weight: 0 + filtered in
+    // getEligibleCards). game.js#manageShortageEvents activates one when its
+    // `shortageOf` resource is depleted and silently deactivates it on
+    // recovery. perTurnEffects keeps the realm bleeding every turn while
+    // active. onActivate mirrors perTurnEffects so the penalty also fires
+    // on the turn the shortage begins (matching the old decay cascade).
+    {
+        typeId: "shortageGold",
+        category: "event",
+        name: "Empty Coffers",
+        description: "The treasury is bone dry — the realm groans under unpaid wages.",
+        icon: "💸",
+        tonality: "bad",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: true,
+        maxInstances: 1,
+        minTurn: 1,
+        requiresResource: null,
+
+        weight: 0,
+        absoluteChance: null,
+
+        shortageOf: "gold",
+        onActivate: { food: -2, manpower: -0.33, favor: -0.5 },
+        perTurnEffects: { food: -2, manpower: -0.33, favor: -0.5 },
+        onExpire: null,
+    },
+    {
+        typeId: "shortageFood",
+        category: "event",
+        name: "Famine",
+        description: "Granaries are empty — hunger claims the weakest each week.",
+        icon: "🥀",
+        tonality: "bad",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: true,
+        maxInstances: 1,
+        minTurn: 1,
+        requiresResource: null,
+
+        weight: 0,
+        absoluteChance: null,
+
+        shortageOf: "food",
+        onActivate: { manpower: -1 },
+        perTurnEffects: { manpower: -1 },
+        onExpire: null,
+    },
+    {
+        typeId: "shortageManpower",
+        category: "event",
+        name: "Workforce Collapse",
+        description: "Too few hands to till the fields, mind the coffers, or keep the peace.",
+        icon: "🏚️",
+        tonality: "bad",
+
+        dependencies: [],
+        blockedBy: [],
+        isUnique: true,
+        maxInstances: 1,
+        minTurn: 1,
+        requiresResource: null,
+
+        weight: 0,
+        absoluteChance: null,
+
+        shortageOf: "manpower",
+        onActivate: { gold: -1, food: -1, favor: -0.5 },
+        perTurnEffects: { gold: -1, food: -1, favor: -0.5 },
+        onExpire: null,
+    },
 ];

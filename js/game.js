@@ -85,11 +85,6 @@ const defaultState = {
     // { turn, resources: {...}, income: {...} }. Capped to HISTORY_MAX entries.
     history: [],
 
-    // Which decay cascades have already been announced to the player. Keys
-    // are trigger resource ids ("gold" / "food" / "manpower"); presence
-    // means the rising-edge toast has fired and we shouldn't repeat it
-    // until the resource recovers above zero.
-    activeDecays: {},
 };
 
 let gameState = null;
@@ -312,9 +307,10 @@ function handleSpin() {
         recordSpin();
         processEvents();
         applyPassiveIncome();
-        // Cascade decay fires AFTER passive income has had a chance to refill
-        // — only resources still ≤ 0 then take a hit.
-        applyDecayEffects();
+        // Shortage events fire AFTER passive income has had a chance to
+        // refill — only resources still ≤ 0 trigger one. Newly-activated
+        // shortages apply their onActivate penalty immediately.
+        manageShortageEvents();
         gameState.turn += 1;
         recordTurnSnapshot();
         updateResourceBar(gameState);
@@ -333,50 +329,30 @@ function handleSpin() {
 }
 
 // =====================================================
-// DECAY (negative-resource cascade)
+// SHORTAGE EVENTS (negative-resource cascade as real events)
 // =====================================================
-// When a resource sits at ≤ 0 the realm bleeds: each rule below applies
-// its penalty every turn for as long as the trigger resource stays
-// negative. Rules are independent and stack — being broke and starving at
-// the same time inflicts both penalties this turn.
-//
-// The first time a cascade activates we toast the player so they understand
-// what's happening; subsequent turns apply silently. When the resource
-// recovers above zero we silently clear the announcement so the next dip
-// triggers a fresh notification.
+// When a resource sits at ≤ 0 we activate the matching shortage event
+// (cards-event.js, marked with `shortageOf: "<resource>"`). The event
+// shows up in the kingdom events list, contributes its perTurnEffects to
+// the per-turn yield, and pops a toast on activation. When the resource
+// recovers above zero the event is silently removed (no end toast).
+// On game over we leave events as-is — the run is over either way.
 
-const DECAY_RULES = {
-    gold: {
-        effects: { food: -2, manpower: -0.33, favor: -0.5 },
-        message: "💸 Empty coffers — the realm bleeds: −2 food, −0.33 manpower, −0.5 favor / turn.",
-    },
-    food: {
-        effects: { manpower: -1 },
-        message: "🥀 Famine claims the weak: −1 manpower / turn.",
-    },
-    manpower: {
-        effects: { gold: -1, food: -1, favor: -0.5 },
-        message: "🏚️ Few hands left to till and defend: −1 gold, −1 food, −0.5 favor / turn.",
-    },
-};
-
-function applyDecayEffects() {
-    if (!gameState.activeDecays) gameState.activeDecays = {};
-    for (const [trigger, rule] of Object.entries(DECAY_RULES)) {
-        const isActive = gameState.resources[trigger] <= 0;
-        if (isActive) {
-            // Rising-edge announcement — once per cascade entry.
-            if (!gameState.activeDecays[trigger]) {
-                showToast(rule.message);
-                gameState.activeDecays[trigger] = true;
-            }
-            // Penalty applies every turn while the cascade is active. No
-            // reason argument so the per-turn drain stays silent.
-            applyResourceChange(rule.effects);
-        } else if (gameState.activeDecays[trigger]) {
-            // Recovery is silent — no toast, just clear the announce flag so
-            // the next dip will re-announce.
-            delete gameState.activeDecays[trigger];
+function manageShortageEvents() {
+    if (gameState.gameOver) return;
+    const shortageCards = allCards.filter(c => c.shortageOf);
+    for (const card of shortageCards) {
+        const conditionMet = gameState.resources[card.shortageOf] <= 0;
+        const existing = activeCards.find(c => c.typeId === card.typeId);
+        if (conditionMet && !existing) {
+            const inst = createCardInstance(card);
+            // applyEventInstance applies onActivate (immediate penalty) and
+            // adds the card to activeCards (so processActiveEvents will pick
+            // up its perTurnEffects on subsequent turns).
+            applyEventInstance(inst, applyResourceChange);
+            showToast(`${inst.icon} ${inst.name} — the realm suffers.`);
+        } else if (!conditionMet && existing) {
+            deactivateCard(existing.instanceId);
         }
     }
 }
@@ -762,9 +738,9 @@ function verifyState() {
         endGame("🎉 The people crown you Duke!");
         return;
     }
-    // Only favor ends the run now. Other resources going negative inflict the
-    // cascade penalties from applyDecayEffects, which over time push favor
-    // toward this threshold.
+    // Only favor ends the run now. Other resources going negative activate
+    // shortage events (manageShortageEvents), whose perTurnEffects push
+    // favor toward this threshold over time.
     if (favor < 0) {
         endGame("⚔️ Revolution! The people overthrow you.");
     }

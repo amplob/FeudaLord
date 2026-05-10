@@ -344,6 +344,9 @@ function isCardEligible(card, state) {
 function getEligibleCards(category, state, tonality) {
     return allCards.filter(card => {
         if (card.category !== category) return false;
+        // Shortage events are auto-triggered by manageShortageEvents — never
+        // drawn from the wheel, even if their gating happens to allow it.
+        if (card.shortageOf) return false;
         if (tonality && card.tonality !== tonality) return false;
         return isCardEligible(card, state);
     });
