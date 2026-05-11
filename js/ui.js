@@ -224,6 +224,36 @@ function showTradeOverlay() {
     document.getElementById('tradeOverlay').classList.remove('hidden');
 }
 
+// Shortage popup. game.js#manageShortageEvents queues notifications when a
+// shortage activates; if one is already on screen the new one waits in
+// _shortageQueue until the player presses Continue.
+const _shortageQueue = [];
+let _shortageVisible = false;
+
+function showShortagePopup(eventInstance) {
+    _shortageQueue.push(eventInstance);
+    if (!_shortageVisible) _renderNextShortage();
+}
+
+function _renderNextShortage() {
+    const next = _shortageQueue.shift();
+    if (!next) { _shortageVisible = false; return; }
+    _shortageVisible = true;
+    document.getElementById('shortageIcon').textContent = next.icon || '⚠️';
+    document.getElementById('shortageTitle').textContent = next.name || 'Shortage';
+    document.getElementById('shortageDescription').textContent = next.description || '';
+    const eff = document.getElementById('shortageEffects');
+    eff.textContent = next.perTurn ? `${formatPerTurn(next.perTurn)} per turn` : '';
+    document.getElementById('shortageOverlay').classList.remove('hidden');
+}
+
+function hideShortagePopup() {
+    document.getElementById('shortageOverlay').classList.add('hidden');
+    // Defer the next render slightly so the fade-out reads as a discrete
+    // dismissal rather than a card-swap.
+    setTimeout(_renderNextShortage, 220);
+}
+
 function hideTradeOverlay() {
     document.getElementById('tradeOverlay').classList.add('hidden');
 }

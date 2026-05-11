@@ -722,6 +722,18 @@
             </div>
         </div>
 
+        <!-- Shortage Popup — auto-fired when a resource drops to ≤ 0. Higher
+             z-index than the augury overlay so it shows on top even mid-spin. -->
+        <div class="overlay shortage-overlay hidden" id="shortageOverlay">
+            <div class="overlay-content shortage-content">
+                <div class="shortage-icon" id="shortageIcon">⚠️</div>
+                <h2 id="shortageTitle">Shortage</h2>
+                <p id="shortageDescription">A resource has run out.</p>
+                <p class="shortage-effects" id="shortageEffects"></p>
+                <button class="shortage-continue" id="shortageContinue" type="button">Continue</button>
+            </div>
+        </div>
+
         <!-- Trade Overlay (higher z-index, always accessible) -->
         <div class="overlay trade-overlay hidden" id="tradeOverlay">
             <div class="overlay-content trade-content">

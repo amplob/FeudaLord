@@ -129,6 +129,7 @@ function initGame() {
     document.getElementById("dailyButton").addEventListener("click", handleDailyClick);
     document.getElementById("dailyContinue").addEventListener("click", hideDailyOverlay);
     document.getElementById("eyeButton").addEventListener("click", toggleRealmView);
+    document.getElementById("shortageContinue").addEventListener("click", hideShortagePopup);
     wireSidebar();
     // Render the realm landscape behind the wheel on first paint.
     renderRealm();
@@ -366,6 +367,9 @@ function manageShortageEvents() {
                 applyEventInstance(inst, applyResourceChange);
                 renderKingdom();
                 updateIncomeIndicators();
+                if (typeof showShortagePopup === "function") {
+                    showShortagePopup(inst);
+                }
             } else if (!conditionMet && existing) {
                 deactivateCard(existing.instanceId);
                 renderKingdom();
@@ -400,9 +404,17 @@ function processEvents() {
 }
 
 function applyPassiveIncome() {
-    const net = calculateTotalPassiveIncome();
+    // Only investments contribute here. Event perTurn is already applied by
+    // processEvents above — folding it in again would double-count any
+    // event that yields per turn (drought, shortages, etc.).
+    const net = { gold: 0, food: 0, manpower: 0, favor: 0 };
+    for (const card of activeCards) {
+        if (card.category !== "investment" || !card.perTurn) continue;
+        for (const [resource, amount] of Object.entries(card.perTurn)) {
+            net[resource] = (net[resource] || 0) + amount;
+        }
+    }
     const hasIncome = Object.values(net).some(v => v !== 0);
-    
     if (hasIncome) {
         applyResourceChange(net, "Passive income collected");
     }
