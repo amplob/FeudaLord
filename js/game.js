@@ -102,10 +102,15 @@ function initGame() {
     
     // Restore card system state
     restoreCardSystemState(gameState.cardSystemState);
-    
+
     // Credit regen for time elapsed since last save, then start the live tick
     // so the countdown updates every second while the game is open.
     applyRegen();
+
+    // Surface any shortage events that are valid against the just-loaded
+    // resources (saves from before the shortage-events change won't carry
+    // them in activeCards, so re-sync on every boot).
+    manageShortageEvents();
 
     // Update UI
     updateResourceBar(gameState);
@@ -338,22 +343,37 @@ function handleSpin() {
 // recovers above zero the event is silently removed (no end toast).
 // On game over we leave events as-is — the run is over either way.
 
+// Re-entrancy guard. manageShortageEvents calls applyEventInstance →
+// applyChange → applyResourceChange, and applyResourceChange now calls
+// manageShortageEvents again. The recursive call is idempotent per typeId
+// (the `existing` check), but the guard avoids re-iterating the card list.
+let _shortageSyncing = false;
+
 function manageShortageEvents() {
-    if (gameState.gameOver) return;
-    const shortageCards = allCards.filter(c => c.shortageOf);
-    for (const card of shortageCards) {
-        const conditionMet = gameState.resources[card.shortageOf] <= 0;
-        const existing = activeCards.find(c => c.typeId === card.typeId);
-        if (conditionMet && !existing) {
-            const inst = createCardInstance(card);
-            // applyEventInstance applies onActivate (immediate penalty) and
-            // adds the card to activeCards (so processActiveEvents will pick
-            // up its perTurnEffects on subsequent turns).
-            applyEventInstance(inst, applyResourceChange);
-            showToast(`${inst.icon} ${inst.name} — the realm suffers.`);
-        } else if (!conditionMet && existing) {
-            deactivateCard(existing.instanceId);
+    if (!gameState || gameState.gameOver) return;
+    if (_shortageSyncing) return;
+    _shortageSyncing = true;
+    try {
+        const shortageCards = allCards.filter(c => c.shortageOf);
+        for (const card of shortageCards) {
+            const conditionMet = gameState.resources[card.shortageOf] <= 0;
+            const existing = activeCards.find(c => c.typeId === card.typeId);
+            if (conditionMet && !existing) {
+                const inst = createCardInstance(card);
+                // applyEventInstance applies onActivate (immediate penalty)
+                // and adds the card to activeCards (so processActiveEvents
+                // picks up its perTurnEffects from next turn).
+                applyEventInstance(inst, applyResourceChange);
+                renderKingdom();
+                updateIncomeIndicators();
+            } else if (!conditionMet && existing) {
+                deactivateCard(existing.instanceId);
+                renderKingdom();
+                updateIncomeIndicators();
+            }
         }
+    } finally {
+        _shortageSyncing = false;
     }
 }
 
@@ -706,6 +726,13 @@ function applyResourceChange(change, reason) {
 
     if (reason) {
         showToast(reason);
+    }
+
+    // Any resource change can push us into (or out of) a shortage state —
+    // sync the shortage events so the popup and event list stay in lockstep
+    // with the resource bar, even between spins (decisions, trades, etc.).
+    if (typeof manageShortageEvents === "function") {
+        manageShortageEvents();
     }
 
     // No saveState here — under save-after-spin, mid-turn resource changes
