@@ -175,8 +175,18 @@ function validateCards() {
                 if (!(opt.inputRes && opt.outputRes && typeof opt.inputBase === "number")) {
                     log(`${tag}: option "${opt.label}" missing inputRes/outputRes/inputBase`);
                 } else {
-                    if (!validResources.has(opt.inputRes)) log(`${tag}: option "${opt.label}" inputRes "${opt.inputRes}" invalid`);
-                    if (!validResources.has(opt.outputRes)) log(`${tag}: option "${opt.label}" outputRes "${opt.outputRes}" invalid`);
+                    // Resource fields may list multiple resources separated by
+                    // commas (e.g., "food,gold"). Each must be a valid resource.
+                    const ins = parseResources(opt.inputRes);
+                    const outs = parseResources(opt.outputRes);
+                    if (!ins.length) log(`${tag}: option "${opt.label}" inputRes is empty`);
+                    if (!outs.length) log(`${tag}: option "${opt.label}" outputRes is empty`);
+                    for (const r of ins) {
+                        if (!validResources.has(r)) log(`${tag}: option "${opt.label}" inputRes "${r}" invalid`);
+                    }
+                    for (const r of outs) {
+                        if (!validResources.has(r)) log(`${tag}: option "${opt.label}" outputRes "${r}" invalid`);
+                    }
                 }
             }
         }
@@ -494,17 +504,55 @@ function evalTierMultiplier(tierBoosts) {
     return best;
 }
 
-// Trade-style formula: convert inputRes → outputRes.
-// inputAmount  = inputBase × bulkRoll
-// outputAmount = inputAmount × canonicalRate × qualityFactor × varianceRoll × tierMultiplier
+// Parse a resource list. Accepts a single name ("food"), a
+// comma-separated list ("food,gold"), or an array. Trims whitespace and
+// drops blanks. Used by decision options to declare multi-resource
+// inputs/outputs.
+function parseResources(spec) {
+    if (Array.isArray(spec)) return spec.map(s => String(s).trim()).filter(Boolean);
+    if (typeof spec !== "string") return [];
+    return spec.split(",").map(s => s.trim()).filter(Boolean);
+}
+
+// Trade-style formula. Supports multi-resource inputs and outputs:
+//
+//   inputBase is sized in units of the FIRST listed input resource. The
+//   total cost (in g-eq) = inputBase × value(firstInput) × bulkRoll, then
+//   split EVENLY across all listed input resources. Each input's amount
+//   is its share of the total g-eq, converted back into its own units.
+//
+//   The output's total g-eq = totalInputGEq × qualityFactor × varianceRoll
+//   × tierMultiplier. Split evenly across all listed output resources,
+//   converted into per-resource amounts the same way.
+//
+// Single-resource options (the common case) collapse to the original
+// behavior: inputAmount = inputBase × bulk in input units, outputAmount =
+// inputAmount × canonicalRate × qF × variance × tier in output units.
+//
+// Returns the resolved per-resource effects object (inputs negative,
+// outputs positive, summed if a resource appears on both sides).
 function applyTradeFormula({ inputRes, outputRes, inputBase, qualityFactor = 1, tierMultiplier = 1 }) {
+    const inputs = parseResources(inputRes);
+    const outputs = parseResources(outputRes);
+    if (!inputs.length || !outputs.length) return { effects: {} };
+
     const bulk = rollBulk();
     const variance = rollVariance();
-    const inputAmount = round2(inputBase * bulk);
-    const outputAmount = round2(
-        inputAmount * canonicalRate(inputRes, outputRes) * qualityFactor * variance * tierMultiplier
-    );
-    return { inputAmount, outputAmount };
+    const totalInputGEq = inputBase * getResourceValue(inputs[0]) * bulk;
+    const shareInputGEq = totalInputGEq / inputs.length;
+    const totalOutputGEq = totalInputGEq * qualityFactor * variance * tierMultiplier;
+    const shareOutputGEq = totalOutputGEq / outputs.length;
+
+    const effects = {};
+    for (const r of inputs) {
+        const amount = round2(shareInputGEq / getResourceValue(r));
+        effects[r] = (effects[r] || 0) - amount;
+    }
+    for (const r of outputs) {
+        const amount = round2(shareOutputGEq / getResourceValue(r));
+        effects[r] = round2((effects[r] || 0) + amount);
+    }
+    return { effects };
 }
 
 // Instant-event formula: no input, size is eventBase in gold-equivalent.
@@ -610,7 +658,7 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
                 };
             }
             const tierMultiplier = evalTierMultiplier(opt.tierBoosts) * sliceMultiplier;
-            const { inputAmount, outputAmount } = applyTradeFormula({
+            const { effects } = applyTradeFormula({
                 inputRes: opt.inputRes,
                 outputRes: opt.outputRes,
                 inputBase: opt.inputBase,
@@ -619,10 +667,7 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
             });
             return {
                 label: opt.label,
-                effects: {
-                    [opt.inputRes]: -inputAmount,
-                    [opt.outputRes]: outputAmount,
-                },
+                effects,
                 triggersEvent: opt.triggersEvent || null,
                 ...copyFlagFields(opt),
             };

@@ -54,6 +54,17 @@ Both `inputRes` AND `outputRes` can vary across the three options — same
 input + varied outputs (Tournament), varied inputs + same output
 (BishopsRequest), or fully mixed (OldKnightRetires).
 
+`inputRes` and `outputRes` can also list **multiple resources** as a
+comma-separated string (e.g., `"food,gold"`). The cost and reward are
+split **evenly** across the listed resources by gold-equivalent — see
+the math below.
+
+```js
+// "Welcome them as workers" — pay food AND gold, receive manpower AND favor.
+{ label: "Welcome them as workers",
+  inputRes: "food,gold", outputRes: "manpower,favor", inputBase: 12 },
+```
+
 The legacy "fixed-output" schema (`outputRes`/`outputBase` at the card
 level) is gone, and so is `applyFixedOutputTrade` in `cardSystem.js`.
 The validator will flag any card that still carries those fields.
@@ -65,9 +76,9 @@ The validator will flag any card that still carries those fields.
 | Field | Level | Type | Purpose |
 |-------|-------|------|---------|
 | `qualityFactors` | card | number[] | Shuffled & assigned to options at draw time. Length must match `options`. |
-| `inputRes` | option | string | What this option costs |
-| `outputRes` | option | string | What this option yields |
-| `inputBase` | option | number | Cost size, in input-resource units, before the bulk roll |
+| `inputRes` | option | string | What this option costs. One resource (`"food"`) or several (`"food,gold"`). |
+| `outputRes` | option | string | What this option yields. Same syntax as `inputRes`. |
+| `inputBase` | option | number | Cost size, in units of the **first listed input resource**, before the bulk roll. |
 | `triggersEvent` | option | string? | Optional event typeId to fire when chosen |
 
 Per-card meta (same as other card types): `typeId`, `name`,
@@ -85,18 +96,35 @@ Canonical resource values (g-eq): `gold=1`, `food=0.5`, `manpower=3`, `favor=2`.
 - `varianceRoll ∈ [0.85, 1.15]` — small per-option quality jitter
 - `qualityFactor` — pulled from the card's shuffled `qualityFactors` array
 
-**Formula** (one for every option):
+**Formula** (one for every option). `inputBase` is sized in units of the
+**first listed input resource**; the total g-eq cost of the option is
+then split evenly across all listed inputs (and the total g-eq reward
+evenly across all listed outputs).
+
 ```
-inputAmount  = inputBase × bulkRoll
-outputAmount = inputAmount × canonicalRate(in→out) × qualityFactor × varianceRoll
+totalInputGEq  = inputBase × value(firstInputRes) × bulkRoll
+shareInputGEq  = totalInputGEq / numInputs
+totalOutputGEq = totalInputGEq × qualityFactor × varianceRoll
+shareOutputGEq = totalOutputGEq / numOutputs
+
+for each input  resource r:  amount = shareInputGEq  / value(r)   (subtracted)
+for each output resource r:  amount = shareOutputGEq / value(r)   (added)
 ```
+
+For the single-resource case (`inputRes: "food"`, one output) this
+collapses to the original `inputAmount = inputBase × bulk` / `output =
+inputAmount × canonicalRate × qF × variance`.
 
 At `qualityFactor = 1` the swap is canonical (zero sum in g-eq). At 1.3
-the player profits ~30% in g-eq; at 0.7 they lose ~30%.
+the player profits ~30%; at 0.7 they lose ~30%.
+
+A resource that appears on both sides nets out in the final effects
+(e.g., `inputRes: "gold,food", outputRes: "gold,manpower"` would
+subtract its input share and add its output share to `effects.gold`).
 
 **Rule of thumb for sizing inputBase**: pick the desired g-eq scale of
-the trade and divide by the input's value:
-`inputBase ≈ desired_g-eq / value(inputRes)`.
+the trade and divide by the FIRST input's value:
+`inputBase ≈ desired_g-eq / value(firstInputRes)`.
 
 Most current cards target **15–20 g-eq** per option, matching the
 investment-tier scale of mid-game decisions.
