@@ -42,7 +42,7 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        qualityFactors: [0.7, 1.0, 1.3],
+        qualityFactors: [0.7, 1.0, 1.1],
 
         options: [
             { label: "Welcome them as workers", inputRes: "food", outputRes: "manpower", inputBase: 12 },
@@ -423,7 +423,7 @@ const decisionCards = [
         options: [
             { label: "Grand spectacle (seek renown)", inputRes: "gold", outputRes: "favor", inputBase: 20 },
             { label: "Recruit the champions", inputRes: "gold", outputRes: "manpower", inputBase: 20 },
-            { label: "Feast the visiting lords", inputRes: "gold", outputRes: "food", inputBase: 20 },
+            { label: "Feast the visiting lords", inputRes: "food", outputRes: "favor", inputBase: 20 },
         ],
     },
     {
