@@ -46,12 +46,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        qualityFactors: [0.7, 1.0, 1.1],
+        qualityFactors: [0.7, 1.0, 0.9],
 
         options: [
-            { label: "Welcome them as workers", inputRes: "food", outputRes: "manpower", inputBase: 6 },
-            { label: "Provide charitable relief", inputRes: "food", outputRes: "favor", inputBase: 6 },
-            { label: "Sell their meager goods", inputRes: "food", outputRes: "gold", inputBase: 6 },
+            { label: "Welcome them as workers", inputRes: "food,gold", outputRes: "manpower,favor", inputBase: 20 },
+            { label: "Provide charitable relief", inputRes: "food,manpower", outputRes: "favor", inputBase: 15 },
+            { label: "Sell their meager goods", inputRes: "favor", outputRes: "gold", inputBase: 10 },
         ],
     },
     {
@@ -75,7 +75,7 @@ const decisionCards = [
 
         options: [
             { label: "Gift gold", inputRes: "gold", outputRes: "favor", inputBase: 15 },
-            { label: "Send grain", inputRes: "food", outputRes: "favor", inputBase: 15 },
+            { label: "Send thoughts and prayers", inputRes: "favor", outputRes: "favor", inputBase: 15 },
             { label: "Send laborers", inputRes: "manpower", outputRes: "favor", inputBase: 15 },
         ],
     },
@@ -96,12 +96,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        qualityFactors: [0.7, 1.0, 1.3],
+        qualityFactors: [0.9, 1.0, 1.2],
 
         options: [
             { label: "Feed his men", inputRes: "food", outputRes: "manpower", inputBase: 15 },
             { label: "Buy his retinue", inputRes: "gold", outputRes: "manpower", inputBase: 15 },
-            { label: "Knight him personally", inputRes: "favor", outputRes: "manpower", inputBase: 15 },
+            { label: "Knight him personally", inputRes: "favor,gold", outputRes: "manpower,favor", inputBase: 15 },
         ],
     },
     {
@@ -124,10 +124,9 @@ const decisionCards = [
         qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            // Grain rights also fire a Trade Boom event for extra reward on top of the gold.
-            { label: "Grant grain rights", inputRes: "food", outputRes: "gold", inputBase: 17, triggersEvent: "tradeBoom" },
-            { label: "Assign workers", inputRes: "manpower", outputRes: "gold", inputBase: 17 },
-            { label: "Royal endorsement", inputRes: "favor", outputRes: "gold", inputBase: 17 },
+            { label: "Grant them rights", inputRes: "favor", outputRes: "gold", inputBase: 17, triggersEvent: "tradeBoom" },
+            { label: "Assign workers", inputRes: "manpower", outputRes: "gold", inputBase: 17, triggersEvent: "tradeBoom" },
+            { label: "Deny them entry", inputRes: "favor,manpower", outputRes: "favor", inputBase: 17 },
         ],
     },
     {
@@ -147,7 +146,7 @@ const decisionCards = [
         weight: 8,
         absoluteChance: null,
 
-        qualityFactors: [0.7, 1.0, 1.3],
+        qualityFactors: [0.7, 0.8, 0.8],
 
         options: [
             { label: "Hire mercenaries", inputRes: "gold", outputRes: "manpower", inputBase: 17 },
@@ -177,7 +176,7 @@ const decisionCards = [
         options: [
             { label: "Fund irrigation", inputRes: "gold", outputRes: "food", inputBase: 17 },
             { label: "Send laborers", inputRes: "manpower", outputRes: "food", inputBase: 17 },
-            { label: "Decree royal levy", inputRes: "favor", outputRes: "food", inputBase: 17 },
+            { label: "Decree royal levy", inputRes: "favor", outputRes: "food,favor", inputBase: 17 },
         ],
     },
     {
@@ -202,7 +201,7 @@ const decisionCards = [
         options: [
             { label: "Pay him in coin", inputRes: "gold", outputRes: "favor", inputBase: 14 },
             { label: "Feast the troupe", inputRes: "food", outputRes: "favor", inputBase: 14 },
-            { label: "Lend him guards", inputRes: "manpower", outputRes: "favor", inputBase: 14 },
+            { label: "Lend him guards", inputRes: "manpower,favor", outputRes: "favor", inputBase: 14 },
         ],
     },
     {
