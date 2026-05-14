@@ -514,20 +514,17 @@ function parseResources(spec) {
     return spec.split(",").map(s => s.trim()).filter(Boolean);
 }
 
-// Trade-style formula. Supports multi-resource inputs and outputs:
+// Trade-style formula. Supports multi-resource inputs and outputs.
 //
-//   inputBase is sized in units of the FIRST listed input resource. The
-//   total cost (in g-eq) = inputBase × value(firstInput) × bulkRoll, then
-//   split EVENLY across all listed input resources. Each input's amount
-//   is its share of the total g-eq, converted back into its own units.
+//   inputBase is the total cost in gold-equivalent (g-eq). The total
+//   cost after the size roll = inputBase × bulkRoll, split EVENLY across
+//   all listed input resources. Each input's amount is its share of the
+//   total g-eq, converted back into its own units via the canonical
+//   rates (gold=1, food=0.5, manpower=3, favor=2).
 //
 //   The output's total g-eq = totalInputGEq × qualityFactor × varianceRoll
 //   × tierMultiplier. Split evenly across all listed output resources,
 //   converted into per-resource amounts the same way.
-//
-// Single-resource options (the common case) collapse to the original
-// behavior: inputAmount = inputBase × bulk in input units, outputAmount =
-// inputAmount × canonicalRate × qF × variance × tier in output units.
 //
 // Returns the resolved per-resource effects object (inputs negative,
 // outputs positive, summed if a resource appears on both sides).
@@ -538,7 +535,7 @@ function applyTradeFormula({ inputRes, outputRes, inputBase, qualityFactor = 1, 
 
     const bulk = rollBulk();
     const variance = rollVariance();
-    const totalInputGEq = inputBase * getResourceValue(inputs[0]) * bulk;
+    const totalInputGEq = inputBase * bulk;
     const shareInputGEq = totalInputGEq / inputs.length;
     const totalOutputGEq = totalInputGEq * qualityFactor * variance * tierMultiplier;
     const shareOutputGEq = totalOutputGEq / outputs.length;

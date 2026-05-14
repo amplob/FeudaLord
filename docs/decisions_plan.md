@@ -78,7 +78,7 @@ The validator will flag any card that still carries those fields.
 | `qualityFactors` | card | number[] | Shuffled & assigned to options at draw time. Length must match `options`. |
 | `inputRes` | option | string | What this option costs. One resource (`"food"`) or several (`"food,gold"`). |
 | `outputRes` | option | string | What this option yields. Same syntax as `inputRes`. |
-| `inputBase` | option | number | Cost size, in units of the **first listed input resource**, before the bulk roll. |
+| `inputBase` | option | number | Total cost **in gold-equivalent** (g-eq), before the bulk roll. Split evenly across listed inputRes resources. |
 | `triggersEvent` | option | string? | Optional event typeId to fire when chosen |
 
 Per-card meta (same as other card types): `typeId`, `name`,
@@ -96,13 +96,12 @@ Canonical resource values (g-eq): `gold=1`, `food=0.5`, `manpower=3`, `favor=2`.
 - `varianceRoll ∈ [0.85, 1.15]` — small per-option quality jitter
 - `qualityFactor` — pulled from the card's shuffled `qualityFactors` array
 
-**Formula** (one for every option). `inputBase` is sized in units of the
-**first listed input resource**; the total g-eq cost of the option is
-then split evenly across all listed inputs (and the total g-eq reward
-evenly across all listed outputs).
+**Formula** (one for every option). `inputBase` is the total cost in
+g-eq; it splits evenly across the listed inputs, and the resulting
+output g-eq splits evenly across the listed outputs.
 
 ```
-totalInputGEq  = inputBase × value(firstInputRes) × bulkRoll
+totalInputGEq  = inputBase × bulkRoll
 shareInputGEq  = totalInputGEq / numInputs
 totalOutputGEq = totalInputGEq × qualityFactor × varianceRoll
 shareOutputGEq = totalOutputGEq / numOutputs
@@ -111,10 +110,6 @@ for each input  resource r:  amount = shareInputGEq  / value(r)   (subtracted)
 for each output resource r:  amount = shareOutputGEq / value(r)   (added)
 ```
 
-For the single-resource case (`inputRes: "food"`, one output) this
-collapses to the original `inputAmount = inputBase × bulk` / `output =
-inputAmount × canonicalRate × qF × variance`.
-
 At `qualityFactor = 1` the swap is canonical (zero sum in g-eq). At 1.3
 the player profits ~30%; at 0.7 they lose ~30%.
 
@@ -122,12 +117,10 @@ A resource that appears on both sides nets out in the final effects
 (e.g., `inputRes: "gold,food", outputRes: "gold,manpower"` would
 subtract its input share and add its output share to `effects.gold`).
 
-**Rule of thumb for sizing inputBase**: pick the desired g-eq scale of
-the trade and divide by the FIRST input's value:
-`inputBase ≈ desired_g-eq / value(firstInputRes)`.
-
-Most current cards target **15–20 g-eq** per option, matching the
-investment-tier scale of mid-game decisions.
+**Sizing inputBase**: just pick the g-eq scale of the trade directly.
+Most current cards sit at **15–20 g-eq** per option, matching the
+investment-tier scale of mid-game decisions. Refugees is intentionally
+small (6 g-eq) as an early-game card.
 
 ---
 
@@ -153,38 +146,37 @@ before the player picks).
 
 ## Card catalog (20)
 
-All cards use `qualityFactors: [0.7, 1.0, 1.3]`. Options column lists
-`input → output, inputBase` for each option.
+`qualityFactors` is `[0.7, 1.0, 1.3]` everywhere except `refugees`
+(`[0.7, 1.0, 1.1]` — Marc trimmed the upside there). `inputBase` is in
+g-eq; "uniform" means the same inputBase across all three options.
 
-| # | typeId | name | minTurn | Options (input → output, base) |
-|---|--------|------|---------|---------------------------------|
-| 1 | refugees | Refugees at the Gates | 2 | 12🌾→👥 · 12🌾→👑 · 12🌾→💰 |
-| 2 | bishopsRequest | The Bishop's Request | 1 | 15💰→👑 · 30🌾→👑 · 5👥→👑 |
-| 3 | knightsOffer | A Knight's Offer | 2 | 30🌾→👥 · 15💰→👥 · 7.5👑→👥 |
-| 4 | merchantGuild | Merchant Guild Request | 3 | 34🌾→💰 (+tradeBoom) · 6👥→💰 · 8.5👑→💰 |
-| 5 | warPreparations | War in Neighboring Lands | 6 | 17💰→👥 · 8.5👑→👥 · 33🌾→👥 |
-| 6 | ruralPetition | Rural Petition | 3 | 17💰→🌾 · 5.5👥→🌾 · 8.5👑→🌾 |
-| 7 | travelingMinstrel | A Traveling Minstrel | 1 | 14💰→👑 · 28🌾→👑 · 5👥→👑 |
-| 8 | surplusGrainOffer | Surplus Grain Offer | 2 | 34🌾→💰 · 8.5👑→💰 · 6👥→💰 |
-| 9 | foreignMercenaries | Foreign Mercenaries | 3 | 15💰→👥 · 7.5👑→👥 · 30🌾→👥 |
-| 10 | huntingParty | Great Hunting Party | 2 | 7👥→🌾 · 20💰→🌾 · 10👑→🌾 |
-| 11 | taxCollection | Tax Collection Round | 1 | 8.5👑→💰 · 6👥→💰 · 34🌾→💰 |
-| 12 | saltMerchant | The Salt Merchant | 2 | 18💰→🌾 · 9👑→🌾 · 6👥→🌾 |
-| 13 | apothecaryArrives | An Apothecary Arrives | 3 | 16💰→👑 · 5👥→👑 · 32🌾→👑 |
-| 14 | peasantVolunteers | Peasant Volunteers | 2 | 30🌾→👥 · 15💰→👥 · 7.5👑→👥 |
-| 15 | dowryOffered | A Dowry Offered | 4 | 10👑→💰 · 7👥→💰 · 40🌾→💰 |
-| 16 | tournament | Host a Tournament | 4 | 20💰→👑 · 20💰→👥 · 20💰→🌾 |
-| 17 | royalDecree | Royal Decree | 3 | 10👑→💰 · 10👑→👥 · 10👑→🌾 |
-| 18 | forestClearing | Forest Clearing Offer | 2 | 5👥→🌾 · 5👥→💰 · 5👥→👑 |
-| 19 | festivalOfLights | Festival of Lights | 3 | 20💰→👑 · 40🌾→👑 · 7👥→👑 |
-| 20 | oldKnightRetires | An Old Knight Retires | 5 | 20💰→👑 · 30🌾→👥 · 20💰→👥 |
+| # | typeId | name | minTurn | inputBase | Options (input → output) |
+|---|--------|------|---------|-----------|---------------------------|
+| 1 | refugees | Refugees at the Gates | 2 | 6 | 🌾→👥 · 🌾→👑 · 🌾→💰 |
+| 2 | bishopsRequest | The Bishop's Request | 1 | 15 | 💰→👑 · 🌾→👑 · 👥→👑 |
+| 3 | knightsOffer | A Knight's Offer | 2 | 15 | 🌾→👥 · 💰→👥 · 👑→👥 |
+| 4 | merchantGuild | Merchant Guild Request | 3 | 17 | 🌾→💰 (+tradeBoom) · 👥→💰 · 👑→💰 |
+| 5 | warPreparations | War in Neighboring Lands | 6 | 17 | 💰→👥 · 👑→👥 · 🌾→👥 |
+| 6 | ruralPetition | Rural Petition | 3 | 17 | 💰→🌾 · 👥→🌾 · 👑→🌾 |
+| 7 | travelingMinstrel | A Traveling Minstrel | 1 | 14 | 💰→👑 · 🌾→👑 · 👥→👑 |
+| 8 | surplusGrainOffer | Surplus Grain Offer | 2 | 17 | 🌾→💰 · 👑→💰 · 👥→💰 |
+| 9 | foreignMercenaries | Foreign Mercenaries | 3 | 15 | 💰→👥 · 👑→👥 · 🌾→👥 |
+| 10 | huntingParty | Great Hunting Party | 2 | 20 | 👥→🌾 · 💰→🌾 · 👑→🌾 |
+| 11 | taxCollection | Tax Collection Round | 1 | 17 | 👑→💰 · 👥→💰 · 🌾→💰 |
+| 12 | saltMerchant | The Salt Merchant | 2 | 17.5 | 💰→🌾 · 👑→🌾 · 👥→🌾 |
+| 13 | apothecaryArrives | An Apothecary Arrives | 3 | 16 | 💰→👑 · 👥→👑 · 🌾→👑 |
+| 14 | peasantVolunteers | Peasant Volunteers | 2 | 15 | 🌾→👥 · 💰→👥 · 👑→👥 |
+| 15 | dowryOffered | A Dowry Offered | 4 | 20 | 👑→💰 · 👥→💰 · 🌾→💰 |
+| 16 | tournament | Host a Tournament | 4 | 20/20/10 | 💰→👑 · 💰→👥 · 🌾→👑 |
+| 17 | royalDecree | Royal Decree | 3 | 20 | 👑→💰 · 👑→👥 · 👑→🌾 |
+| 18 | forestClearing | Forest Clearing Offer | 2 | 15 | 👥→🌾 · 👥→💰 · 👥→👑 |
+| 19 | festivalOfLights | Festival of Lights | 3 | 20 | 💰→👑 · 🌾→👑 · 👥→👑 |
+| 20 | oldKnightRetires | An Old Knight Retires | 5 | 20/15/20 | 💰→👑 · 🌾→👥 · 💰→👥 |
 
-**Per-card input-side g-eq** (rounded): cards 2-9 and 11-15 all sit
-around **15–20 g-eq** per option (the size implied by the old
-fixed-output formulas they were converted from). #1 (refugees) is
-deliberately small (6 g-eq) as an early-game card. #16 (tournament) and
-#19 (festival) target **20 g-eq**. #17 (royalDecree) is 20 g-eq.
-#18 (forestClearing) is 15 g-eq.
+Sizes cluster at **15–20 g-eq** — investment-tier scale. #1 (refugees)
+is 6 g-eq (early-game). #16 (tournament) deliberately makes "Feast"
+cheaper (10 g-eq) because food is the input. #20 (oldKnightRetires)
+makes "Settle on a farm" cheaper (15 g-eq).
 
 ---
 
