@@ -153,9 +153,14 @@ function validateCards() {
                 log(`${tag}: decision has no options`);
                 continue;
             }
-            const isFixedOutput = c.outputRes && typeof c.outputBase === "number";
-            if (isFixedOutput && !validResources.has(c.outputRes)) {
-                log(`${tag}: outputRes "${c.outputRes}" invalid`);
+            // Card-level qualityFactors must exist and match the options length.
+            // Shuffled and assigned to options at draw time (see createCardInstance).
+            if (!Array.isArray(c.qualityFactors) || c.qualityFactors.length !== c.options.length) {
+                log(`${tag}: qualityFactors must be an array of the same length as options (${c.options.length})`);
+            }
+            // Legacy fixed-output fields are no longer supported.
+            if (c.outputRes || typeof c.outputBase === "number") {
+                log(`${tag}: card-level outputRes/outputBase is the old fixed-output schema — every option must declare its own inputRes/outputRes/inputBase instead`);
             }
             for (const opt of c.options) {
                 if (opt.triggersEvent && !eventIds.has(opt.triggersEvent)) {
@@ -164,22 +169,14 @@ function validateCards() {
                 if (opt.perTurnEffects) {
                     log(`${tag}: option "${opt.label}" has perTurnEffects — define a real event card and use triggersEvent instead`);
                 }
-                if (isFixedOutput) {
-                    // Fixed-output: option may or may not have inputRes, but must NOT mix per-option-trade fields.
-                    if (opt.outputRes || typeof opt.inputBase === "number") {
-                        log(`${tag}: option "${opt.label}" mixes per-option-trade fields with a fixed-output card`);
-                    }
-                    if (opt.inputRes && !validResources.has(opt.inputRes)) {
-                        log(`${tag}: option "${opt.label}" inputRes "${opt.inputRes}" invalid`);
-                    }
+                if ("qualityFactor" in opt) {
+                    log(`${tag}: option "${opt.label}" has per-option qualityFactor — move it to the card-level qualityFactors array`);
+                }
+                if (!(opt.inputRes && opt.outputRes && typeof opt.inputBase === "number")) {
+                    log(`${tag}: option "${opt.label}" missing inputRes/outputRes/inputBase`);
                 } else {
-                    // Per-option trade: every option requires the trio.
-                    if (!(opt.inputRes && opt.outputRes && typeof opt.inputBase === "number")) {
-                        log(`${tag}: option "${opt.label}" missing inputRes/outputRes/inputBase (per-option-trade requires all three)`);
-                    } else {
-                        if (!validResources.has(opt.inputRes)) log(`${tag}: option "${opt.label}" inputRes "${opt.inputRes}" invalid`);
-                        if (!validResources.has(opt.outputRes)) log(`${tag}: option "${opt.label}" outputRes "${opt.outputRes}" invalid`);
-                    }
+                    if (!validResources.has(opt.inputRes)) log(`${tag}: option "${opt.label}" inputRes "${opt.inputRes}" invalid`);
+                    if (!validResources.has(opt.outputRes)) log(`${tag}: option "${opt.label}" outputRes "${opt.outputRes}" invalid`);
                 }
             }
         }
@@ -473,6 +470,16 @@ function round2(n) {
     return Math.round(n * 100) / 100;
 }
 
+// In-place Fisher-Yates on a copy; returns the shuffled copy.
+function shuffleArray(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
 // Evaluate tierBoosts against active cards; pick the best multiplier
 // among entries whose prereqs (typeIds) are all active. Default 1.0.
 function evalTierMultiplier(tierBoosts) {
@@ -508,18 +515,6 @@ function applyInstantEventFormula({ outputRes, eventBase, qualityFactor = 1, tie
         eventBase * (1 / getResourceValue(outputRes)) * qualityFactor * variance * tierMultiplier
     );
     return { outputAmount };
-}
-
-// Fixed-output trade: outputAmount is given (rolled once per card), each option
-// pays a different inputRes to reach it. Higher qualityFactor / tierMultiplier
-// reduces the input cost (better deal for the player). Variance applies per option.
-// inputAmount = outputAmount × canonicalRate(out→in) / (qualityFactor × tierMultiplier) × varianceRoll
-function applyFixedOutputTrade({ outputRes, outputAmount, inputRes, qualityFactor = 1, tierMultiplier = 1 }) {
-    const variance = rollVariance();
-    const inputAmount = round2(
-        outputAmount * canonicalRate(outputRes, inputRes) / (qualityFactor * tierMultiplier) * variance
-    );
-    return { inputAmount };
 }
 
 // Scale every resource amount in an effects object by `factor`.
@@ -595,74 +590,43 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
         if (card.basePerTurn) instance.perTurn = scaleEffects(card.basePerTurn, 1);
     }
 
-    // For decisions: two schemas supported.
-    //   1. Fixed-output: card-level outputRes + outputBase. Options are payment methods
-    //      (inputRes) or rejects (no inputRes). Output is rolled once per card.
-    //   2. Per-option trade: each option has inputRes/outputRes/inputBase.
+    // Decisions: each option is an independent inputRes → outputRes trade.
+    // The card carries a `qualityFactors` array (one factor per option). At
+    // instantiation we shuffle the factors and assign them to options in
+    // order, so the "best deal" position is randomised every draw.
     if (card.options) {
-        if (card.outputRes && typeof card.outputBase === "number") {
-            const outputAmount = round2(card.outputBase * rollBulk() * sliceMultiplier);
-            instance.options = card.options.map(opt => {
-                if (opt.inputRes) {
-                    const tierMultiplier = evalTierMultiplier(opt.tierBoosts) * sliceMultiplier;
-                    const { inputAmount } = applyFixedOutputTrade({
-                        outputRes: card.outputRes,
-                        outputAmount,
-                        inputRes: opt.inputRes,
-                        qualityFactor: opt.qualityFactor || 1,
-                        tierMultiplier,
-                    });
-                    return {
-                        label: opt.label,
-                        effects: {
-                            [opt.inputRes]: -inputAmount,
-                            [card.outputRes]: outputAmount,
-                        },
-                        triggersEvent: opt.triggersEvent || null,
-                        ...copyFlagFields(opt),
-                    };
-                }
+        const factors = shuffleArray(card.qualityFactors || []);
+        instance.options = card.options.map((opt, i) => {
+            if (!(opt.inputRes && opt.outputRes && typeof opt.inputBase === "number")) {
+                console.error(
+                    `Decision ${card.typeId} option "${opt.label}" — every option must ` +
+                    `define inputRes, outputRes, and inputBase.`
+                );
                 return {
                     label: opt.label,
                     effects: {},
                     triggersEvent: opt.triggersEvent || null,
                     ...copyFlagFields(opt),
                 };
+            }
+            const tierMultiplier = evalTierMultiplier(opt.tierBoosts) * sliceMultiplier;
+            const { inputAmount, outputAmount } = applyTradeFormula({
+                inputRes: opt.inputRes,
+                outputRes: opt.outputRes,
+                inputBase: opt.inputBase,
+                qualityFactor: factors[i] ?? 1,
+                tierMultiplier,
             });
-        } else {
-            instance.options = card.options.map(opt => {
-                if (!(opt.inputRes && opt.outputRes && typeof opt.inputBase === "number")) {
-                    console.error(
-                        `Decision ${card.typeId} option "${opt.label}" — per-option-trade ` +
-                        `decisions require inputRes/outputRes/inputBase on every option. ` +
-                        `Use the fixed-output schema (card-level outputRes/outputBase) for reject-style options.`
-                    );
-                    return {
-                        label: opt.label,
-                        effects: {},
-                        triggersEvent: opt.triggersEvent || null,
-                        ...copyFlagFields(opt),
-                    };
-                }
-                const tierMultiplier = evalTierMultiplier(opt.tierBoosts) * sliceMultiplier;
-                const { inputAmount, outputAmount } = applyTradeFormula({
-                    inputRes: opt.inputRes,
-                    outputRes: opt.outputRes,
-                    inputBase: opt.inputBase,
-                    qualityFactor: opt.qualityFactor || 1,
-                    tierMultiplier,
-                });
-                return {
-                    label: opt.label,
-                    effects: {
-                        [opt.inputRes]: -inputAmount,
-                        [opt.outputRes]: outputAmount,
-                    },
-                    triggersEvent: opt.triggersEvent || null,
-                    ...copyFlagFields(opt),
-                };
-            });
-        }
+            return {
+                label: opt.label,
+                effects: {
+                    [opt.inputRes]: -inputAmount,
+                    [opt.outputRes]: outputAmount,
+                },
+                triggersEvent: opt.triggersEvent || null,
+                ...copyFlagFields(opt),
+            };
+        });
     }
 
     // Instant-event effects: eventBase sized in gold-equivalent. Applied on draw.

@@ -1,22 +1,27 @@
 // =====================================================
 // DECISION CARDS
 // =====================================================
-// Two schemas coexist:
-//  - Per-option trade: each option is a zero-sum trade (inputRes → outputRes).
-//  - Fixed-output: card-level outputRes + outputBase set the reward; each
-//    option is a different payment method (inputRes). outputAmount is rolled
-//    once per card; inputAmount is rolled per option.
+// One schema: each option is an independent inputRes → outputRes trade.
+// inputBase is the size of the input (in its own resource units, before
+// the bulk roll).
+//
+// Quality factors are declared at the card level as an array
+// `qualityFactors` of the same length as `options`. They're shuffled
+// every draw and assigned to options in order — so the best / neutral /
+// worst position is randomised each play.
+//
 // Canonical values: gold=1, food=0.5, manpower=3, favor=2.
-// Decisions are UNSKIPPABLE — every option must require a payment. If the
-// player cannot afford any option, resources go negative and verifyState()
-// ends the game. The manual trade panel is the survival safety net.
-// Some options can `triggersEvent` to activate an event card.
-// Each card has THREE options with differentiated qualityFactor (0.7 / 1.0 / 1.3)
-// so one option is mechanically best, one neutral, one worst — variance can
-// occasionally flip outcomes. The "best" position is shuffled across cards
-// so the player must read each one. For per-option trades, qualityFactor
-// scales the OUTPUT (higher = better deal); for fixed-output, qualityFactor
-// reduces the INPUT cost (higher = pay less for the same reward).
+// Decisions are UNSKIPPABLE — every option must require a payment. If
+// the player cannot afford any option, resources go negative and shortage
+// events kick in (or favor turns negative and the run ends). The manual
+// trade panel is the survival escape hatch.
+//
+// Some options can `triggersEvent` to activate an event card on top of
+// the trade (currently only `merchantGuild` → `tradeBoom`).
+//
+// inputBase target rule of thumb: inputBase ≈ desired_g-eq / value(inputRes).
+// With qualityFactor 1.0 the output's g-eq matches the input's g-eq.
+// With 1.3 the player profits ~30% in g-eq; with 0.7 they lose ~30%.
 // =====================================================
 
 const decisionCards = [
@@ -37,29 +42,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        // Per-option trade: spend food, get different resources back.
+        qualityFactors: [0.7, 1.0, 1.3],
+
         options: [
-            {
-                label: "Welcome them as workers",
-                inputRes: "food",
-                outputRes: "manpower",
-                inputBase: 12,
-                qualityFactor: 1.3,
-            },
-            {
-                label: "Provide charitable relief",
-                inputRes: "food",
-                outputRes: "favor",
-                inputBase: 12,
-                qualityFactor: 1.0,
-            },
-            {
-                label: "Sell their meager goods",
-                inputRes: "food",
-                outputRes: "gold",
-                inputBase: 12,
-                qualityFactor: 0.7,
-            },
+            { label: "Welcome them as workers", inputRes: "food", outputRes: "manpower", inputBase: 12 },
+            { label: "Provide charitable relief", inputRes: "food", outputRes: "favor", inputBase: 12 },
+            { label: "Sell their meager goods", inputRes: "food", outputRes: "gold", inputBase: 12 },
         ],
     },
     {
@@ -79,13 +67,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "favor",
-        outputBase: 7.5,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Gift gold", inputRes: "gold", qualityFactor: 1.0 },
-            { label: "Send grain", inputRes: "food", qualityFactor: 1.3 },
-            { label: "Send laborers", inputRes: "manpower", qualityFactor: 0.7 },
+            { label: "Gift gold", inputRes: "gold", outputRes: "favor", inputBase: 15 },
+            { label: "Send grain", inputRes: "food", outputRes: "favor", inputBase: 30 },
+            { label: "Send laborers", inputRes: "manpower", outputRes: "favor", inputBase: 5 },
         ],
     },
     {
@@ -105,13 +92,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "manpower",
-        outputBase: 5,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Feed his men", inputRes: "food", qualityFactor: 1.0 },
-            { label: "Buy his retinue", inputRes: "gold", qualityFactor: 0.7 },
-            { label: "Knight him personally", inputRes: "favor", qualityFactor: 1.3 },
+            { label: "Feed his men", inputRes: "food", outputRes: "manpower", inputBase: 30 },
+            { label: "Buy his retinue", inputRes: "gold", outputRes: "manpower", inputBase: 15 },
+            { label: "Knight him personally", inputRes: "favor", outputRes: "manpower", inputBase: 7.5 },
         ],
     },
     {
@@ -131,14 +117,13 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "gold",
-        outputBase: 17,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            // Food option also triggers a Trade Boom event — big bonus on top of the gold.
-            { label: "Grant grain rights", inputRes: "food", qualityFactor: 1.3, triggersEvent: "tradeBoom" },
-            { label: "Assign workers", inputRes: "manpower", qualityFactor: 0.7 },
-            { label: "Royal endorsement", inputRes: "favor", qualityFactor: 1.0 },
+            // Grain rights also fire a Trade Boom event for extra reward on top of the gold.
+            { label: "Grant grain rights", inputRes: "food", outputRes: "gold", inputBase: 34, triggersEvent: "tradeBoom" },
+            { label: "Assign workers", inputRes: "manpower", outputRes: "gold", inputBase: 6 },
+            { label: "Royal endorsement", inputRes: "favor", outputRes: "gold", inputBase: 8.5 },
         ],
     },
     {
@@ -158,13 +143,12 @@ const decisionCards = [
         weight: 8,
         absoluteChance: null,
 
-        outputRes: "manpower",
-        outputBase: 5.5,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Hire mercenaries", inputRes: "gold", qualityFactor: 1.0 },
-            { label: "Conscript peasants", inputRes: "favor", qualityFactor: 1.3 },
-            { label: "Promise war rations", inputRes: "food", qualityFactor: 0.7 },
+            { label: "Hire mercenaries", inputRes: "gold", outputRes: "manpower", inputBase: 17 },
+            { label: "Conscript peasants", inputRes: "favor", outputRes: "manpower", inputBase: 8.5 },
+            { label: "Promise war rations", inputRes: "food", outputRes: "manpower", inputBase: 33 },
         ],
     },
     {
@@ -184,18 +168,14 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "food",
-        outputBase: 33,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Fund irrigation", inputRes: "gold", qualityFactor: 1.3 },
-            { label: "Send laborers", inputRes: "manpower", qualityFactor: 1.0 },
-            { label: "Decree royal levy", inputRes: "favor", qualityFactor: 0.7 },
+            { label: "Fund irrigation", inputRes: "gold", outputRes: "food", inputBase: 17 },
+            { label: "Send laborers", inputRes: "manpower", outputRes: "food", inputBase: 5.5 },
+            { label: "Decree royal levy", inputRes: "favor", outputRes: "food", inputBase: 8.5 },
         ],
     },
-
-    // --- Fixed-output trade ---
-
     {
         typeId: "travelingMinstrel",
         category: "decision",
@@ -213,13 +193,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "favor",
-        outputBase: 7,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Pay him in coin", inputRes: "gold", qualityFactor: 1.0 },
-            { label: "Feast the troupe", inputRes: "food", qualityFactor: 1.3 },
-            { label: "Lend him guards", inputRes: "manpower", qualityFactor: 0.7 },
+            { label: "Pay him in coin", inputRes: "gold", outputRes: "favor", inputBase: 14 },
+            { label: "Feast the troupe", inputRes: "food", outputRes: "favor", inputBase: 28 },
+            { label: "Lend him guards", inputRes: "manpower", outputRes: "favor", inputBase: 5 },
         ],
     },
     {
@@ -239,13 +218,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "gold",
-        outputBase: 17,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Sell the grain", inputRes: "food", qualityFactor: 1.3 },
-            { label: "Command royal levy", inputRes: "favor", qualityFactor: 0.7 },
-            { label: "Use serfs to ship it", inputRes: "manpower", qualityFactor: 1.0 },
+            { label: "Sell the grain", inputRes: "food", outputRes: "gold", inputBase: 34 },
+            { label: "Command royal levy", inputRes: "favor", outputRes: "gold", inputBase: 8.5 },
+            { label: "Use serfs to ship it", inputRes: "manpower", outputRes: "gold", inputBase: 6 },
         ],
     },
     {
@@ -265,13 +243,12 @@ const decisionCards = [
         weight: 9,
         absoluteChance: null,
 
-        outputRes: "manpower",
-        outputBase: 5,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Pay their contract", inputRes: "gold", qualityFactor: 1.3 },
-            { label: "Appeal to honor", inputRes: "favor", qualityFactor: 1.0 },
-            { label: "Promise full bellies", inputRes: "food", qualityFactor: 0.7 },
+            { label: "Pay their contract", inputRes: "gold", outputRes: "manpower", inputBase: 15 },
+            { label: "Appeal to honor", inputRes: "favor", outputRes: "manpower", inputBase: 7.5 },
+            { label: "Promise full bellies", inputRes: "food", outputRes: "manpower", inputBase: 30 },
         ],
     },
     {
@@ -291,13 +268,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "food",
-        outputBase: 40,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Send trained hunters", inputRes: "manpower", qualityFactor: 1.3 },
-            { label: "Equip the expedition", inputRes: "gold", qualityFactor: 1.0 },
-            { label: "Royal hunting decree", inputRes: "favor", qualityFactor: 0.7 },
+            { label: "Send trained hunters", inputRes: "manpower", outputRes: "food", inputBase: 7 },
+            { label: "Equip the expedition", inputRes: "gold", outputRes: "food", inputBase: 20 },
+            { label: "Royal hunting decree", inputRes: "favor", outputRes: "food", inputBase: 10 },
         ],
     },
     {
@@ -317,13 +293,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "gold",
-        outputBase: 17,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Squeeze the peasants", inputRes: "favor", qualityFactor: 0.7 },
-            { label: "Send armed enforcers", inputRes: "manpower", qualityFactor: 1.0 },
-            { label: "Collect grain tithes", inputRes: "food", qualityFactor: 1.3 },
+            { label: "Squeeze the peasants", inputRes: "favor", outputRes: "gold", inputBase: 8.5 },
+            { label: "Send armed enforcers", inputRes: "manpower", outputRes: "gold", inputBase: 6 },
+            { label: "Collect grain tithes", inputRes: "food", outputRes: "gold", inputBase: 34 },
         ],
     },
     {
@@ -343,13 +318,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "food",
-        outputBase: 35,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Pay in coin", inputRes: "gold", qualityFactor: 1.3 },
-            { label: "Offer royal favor", inputRes: "favor", qualityFactor: 1.0 },
-            { label: "Trade workers for caravans", inputRes: "manpower", qualityFactor: 0.7 },
+            { label: "Pay in coin", inputRes: "gold", outputRes: "food", inputBase: 18 },
+            { label: "Offer royal favor", inputRes: "favor", outputRes: "food", inputBase: 9 },
+            { label: "Trade workers for caravans", inputRes: "manpower", outputRes: "food", inputBase: 6 },
         ],
     },
     {
@@ -369,13 +343,12 @@ const decisionCards = [
         weight: 9,
         absoluteChance: null,
 
-        outputRes: "favor",
-        outputBase: 8,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Fund his shop", inputRes: "gold", qualityFactor: 1.0 },
-            { label: "Assign apprentices", inputRes: "manpower", qualityFactor: 0.7 },
-            { label: "Provision his herbs", inputRes: "food", qualityFactor: 1.3 },
+            { label: "Fund his shop", inputRes: "gold", outputRes: "favor", inputBase: 16 },
+            { label: "Assign apprentices", inputRes: "manpower", outputRes: "favor", inputBase: 5 },
+            { label: "Provision his herbs", inputRes: "food", outputRes: "favor", inputBase: 32 },
         ],
     },
     {
@@ -395,13 +368,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
-        outputRes: "manpower",
-        outputBase: 5,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Feed and house them", inputRes: "food", qualityFactor: 1.3 },
-            { label: "Equip them properly", inputRes: "gold", qualityFactor: 1.0 },
-            { label: "Drape them in royal colors", inputRes: "favor", qualityFactor: 0.7 },
+            { label: "Feed and house them", inputRes: "food", outputRes: "manpower", inputBase: 30 },
+            { label: "Equip them properly", inputRes: "gold", outputRes: "manpower", inputBase: 15 },
+            { label: "Drape them in royal colors", inputRes: "favor", outputRes: "manpower", inputBase: 7.5 },
         ],
     },
     {
@@ -421,18 +393,14 @@ const decisionCards = [
         weight: 8,
         absoluteChance: null,
 
-        outputRes: "gold",
-        outputBase: 20,
+        qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Accept the match (political cost)", inputRes: "favor", qualityFactor: 1.0 },
-            { label: "Send an armed escort", inputRes: "manpower", qualityFactor: 1.3 },
-            { label: "Provision the wedding feast", inputRes: "food", qualityFactor: 0.7 },
+            { label: "Accept the match (political cost)", inputRes: "favor", outputRes: "gold", inputBase: 10 },
+            { label: "Send an armed escort", inputRes: "manpower", outputRes: "gold", inputBase: 7 },
+            { label: "Provision the wedding feast", inputRes: "food", outputRes: "gold", inputBase: 40 },
         ],
     },
-
-    // --- Per-option trade (zero-sum swaps) ---
-
     {
         typeId: "tournament",
         category: "decision",
@@ -450,28 +418,12 @@ const decisionCards = [
         weight: 9,
         absoluteChance: null,
 
+        qualityFactors: [0.7, 1.0, 1.3],
+
         options: [
-            {
-                label: "Grand spectacle (seek renown)",
-                inputRes: "gold",
-                outputRes: "favor",
-                inputBase: 20,
-                qualityFactor: 1.3,
-            },
-            {
-                label: "Recruit the champions",
-                inputRes: "gold",
-                outputRes: "manpower",
-                inputBase: 20,
-                qualityFactor: 1.0,
-            },
-            {
-                label: "Feast the visiting lords",
-                inputRes: "gold",
-                outputRes: "food",
-                inputBase: 20,
-                qualityFactor: 0.7,
-            },
+            { label: "Grand spectacle (seek renown)", inputRes: "gold", outputRes: "favor", inputBase: 20 },
+            { label: "Recruit the champions", inputRes: "gold", outputRes: "manpower", inputBase: 20 },
+            { label: "Feast the visiting lords", inputRes: "gold", outputRes: "food", inputBase: 20 },
         ],
     },
     {
@@ -491,28 +443,12 @@ const decisionCards = [
         weight: 9,
         absoluteChance: null,
 
+        qualityFactors: [0.7, 1.0, 1.3],
+
         options: [
-            {
-                label: "Call in favors for coin",
-                inputRes: "favor",
-                outputRes: "gold",
-                inputBase: 10,
-                qualityFactor: 1.0,
-            },
-            {
-                label: "Request a royal garrison",
-                inputRes: "favor",
-                outputRes: "manpower",
-                inputBase: 10,
-                qualityFactor: 1.3,
-            },
-            {
-                label: "Beg the royal granaries",
-                inputRes: "favor",
-                outputRes: "food",
-                inputBase: 10,
-                qualityFactor: 0.7,
-            },
+            { label: "Call in favors for coin", inputRes: "favor", outputRes: "gold", inputBase: 10 },
+            { label: "Request a royal garrison", inputRes: "favor", outputRes: "manpower", inputBase: 10 },
+            { label: "Beg the royal granaries", inputRes: "favor", outputRes: "food", inputBase: 10 },
         ],
     },
     {
@@ -532,28 +468,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
+        qualityFactors: [0.7, 1.0, 1.3],
+
         options: [
-            {
-                label: "Turn it into farmland",
-                inputRes: "manpower",
-                outputRes: "food",
-                inputBase: 5,
-                qualityFactor: 1.3,
-            },
-            {
-                label: "Harvest the timber",
-                inputRes: "manpower",
-                outputRes: "gold",
-                inputBase: 5,
-                qualityFactor: 1.0,
-            },
-            {
-                label: "Donate the wood to the church",
-                inputRes: "manpower",
-                outputRes: "favor",
-                inputBase: 5,
-                qualityFactor: 0.7,
-            },
+            { label: "Turn it into farmland", inputRes: "manpower", outputRes: "food", inputBase: 5 },
+            { label: "Harvest the timber", inputRes: "manpower", outputRes: "gold", inputBase: 5 },
+            { label: "Donate the wood to the church", inputRes: "manpower", outputRes: "favor", inputBase: 5 },
         ],
     },
     {
@@ -573,28 +493,12 @@ const decisionCards = [
         weight: 10,
         absoluteChance: null,
 
+        qualityFactors: [0.7, 1.0, 1.3],
+
         options: [
-            {
-                label: "Fund a lavish show",
-                inputRes: "gold",
-                outputRes: "favor",
-                inputBase: 20,
-                qualityFactor: 1.3,
-            },
-            {
-                label: "Open the granaries for a feast",
-                inputRes: "food",
-                outputRes: "favor",
-                inputBase: 40,
-                qualityFactor: 0.7,
-            },
-            {
-                label: "Volunteer labor for the show",
-                inputRes: "manpower",
-                outputRes: "favor",
-                inputBase: 5,
-                qualityFactor: 1.0,
-            },
+            { label: "Fund a lavish show", inputRes: "gold", outputRes: "favor", inputBase: 20 },
+            { label: "Open the granaries for a feast", inputRes: "food", outputRes: "favor", inputBase: 40 },
+            { label: "Volunteer labor for the show", inputRes: "manpower", outputRes: "favor", inputBase: 7 },
         ],
     },
     {
@@ -614,28 +518,12 @@ const decisionCards = [
         weight: 8,
         absoluteChance: null,
 
+        qualityFactors: [0.7, 1.0, 1.3],
+
         options: [
-            {
-                label: "Generous pension",
-                inputRes: "gold",
-                outputRes: "favor",
-                inputBase: 20,
-                qualityFactor: 1.0,
-            },
-            {
-                label: "Settle him on a farm",
-                inputRes: "food",
-                outputRes: "manpower",
-                inputBase: 30,
-                qualityFactor: 1.3,
-            },
-            {
-                label: "Reward him with lands",
-                inputRes: "gold",
-                outputRes: "manpower",
-                inputBase: 20,
-                qualityFactor: 0.7,
-            },
+            { label: "Generous pension", inputRes: "gold", outputRes: "favor", inputBase: 20 },
+            { label: "Settle him on a farm", inputRes: "food", outputRes: "manpower", inputBase: 30 },
+            { label: "Reward him with lands", inputRes: "gold", outputRes: "manpower", inputBase: 20 },
         ],
     },
 ];

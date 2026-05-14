@@ -1,8 +1,8 @@
 # Decisions — Reference & Tuning Sheet
 
-A snapshot of the 20 decision cards currently in `js/data/cards-decision.js`,
-with parametrization rules and good-vs-bad ratios called out so we can
-iterate on balance the same way we did with investments.
+A snapshot of the 20 decision cards in `js/data/cards-decision.js`, the
+parametrization rules, and the good-vs-bad ratios — so we can keep
+iterating on balance the same way we did with investments.
 
 ---
 
@@ -10,61 +10,69 @@ iterate on balance the same way we did with investments.
 
 - Pop-up presented to the player; they pick **one of 3 options**.
 - **Unskippable** — every option requires a payment. If the player can't
-  afford any, the manual trade panel is the survival escape hatch.
-- Some options can `triggersEvent: "<eventTypeId>"` to fire an event card on
-  top of the trade (currently only `merchantGuild` → `tradeBoom`).
-- The **best option's position is shuffled across cards** so the player has
-  to read each time — no fixed "always pick option 2" pattern.
+  afford any, resources go negative and shortage events kick in (or favor
+  drops below zero and the run ends). The manual trade panel is the
+  survival escape hatch.
+- Some options can `triggersEvent: "<eventTypeId>"` to fire an event card
+  on top of the trade (currently only `merchantGuild` → `tradeBoom`).
+- **Quality factors are shuffled every draw** — the player can't memorise
+  "option 2 is always best on card X". They have to read the rolled
+  amounts and decide.
 
 ---
 
-## Two schemas (do not mix on a card)
+## Schema — one path for every decision
 
-### A. Per-option trade
-
-Each option independently defines `inputRes → outputRes`. Zero-sum-ish
-swap — pay X of resource A, receive Y of resource B.
-
-```js
-options: [
-  { label, inputRes, outputRes, inputBase, qualityFactor },
-  ...
-]
-```
-
-### B. Fixed-output
-
-Card defines `outputRes` + `outputBase`. Each option is an alternative
-**payment method** (different `inputRes`) for the same reward.
+Each option is an **independent inputRes → outputRes trade**. The card
+declares a `qualityFactors` array (one factor per option); at draw time
+the factors are shuffled and assigned to options in order.
 
 ```js
-outputRes: "favor",
-outputBase: 7.5,
-options: [
-  { label, inputRes, qualityFactor },
-  ...
-]
+{
+  typeId: "tournament",
+  category: "decision",
+  name: "Host a Tournament",
+  description: "...",
+  icon: "🤺",
+
+  dependencies: [], blockedBy: [],
+  isUnique: false, maxInstances: null,
+  minTurn: 4, requiresResource: null,
+  weight: 9, absoluteChance: null,
+
+  qualityFactors: [0.7, 1.0, 1.3],   // shuffled per draw
+
+  options: [
+    { label: "Grand spectacle (seek renown)", inputRes: "gold", outputRes: "favor",    inputBase: 20 },
+    { label: "Recruit the champions",         inputRes: "gold", outputRes: "manpower", inputBase: 20 },
+    { label: "Feast the visiting lords",      inputRes: "gold", outputRes: "food",     inputBase: 20 },
+  ],
+}
 ```
 
-The output amount is rolled **once per card**; input amount rolled **per
-option**.
+Both `inputRes` AND `outputRes` can vary across the three options — same
+input + varied outputs (Tournament), varied inputs + same output
+(BishopsRequest), or fully mixed (OldKnightRetires).
+
+The legacy "fixed-output" schema (`outputRes`/`outputBase` at the card
+level) is gone, and so is `applyFixedOutputTrade` in `cardSystem.js`.
+The validator will flag any card that still carries those fields.
 
 ---
 
 ## Parametrization fields
 
-| Field | Schema | Type | Purpose |
-|-------|--------|------|---------|
-| `outputRes` | A (per-option) | string | Set on each option |
-| `outputRes` | B (fixed) | string | Set at card level |
-| `outputBase` | B only | number | Reward size (own resource units, before bulk roll) |
-| `inputRes` | A & B | string | What this option costs |
-| `inputBase` | A only | number | Cost size (own resource units, before bulk roll) |
-| `qualityFactor` | A & B | 0.7 / 1.0 / 1.3 | Deal quality (see below) |
-| `triggersEvent` | A & B | string? | Optional event typeId to fire when chosen |
+| Field | Level | Type | Purpose |
+|-------|-------|------|---------|
+| `qualityFactors` | card | number[] | Shuffled & assigned to options at draw time. Length must match `options`. |
+| `inputRes` | option | string | What this option costs |
+| `outputRes` | option | string | What this option yields |
+| `inputBase` | option | number | Cost size, in input-resource units, before the bulk roll |
+| `triggersEvent` | option | string? | Optional event typeId to fire when chosen |
 
-Per-card meta (same as other card types): `typeId`, `name`, `description`,
-`icon`, `minTurn`, `weight`, `dependencies`, `blockedBy`, `requiresResource`.
+Per-card meta (same as other card types): `typeId`, `name`,
+`description`, `icon`, `minTurn`, `weight`, `dependencies`, `blockedBy`,
+`requiresResource`.
 
 ---
 
@@ -73,162 +81,143 @@ Per-card meta (same as other card types): `typeId`, `name`, `description`,
 Canonical resource values (g-eq): `gold=1`, `food=0.5`, `manpower=3`, `favor=2`.
 
 **Random rolls (every option draw):**
-- `bulkRoll ∈ [0.5, 2]` — scales the size of the swap
+- `bulkRoll ∈ [0.5, 2]` — scales the size of the swap (per option)
 - `varianceRoll ∈ [0.85, 1.15]` — small per-option quality jitter
+- `qualityFactor` — pulled from the card's shuffled `qualityFactors` array
 
-### Per-option trade
+**Formula** (one for every option):
 ```
 inputAmount  = inputBase × bulkRoll
 outputAmount = inputAmount × canonicalRate(in→out) × qualityFactor × varianceRoll
 ```
-Higher `qualityFactor` ⇒ **more output** for the same input. Player wants high.
 
-### Fixed-output
-```
-outputAmount = outputBase × bulkRoll                          // rolled once per card
-inputAmount  = outputAmount × canonicalRate(out→in) / qualityFactor × varianceRoll
-```
-Higher `qualityFactor` ⇒ **less input** for the same output. Player wants high.
+At `qualityFactor = 1` the swap is canonical (zero sum in g-eq). At 1.3
+the player profits ~30% in g-eq; at 0.7 they lose ~30%.
 
-Both schemas: at `qualityFactor = 1` the swap is canonical (zero sum in
-g-eq). At 1.3 the player profits ~30% in g-eq; at 0.7 they lose ~30%.
+**Rule of thumb for sizing inputBase**: pick the desired g-eq scale of
+the trade and divide by the input's value:
+`inputBase ≈ desired_g-eq / value(inputRes)`.
+
+Most current cards target **15–20 g-eq** per option, matching the
+investment-tier scale of mid-game decisions.
 
 ---
 
 ## Good-vs-bad ratios
 
-Every card uses the **0.7 / 1.0 / 1.3 split** for its three options
-(intentional — players see one clearly best, one neutral, one bad option).
-Variance ±15% can occasionally flip neutral vs best in a single roll, but
-across many plays the ordering holds.
+Every card uses the **0.7 / 1.0 / 1.3** spread in its `qualityFactors`.
+Three options, three quality bands.
 
-| qualityFactor | Tag | Profit/loss in g-eq | Player intent |
-|---------------|-----|---------------------|----------------|
-| **1.3** | best | +30% over canonical | Pick this if you can afford it |
-| **1.0** | neutral | breakeven | Pick if the best option's input is dry |
-| **0.7** | worst | −30% loss | Trap option / desperation only |
+| qualityFactor | Tag | Profit/loss in g-eq | Realised range (with ±15% variance) |
+|---------------|-----|---------------------|--------------------------------------|
+| **1.3** | best | +30% over canonical | 1.105 – 1.495 |
+| **1.0** | neutral | breakeven | 0.85 – 1.15 |
+| **0.7** | worst | −30% loss | 0.595 – 0.805 |
 
-Variance band per option: ±15%, so realized factor is in:
-- worst: 0.595 – 0.805
-- neutral: 0.85 – 1.15
-- best: 1.105 – 1.495
-
-The bands overlap slightly: a low-rolled best (1.105) ≈ a high-rolled neutral (1.15).
+The neutral and best bands overlap slightly (a low-rolled best can equal
+a high-rolled neutral). Across many plays the ordering holds. Because
+the array is **shuffled per draw**, neither label position nor
+input/output choice predicts which band you'll roll — only the displayed
+amounts do (the UI shows the resolved input and output for each option
+before the player picks).
 
 ---
 
-## Card catalog — Per-option trade (6)
+## Card catalog (20)
 
-| # | typeId | name | minTurn | options (input → output, qf) |
-|---|--------|------|---------|--------------------------------|
-| 1 | refugees | Refugees at the Gates | 2 | 12🌾→👥 (1.3) · 12🌾→👑 (1.0) · 12🌾→💰 (0.7) |
-| 2 | tournament | Host a Tournament | 4 | 20💰→👑 (1.3) · 20💰→👥 (1.0) · 20💰→🌾 (0.7) |
-| 3 | royalDecree | Royal Decree | 3 | 10👑→💰 (1.0) · 10👑→👥 (1.3) · 10👑→🌾 (0.7) |
-| 4 | forestClearing | Forest Clearing Offer | 2 | 5👥→🌾 (1.3) · 5👥→💰 (1.0) · 5👥→👑 (0.7) |
-| 5 | festivalOfLights | Festival of Lights | 3 | 20💰→👑 (1.3) · 40🌾→👑 (0.7) · 5👥→👑 (1.0) |
-| 6 | oldKnightRetires | An Old Knight Retires | 5 | 20💰→👑 (1.0) · 30🌾→👥 (1.3) · 20💰→👥 (0.7) |
+All cards use `qualityFactors: [0.7, 1.0, 1.3]`. Options column lists
+`input → output, inputBase` for each option.
 
-All inputBase values in g-eq sit between **6 and 20** (refugees is the
-outlier at 6 g-eq — small because food is cheap per unit).
+| # | typeId | name | minTurn | Options (input → output, base) |
+|---|--------|------|---------|---------------------------------|
+| 1 | refugees | Refugees at the Gates | 2 | 12🌾→👥 · 12🌾→👑 · 12🌾→💰 |
+| 2 | bishopsRequest | The Bishop's Request | 1 | 15💰→👑 · 30🌾→👑 · 5👥→👑 |
+| 3 | knightsOffer | A Knight's Offer | 2 | 30🌾→👥 · 15💰→👥 · 7.5👑→👥 |
+| 4 | merchantGuild | Merchant Guild Request | 3 | 34🌾→💰 (+tradeBoom) · 6👥→💰 · 8.5👑→💰 |
+| 5 | warPreparations | War in Neighboring Lands | 6 | 17💰→👥 · 8.5👑→👥 · 33🌾→👥 |
+| 6 | ruralPetition | Rural Petition | 3 | 17💰→🌾 · 5.5👥→🌾 · 8.5👑→🌾 |
+| 7 | travelingMinstrel | A Traveling Minstrel | 1 | 14💰→👑 · 28🌾→👑 · 5👥→👑 |
+| 8 | surplusGrainOffer | Surplus Grain Offer | 2 | 34🌾→💰 · 8.5👑→💰 · 6👥→💰 |
+| 9 | foreignMercenaries | Foreign Mercenaries | 3 | 15💰→👥 · 7.5👑→👥 · 30🌾→👥 |
+| 10 | huntingParty | Great Hunting Party | 2 | 7👥→🌾 · 20💰→🌾 · 10👑→🌾 |
+| 11 | taxCollection | Tax Collection Round | 1 | 8.5👑→💰 · 6👥→💰 · 34🌾→💰 |
+| 12 | saltMerchant | The Salt Merchant | 2 | 18💰→🌾 · 9👑→🌾 · 6👥→🌾 |
+| 13 | apothecaryArrives | An Apothecary Arrives | 3 | 16💰→👑 · 5👥→👑 · 32🌾→👑 |
+| 14 | peasantVolunteers | Peasant Volunteers | 2 | 30🌾→👥 · 15💰→👥 · 7.5👑→👥 |
+| 15 | dowryOffered | A Dowry Offered | 4 | 10👑→💰 · 7👥→💰 · 40🌾→💰 |
+| 16 | tournament | Host a Tournament | 4 | 20💰→👑 · 20💰→👥 · 20💰→🌾 |
+| 17 | royalDecree | Royal Decree | 3 | 10👑→💰 · 10👑→👥 · 10👑→🌾 |
+| 18 | forestClearing | Forest Clearing Offer | 2 | 5👥→🌾 · 5👥→💰 · 5👥→👑 |
+| 19 | festivalOfLights | Festival of Lights | 3 | 20💰→👑 · 40🌾→👑 · 7👥→👑 |
+| 20 | oldKnightRetires | An Old Knight Retires | 5 | 20💰→👑 · 30🌾→👥 · 20💰→👥 |
 
-## Card catalog — Fixed-output (14)
-
-| # | typeId | name | minTurn | output | base | g-eq | options (input, qf) |
-|---|--------|------|---------|--------|------|------|----------------------|
-| 1 | bishopsRequest | The Bishop's Request | 1 | 👑 | 7.5 | 15 | 💰 (1.0) · 🌾 (1.3) · 👥 (0.7) |
-| 2 | knightsOffer | A Knight's Offer | 2 | 👥 | 5 | 15 | 🌾 (1.0) · 💰 (0.7) · 👑 (1.3) |
-| 3 | merchantGuild | Merchant Guild Request | 3 | 💰 | 17 | 17 | 🌾 (1.3, +tradeBoom) · 👥 (0.7) · 👑 (1.0) |
-| 4 | warPreparations | War in Neighboring Lands | 6 | 👥 | 5.5 | 16.5 | 💰 (1.0) · 👑 (1.3) · 🌾 (0.7) |
-| 5 | ruralPetition | Rural Petition | 3 | 🌾 | 33 | 16.5 | 💰 (1.3) · 👥 (1.0) · 👑 (0.7) |
-| 6 | travelingMinstrel | A Traveling Minstrel | 1 | 👑 | 7 | 14 | 💰 (1.0) · 🌾 (1.3) · 👥 (0.7) |
-| 7 | surplusGrainOffer | Surplus Grain Offer | 2 | 💰 | 17 | 17 | 🌾 (1.3) · 👑 (0.7) · 👥 (1.0) |
-| 8 | foreignMercenaries | Foreign Mercenaries | 3 | 👥 | 5 | 15 | 💰 (1.3) · 👑 (1.0) · 🌾 (0.7) |
-| 9 | huntingParty | Great Hunting Party | 2 | 🌾 | 40 | 20 | 👥 (1.3) · 💰 (1.0) · 👑 (0.7) |
-| 10 | taxCollection | Tax Collection Round | 1 | 💰 | 17 | 17 | 👑 (0.7) · 👥 (1.0) · 🌾 (1.3) |
-| 11 | saltMerchant | The Salt Merchant | 2 | 🌾 | 35 | 17.5 | 💰 (1.3) · 👑 (1.0) · 👥 (0.7) |
-| 12 | apothecaryArrives | An Apothecary Arrives | 3 | 👑 | 8 | 16 | 💰 (1.0) · 👥 (0.7) · 🌾 (1.3) |
-| 13 | peasantVolunteers | Peasant Volunteers | 2 | 👥 | 5 | 15 | 🌾 (1.3) · 💰 (1.0) · 👑 (0.7) |
-| 14 | dowryOffered | A Dowry Offered | 4 | 💰 | 20 | 20 | 👑 (1.0) · 👥 (1.3) · 🌾 (0.7) |
-
-Output sizes (g-eq) cluster tightly between **14 and 20**, mean ~16.5.
-
----
-
-## Output distribution (fixed-output cards)
-
-| Output resource | Cards | Avg output (g-eq) |
-|-----------------|-------|--------------------|
-| 💰 Gold | 4 (merchantGuild, surplusGrainOffer, taxCollection, dowryOffered) | 17.75 |
-| 🌾 Food | 3 (ruralPetition, huntingParty, saltMerchant) | 18 |
-| 👥 Manpower | 4 (knightsOffer, warPreparations, foreignMercenaries, peasantVolunteers) | 15.4 |
-| 👑 Favor | 3 (bishopsRequest, travelingMinstrel, apothecaryArrives) | 15 |
-
-Pretty balanced across the four resources.
-
-Per-option trades shift the picture:
-- 💰 spent (4 cards: tournament, festival[opt-A], oldKnight[opt-A,C])
-- 🌾 spent (2 cards: refugees, festival[opt-B], oldKnight[opt-B])
-- 👥 spent (1 card: forestClearing, plus festival[opt-C])
-- 👑 spent (1 card: royalDecree)
-
-So **gold is the most common payment** in per-option trades; favor is rarely
-spent. Slightly skewed.
+**Per-card input-side g-eq** (rounded): cards 2-9 and 11-15 all sit
+around **15–20 g-eq** per option (the size implied by the old
+fixed-output formulas they were converted from). #1 (refugees) is
+deliberately small (6 g-eq) as an early-game card. #16 (tournament) and
+#19 (festival) target **20 g-eq**. #17 (royalDecree) is 20 g-eq.
+#18 (forestClearing) is 15 g-eq.
 
 ---
 
-## Best-option position shuffle
+## Output distribution
 
-Across the 20 cards, where does `qualityFactor: 1.3` sit?
+Across all 60 options on the 20 cards:
 
-| 1.3 in option slot | Count |
-|--------------------|-------|
-| 1st | 7 |
-| 2nd | 6 |
-| 3rd | 7 |
+| Output resource | Option count |
+|-----------------|--------------|
+| 💰 Gold | 14 |
+| 🌾 Food | 12 |
+| 👥 Manpower | 16 |
+| 👑 Favor | 18 |
 
-Reasonably uniform — no positional bias for the player to exploit.
+| Input resource | Option count |
+|----------------|--------------|
+| 💰 Gold | 14 |
+| 🌾 Food | 17 |
+| 👥 Manpower | 16 |
+| 👑 Favor | 13 |
+
+Reasonably balanced both ways — every resource is a meaningful payment
+and a meaningful reward at multiple points in the deck.
 
 ---
 
-## Observations & possible tuning levers
+## Observations & tuning levers
 
-1. **Output sizes are very uniform (14-20 g-eq).** Every fixed-output card
-   gives roughly the same value. There's no "small but cheap" or "big but
-   expensive" axis. We could introduce variance: some cards smaller and
-   safer (ROI ~10 g-eq), some bigger and riskier (~30 g-eq).
+1. **Random quality has no positional bias** — the best slot is no
+   longer "always the food option" or "always the third option". The
+   player has to read the rolled amounts.
 
-2. **`refugees` is undercosted vs the rest** — its inputBase is only 6
-   g-eq, half of the typical 15-20. Either intentionally a small "early
-   game" decision or a balance miss.
+2. **Mostly homogeneous output per card.** 13 of 20 cards have all three
+   options yielding the same resource. Only #1, #15, #16, #17, #18, #19,
+   #20 vary outputs. There's room to mix more if Marc wants more
+   strategic depth (pick the resource you need, not the cheapest path).
 
-3. **No card lets you spend favor for food, food for favor (positive way),
-   or manpower for manpower-equivalent stuff.** Coverage matrix is sparse;
-   if Marc wants every conversion path available we'd need 4×3 = 12
-   directional cards minimum across both schemas.
+3. **Output sizes are still uniform (14–20 g-eq).** No "tiny but cheap"
+   or "huge but expensive" decisions yet. A second pass could add small
+   early-game decisions (5 g-eq) and big late-game ones (40 g-eq).
 
-4. **`triggersEvent` is used exactly once** (`merchantGuild` → `tradeBoom`).
-   Underused as a design tool — could spice up other cards with combo
-   payouts at the cost of slightly worse base trades.
+4. **`triggersEvent` is used exactly once** (`merchantGuild` →
+   `tradeBoom`). Underused as a design tool — good place to add combo
+   payouts on otherwise modest options.
 
-5. **All cards use the rigid 0.7/1.0/1.3 split.** Could consider:
-   - Trap cards: 0.5 / 0.7 / 1.0 (no good option, only "least bad")
-   - Bonus cards: 1.0 / 1.3 / 1.6 (rare, all options are good)
-   - Or wider quality spreads on rarer cards to make them stand out.
+5. **`minTurn` is the only gating mechanism** today (1–6 range). Nothing
+   uses `requiresIncome` like investments. Worth considering for
+   late-game decisions (e.g., tournament unlocks once gold yield ≥ 1).
 
-6. **`minTurn` is the only gating mechanism** (1-6 range). Nothing checks
-   `requiresIncome` like investments do. Could match the new system.
-
-7. **Most "best" options output the resource you'd intuitively expect**
-   (knightsOffer best = pay favor for manpower; ruralPetition best = pay
-   gold for food). Consider whether some cards should *invert* this so the
-   thematic option isn't always optimal — adds replay value.
+6. **No "trap" or "bonus" cards yet.** Every card uses the same
+   [0.7, 1.0, 1.3] split. A rare card with [0.5, 0.7, 1.0] (all bad) or
+   [1.0, 1.3, 1.6] (all good) would stand out and reward attention.
 
 ---
 
 ## Files referenced
 
 - `js/data/cards-decision.js` — card catalog
-- `js/cardSystem.js#applyTradeFormula` — per-option trade math
-- `js/cardSystem.js#applyFixedOutputTrade` — fixed-output math
+- `js/cardSystem.js#applyTradeFormula` — option math
+- `js/cardSystem.js#createCardInstance` (decision branch) — quality
+  shuffling and effect resolution
+- `js/cardSystem.js#shuffleArray` — Fisher-Yates helper
 - `js/cardSystem.js#rollBulk` / `rollVariance` — random rolls
 - `docs/ENGINE.md` — broader engine spec
