@@ -126,7 +126,7 @@ const decisionCards = [
         options: [
             { label: "Grant them rights", inputRes: "favor", outputRes: "gold", inputBase: 17, triggersEvent: "tradeBoom" },
             { label: "Assign workers", inputRes: "manpower", outputRes: "gold", inputBase: 17, triggersEvent: "tradeBoom" },
-            { label: "Deny them entry", inputRes: "favor,manpower", outputRes: "favor", inputBase: 17 },
+            { label: "Deny them entry", inputRes: "favor", outputRes: "", inputBase: 1 },
         ],
     },
     {
@@ -158,7 +158,7 @@ const decisionCards = [
         typeId: "ruralPetition",
         category: "decision",
         name: "Rural Petition",
-        description: "The farmers plead for help with a failing harvest.",
+        description: "The farmers plead for help with the incoming harvest.",
         icon: "🏞️",
 
         dependencies: [],
@@ -176,7 +176,7 @@ const decisionCards = [
         options: [
             { label: "Fund irrigation", inputRes: "gold", outputRes: "food", inputBase: 17 },
             { label: "Send laborers", inputRes: "manpower", outputRes: "food", inputBase: 17 },
-            { label: "Decree royal levy", inputRes: "favor", outputRes: "food,favor", inputBase: 17 },
+            { label: "Plants grow themselves", inputRes: "favor", outputRes: "", inputBase: 5 },
         ],
     },
     {
@@ -200,33 +200,8 @@ const decisionCards = [
 
         options: [
             { label: "Pay him in coin", inputRes: "gold", outputRes: "favor", inputBase: 14 },
-            { label: "Feast the troupe", inputRes: "food", outputRes: "favor", inputBase: 14 },
-            { label: "Lend him guards", inputRes: "manpower,favor", outputRes: "favor", inputBase: 14 },
-        ],
-    },
-    {
-        typeId: "surplusGrainOffer",
-        category: "decision",
-        name: "Surplus Grain Offer",
-        description: "A merchant offers fair prices for your grain reserves.",
-        icon: "🌽",
-
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 2,
-        requiresResource: null,
-
-        weight: 10,
-        absoluteChance: null,
-
-        qualityFactors: [0.7, 1.0, 1.3],
-
-        options: [
-            { label: "Sell the grain", inputRes: "food", outputRes: "gold", inputBase: 17 },
-            { label: "Command royal levy", inputRes: "favor", outputRes: "gold", inputBase: 17 },
-            { label: "Use serfs to ship it", inputRes: "manpower", outputRes: "gold", inputBase: 17 },
+            { label: "Feast the troupe", inputRes: "food", outputRes: "favor", inputBase: 9 },
+            { label: "Write him a poem", inputRes: "favor", outputRes: "favor", inputBase: 4 },
         ],
     },
     {
@@ -250,7 +225,7 @@ const decisionCards = [
 
         options: [
             { label: "Pay their contract", inputRes: "gold", outputRes: "manpower", inputBase: 15 },
-            { label: "Appeal to honor", inputRes: "favor", outputRes: "manpower", inputBase: 15 },
+            { label: "Appeal to honor", inputRes: "favor", outputRes: "manpower", inputBase: 9 },
             { label: "Promise full bellies", inputRes: "food", outputRes: "manpower", inputBase: 15 },
         ],
     },
@@ -276,7 +251,7 @@ const decisionCards = [
         options: [
             { label: "Send trained hunters", inputRes: "manpower", outputRes: "food", inputBase: 20 },
             { label: "Equip the expedition", inputRes: "gold", outputRes: "food", inputBase: 20 },
-            { label: "Royal hunting decree", inputRes: "favor", outputRes: "food", inputBase: 20 },
+            { label: "Decline the offer", inputRes: "favor", outputRes: "", inputBase: 3 },
         ],
     },
     {
@@ -301,32 +276,7 @@ const decisionCards = [
         options: [
             { label: "Squeeze the peasants", inputRes: "favor", outputRes: "gold", inputBase: 17 },
             { label: "Send armed enforcers", inputRes: "manpower", outputRes: "gold", inputBase: 17 },
-            { label: "Collect grain tithes", inputRes: "food", outputRes: "gold", inputBase: 17 },
-        ],
-    },
-    {
-        typeId: "saltMerchant",
-        category: "decision",
-        name: "The Salt Merchant",
-        description: "A caravan from the coast brings barrels of precious salt.",
-        icon: "🧂",
-
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 2,
-        requiresResource: null,
-
-        weight: 10,
-        absoluteChance: null,
-
-        qualityFactors: [0.7, 1.0, 1.3],
-
-        options: [
-            { label: "Pay in coin", inputRes: "gold", outputRes: "food", inputBase: 17.5 },
-            { label: "Offer royal favor", inputRes: "favor", outputRes: "food", inputBase: 17.5 },
-            { label: "Trade workers for caravans", inputRes: "manpower", outputRes: "food", inputBase: 17.5 },
+            { label: "Leap years dont count", inputRes: "gold", outputRes: "", inputBase: 3 },
         ],
     },
     {
@@ -352,56 +302,6 @@ const decisionCards = [
             { label: "Fund his shop", inputRes: "gold", outputRes: "favor", inputBase: 16 },
             { label: "Assign apprentices", inputRes: "manpower", outputRes: "favor", inputBase: 16 },
             { label: "Provision his herbs", inputRes: "food", outputRes: "favor", inputBase: 16 },
-        ],
-    },
-    {
-        typeId: "peasantVolunteers",
-        category: "decision",
-        name: "Peasant Volunteers",
-        description: "Young men from the villages offer to join the guard.",
-        icon: "🧑‍🌾",
-
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 2,
-        requiresResource: null,
-
-        weight: 10,
-        absoluteChance: null,
-
-        qualityFactors: [0.7, 1.0, 1.3],
-
-        options: [
-            { label: "Feed and house them", inputRes: "food", outputRes: "manpower", inputBase: 15 },
-            { label: "Equip them properly", inputRes: "gold", outputRes: "manpower", inputBase: 15 },
-            { label: "Drape them in royal colors", inputRes: "favor", outputRes: "manpower", inputBase: 15 },
-        ],
-    },
-    {
-        typeId: "dowryOffered",
-        category: "decision",
-        name: "A Dowry Offered",
-        description: "A distant house proposes a marriage alliance with a handsome dowry.",
-        icon: "💍",
-
-        dependencies: [],
-        blockedBy: [],
-        isUnique: false,
-        maxInstances: null,
-        minTurn: 4,
-        requiresResource: null,
-
-        weight: 8,
-        absoluteChance: null,
-
-        qualityFactors: [0.7, 1.0, 1.3],
-
-        options: [
-            { label: "Accept the match (political cost)", inputRes: "favor", outputRes: "gold", inputBase: 20 },
-            { label: "Send an armed escort", inputRes: "manpower", outputRes: "gold", inputBase: 20 },
-            { label: "Provision the wedding feast", inputRes: "food", outputRes: "gold", inputBase: 20 },
         ],
     },
     {
@@ -476,7 +376,7 @@ const decisionCards = [
         options: [
             { label: "Turn it into farmland", inputRes: "manpower", outputRes: "food", inputBase: 15 },
             { label: "Harvest the timber", inputRes: "manpower", outputRes: "gold", inputBase: 15 },
-            { label: "Donate the wood to the church", inputRes: "manpower", outputRes: "favor", inputBase: 15 },
+            { label: "Trees stay up", inputRes: "favor", outputRes: "favor", inputBase: 3, triggersEvent: "treeLover"},
         ],
     },
     {
@@ -524,9 +424,9 @@ const decisionCards = [
         qualityFactors: [0.7, 1.0, 1.3],
 
         options: [
-            { label: "Generous pension", inputRes: "gold", outputRes: "favor", inputBase: 20 },
+            { label: "Generous pension", inputRes: "gold", outputRes: "favor", inputBase: 10 },
             { label: "Settle him on a farm", inputRes: "food", outputRes: "manpower", inputBase: 15 },
-            { label: "Reward him with lands", inputRes: "gold", outputRes: "manpower", inputBase: 20 },
+            { label: "You look so young", inputRes: "favor", outputRes: "", inputBase: 5 },
         ],
     },
 ];
