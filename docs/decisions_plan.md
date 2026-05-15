@@ -161,24 +161,24 @@ g-eq; "uniform" means the same inputBase across all three options.
 | # | typeId | name | minTurn | inputBase | Options (input → output) |
 |---|--------|------|---------|-----------|---------------------------|
 | 1 | refugees | Refugees at the Gates | 2 | 6 | 🌾→👥 · 🌾→👑 · 🌾→💰 |
-| 2 | bishopsRequest | The Bishop's Request | 1 | 15 | 💰→👑 · 🌾→👑 · 👥→👑 |
+| 2 | newCult | A Charismatic Preacher | 1 | 10/15/3 | 👑→👥 (+cultRising) · 💰→👑 · 👑→∅ |
 | 3 | knightsOffer | A Knight's Offer | 2 | 15 | 🌾→👥 · 💰→👥 · 👑→👥 |
 | 4 | merchantGuild | Merchant Guild Request | 3 | 17 | 🌾→💰 (+tradeBoom) · 👥→💰 · 👑→💰 |
 | 5 | warPreparations | War in Neighboring Lands | 6 | 17 | 💰→👥 · 👑→👥 · 🌾→👥 |
 | 6 | ruralPetition | Rural Petition | 3 | 17 | 💰→🌾 · 👥→🌾 · 👑→🌾 |
 | 7 | travelingMinstrel | A Traveling Minstrel | 1 | 14 | 💰→👑 · 🌾→👑 · 👥→👑 |
 | 8 | surplusGrainOffer | Surplus Grain Offer | 2 | 17 | 🌾→💰 · 👑→💰 · 👥→💰 |
-| 9 | foreignMercenaries | Foreign Mercenaries | 3 | 15 | 💰→👥 · 👑→👥 · 🌾→👥 |
+| 9 | foreignMercenaries | Foreign Mercenaries | 3 | 15/15/12 | 💰→👥 · 🌾→👥 · ∅→👥 (+mercenariesBetray) — qualityFactors [0.5, 1.0, 1.5] (volatile) |
 | 10 | huntingParty | Great Hunting Party | 2 | 20 | 👥→🌾 · 💰→🌾 · 👑→🌾 |
 | 11 | taxCollection | Tax Collection Round | 1 | 17 | 👑→💰 · 👥→💰 · 🌾→💰 |
 | 12 | saltMerchant | The Salt Merchant | 2 | 17.5 | 💰→🌾 · 👑→🌾 · 👥→🌾 |
-| 13 | apothecaryArrives | An Apothecary Arrives | 3 | 16 | 💰→👑 · 👥→👑 · 🌾→👑 |
+| 13 | apothecaryArrives | An Apothecary Arrives | 3 | 15/15/10 | 💰→👥 · 🌾→👥+👑 · 👑→👥 (+plagueOutbreak) |
 | 14 | peasantVolunteers | Peasant Volunteers | 2 | 15 | 🌾→👥 · 💰→👥 · 👑→👥 |
 | 15 | dowryOffered | A Dowry Offered | 4 | 20 | 👑→💰 · 👥→💰 · 🌾→💰 |
 | 16 | tournament | Host a Tournament | 4 | 20/20/10 | 💰→👑 · 💰→👥 · 🌾→👑 |
 | 17 | royalDecree | Royal Decree | 3 | 20 | 👑→💰 · 👑→👥 · 👑→🌾 |
 | 18 | forestClearing | Forest Clearing Offer | 2 | 15 | 👥→🌾 · 👥→💰 · 👥→👑 |
-| 19 | festivalOfLights | Festival of Lights | 3 | 20 | 💰→👑 · 🌾→👑 · 👥→👑 |
+| 19 | festivalOfLights | Festival of Lights | 3 | 20/15/5 | 💰→👑 (+tradeBoom) · 🌾→👑 · 👑→∅ |
 | 20 | oldKnightRetires | An Old Knight Retires | 5 | 20/15/20 | 💰→👑 · 🌾→👥 · 💰→👥 |
 
 Sizes cluster at **15–20 g-eq** — investment-tier scale. #1 (refugees)
