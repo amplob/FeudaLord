@@ -172,15 +172,18 @@ function validateCards() {
                 if ("qualityFactor" in opt) {
                     log(`${tag}: option "${opt.label}" has per-option qualityFactor — move it to the card-level qualityFactors array`);
                 }
-                if (!(opt.inputRes && opt.outputRes && typeof opt.inputBase === "number")) {
-                    log(`${tag}: option "${opt.label}" missing inputRes/outputRes/inputBase`);
+                if (typeof opt.inputBase !== "number") {
+                    log(`${tag}: option "${opt.label}" missing numeric inputBase`);
                 } else {
                     // Resource fields may list multiple resources separated by
-                    // commas (e.g., "food,gold"). Each must be a valid resource.
+                    // commas (e.g., "food,gold"). Either side may be empty —
+                    // empty inputRes = free reward, empty outputRes = pure
+                    // cost (e.g., "decline the offer"). Both empty is invalid.
                     const ins = parseResources(opt.inputRes);
                     const outs = parseResources(opt.outputRes);
-                    if (!ins.length) log(`${tag}: option "${opt.label}" inputRes is empty`);
-                    if (!outs.length) log(`${tag}: option "${opt.label}" outputRes is empty`);
+                    if (!ins.length && !outs.length) {
+                        log(`${tag}: option "${opt.label}" has neither inputRes nor outputRes — at least one must be set`);
+                    }
                     for (const r of ins) {
                         if (!validResources.has(r)) log(`${tag}: option "${opt.label}" inputRes "${r}" invalid`);
                     }
@@ -514,40 +517,62 @@ function parseResources(spec) {
     return spec.split(",").map(s => s.trim()).filter(Boolean);
 }
 
-// Trade-style formula. Supports multi-resource inputs and outputs.
+// Trade-style formula. Supports multi-resource inputs and outputs and
+// three option shapes:
 //
-//   inputBase is the total cost in gold-equivalent (g-eq). The total
-//   cost after the size roll = inputBase × bulkRoll, split EVENLY across
-//   all listed input resources. Each input's amount is its share of the
-//   total g-eq, converted back into its own units via the canonical
-//   rates (gold=1, food=0.5, manpower=3, favor=2).
+//   1. Trade   — inputRes + outputRes both non-empty. inputBase is the
+//      total cost in gold-equivalent (g-eq); cost = inputBase × bulkRoll,
+//      split evenly across listed inputs. Output g-eq = totalInputGEq ×
+//      qualityFactor × varianceRoll × tierMultiplier, split evenly across
+//      listed outputs.
 //
-//   The output's total g-eq = totalInputGEq × qualityFactor × varianceRoll
-//   × tierMultiplier. Split evenly across all listed output resources,
-//   converted into per-resource amounts the same way.
+//   2. Pure cost — inputRes set, outputRes empty. The player loses
+//      inputBase × bulkRoll g-eq of input(s), receives nothing.
+//      qualityFactor and variance do NOT scale the cost (a "decline" or
+//      "tribute" option should be predictable). Useful for "decline the
+//      offer" or flat-loss tributes.
 //
-// Returns the resolved per-resource effects object (inputs negative,
-// outputs positive, summed if a resource appears on both sides).
+//   3. Free reward — inputRes empty, outputRes set. The player receives
+//      inputBase × bulkRoll × qualityFactor × varianceRoll × tierMultiplier
+//      g-eq of output(s), pays nothing. Useful for "accept the gift"
+//      options inside otherwise costly cards.
+//
+// Single-resource options are the same as multi with one element. A
+// resource that appears on both sides nets out in the final effects.
 function applyTradeFormula({ inputRes, outputRes, inputBase, qualityFactor = 1, tierMultiplier = 1 }) {
     const inputs = parseResources(inputRes);
     const outputs = parseResources(outputRes);
-    if (!inputs.length || !outputs.length) return { effects: {} };
+    if (!inputs.length && !outputs.length) return { effects: {} };
 
     const bulk = rollBulk();
     const variance = rollVariance();
-    const totalInputGEq = inputBase * bulk;
-    const shareInputGEq = totalInputGEq / inputs.length;
-    const totalOutputGEq = totalInputGEq * qualityFactor * variance * tierMultiplier;
-    const shareOutputGEq = totalOutputGEq / outputs.length;
-
     const effects = {};
-    for (const r of inputs) {
-        const amount = round2(shareInputGEq / getResourceValue(r));
-        effects[r] = (effects[r] || 0) - amount;
-    }
-    for (const r of outputs) {
-        const amount = round2(shareOutputGEq / getResourceValue(r));
-        effects[r] = round2((effects[r] || 0) + amount);
+
+    if (inputs.length) {
+        const totalInputGEq = inputBase * bulk;
+        const shareInputGEq = totalInputGEq / inputs.length;
+        for (const r of inputs) {
+            const amount = round2(shareInputGEq / getResourceValue(r));
+            effects[r] = (effects[r] || 0) - amount;
+        }
+        if (outputs.length) {
+            // Trade: scale output by quality and variance.
+            const totalOutputGEq = totalInputGEq * qualityFactor * variance * tierMultiplier;
+            const shareOutputGEq = totalOutputGEq / outputs.length;
+            for (const r of outputs) {
+                const amount = round2(shareOutputGEq / getResourceValue(r));
+                effects[r] = round2((effects[r] || 0) + amount);
+            }
+        }
+        // Pure cost: no outputs to apply.
+    } else {
+        // Free reward: inputBase is the output g-eq base.
+        const totalOutputGEq = inputBase * bulk * qualityFactor * variance * tierMultiplier;
+        const shareOutputGEq = totalOutputGEq / outputs.length;
+        for (const r of outputs) {
+            const amount = round2(shareOutputGEq / getResourceValue(r));
+            effects[r] = round2((effects[r] || 0) + amount);
+        }
     }
     return { effects };
 }
@@ -642,10 +667,9 @@ function createCardInstance(card, { sliceMultiplier = 1 } = {}) {
     if (card.options) {
         const factors = shuffleArray(card.qualityFactors || []);
         instance.options = card.options.map((opt, i) => {
-            if (!(opt.inputRes && opt.outputRes && typeof opt.inputBase === "number")) {
+            if (typeof opt.inputBase !== "number") {
                 console.error(
-                    `Decision ${card.typeId} option "${opt.label}" — every option must ` +
-                    `define inputRes, outputRes, and inputBase.`
+                    `Decision ${card.typeId} option "${opt.label}" — inputBase must be a number.`
                 );
                 return {
                     label: opt.label,

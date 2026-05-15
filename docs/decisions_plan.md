@@ -76,9 +76,9 @@ The validator will flag any card that still carries those fields.
 | Field | Level | Type | Purpose |
 |-------|-------|------|---------|
 | `qualityFactors` | card | number[] | Shuffled & assigned to options at draw time. Length must match `options`. |
-| `inputRes` | option | string | What this option costs. One resource (`"food"`) or several (`"food,gold"`). |
-| `outputRes` | option | string | What this option yields. Same syntax as `inputRes`. |
-| `inputBase` | option | number | Total cost **in gold-equivalent** (g-eq), before the bulk roll. Split evenly across listed inputRes resources. |
+| `inputRes` | option | string | What this option costs. One resource (`"food"`), several (`"food,gold"`), or `""` (free reward). |
+| `outputRes` | option | string | What this option yields. Same syntax as `inputRes`. `""` makes it a pure cost / decline option. |
+| `inputBase` | option | number | Total **gold-equivalent** scale of the option, before the bulk roll. For trades it's the input g-eq (split across inputs). For free-reward options it's the output g-eq. |
 | `triggersEvent` | option | string? | Optional event typeId to fire when chosen |
 
 Per-card meta (same as other card types): `typeId`, `name`,
@@ -96,18 +96,26 @@ Canonical resource values (g-eq): `gold=1`, `food=0.5`, `manpower=3`, `favor=2`.
 - `varianceRoll ∈ [0.85, 1.15]` — small per-option quality jitter
 - `qualityFactor` — pulled from the card's shuffled `qualityFactors` array
 
-**Formula** (one for every option). `inputBase` is the total cost in
-g-eq; it splits evenly across the listed inputs, and the resulting
-output g-eq splits evenly across the listed outputs.
+**Formula** (one for every option). Three shapes depending on which
+sides are filled:
 
 ```
-totalInputGEq  = inputBase × bulkRoll
-shareInputGEq  = totalInputGEq / numInputs
-totalOutputGEq = totalInputGEq × qualityFactor × varianceRoll
-shareOutputGEq = totalOutputGEq / numOutputs
+TRADE         (inputRes set, outputRes set)
+  totalInputGEq  = inputBase × bulkRoll
+  shareInputGEq  = totalInputGEq / numInputs
+  totalOutputGEq = totalInputGEq × qualityFactor × varianceRoll
+  shareOutputGEq = totalOutputGEq / numOutputs
+  for each input  r: amount = shareInputGEq  / value(r)   (subtracted)
+  for each output r: amount = shareOutputGEq / value(r)   (added)
 
-for each input  resource r:  amount = shareInputGEq  / value(r)   (subtracted)
-for each output resource r:  amount = shareOutputGEq / value(r)   (added)
+PURE COST     (inputRes set, outputRes "")
+  cost = inputBase × bulkRoll, split evenly across inputs (no qF/variance)
+  → "Decline the offer", "Pay tribute" — flat loss, predictable.
+
+FREE REWARD   (inputRes "", outputRes set)
+  reward = inputBase × bulkRoll × qualityFactor × varianceRoll
+  split evenly across outputs.
+  → "Accept the gift", "A favorable wind" — no payment, just a roll.
 ```
 
 At `qualityFactor = 1` the swap is canonical (zero sum in g-eq). At 1.3
