@@ -552,6 +552,19 @@ function addDebugAuguryButtons() {
         btn.addEventListener("click", () => debugTriggerAugury(type));
         container.appendChild(btn);
     }
+
+    // Narrative chain buttons — each fires the next eligible card in its
+    // history line. Bypasses the wheel/spin, useful for walking the chain.
+    for (const { icon, title, ids } of DEBUG_HISTORY_CHAINS) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "debug-btn";
+        btn.textContent = icon;
+        btn.title = title;
+        btn.addEventListener("click", () => debugAdvanceChain(ids, title));
+        container.appendChild(btn);
+    }
+
     wheelSection.appendChild(container);
 }
 
@@ -566,6 +579,51 @@ function debugTriggerAugury(type) {
     const segment = candidates[Math.floor(Math.random() * candidates.length)];
     if (typeof showAuguryOverlay === "function") showAuguryOverlay();
     if (typeof presentAugury === "function") presentAugury(segment);
+}
+
+// History chains registered for the debug bar. Each entry's `ids` array
+// lists the chain's cards in narrative order; the click handler fires the
+// first one whose static-flag gates pass.
+const DEBUG_HISTORY_CHAINS = [
+    {
+        icon: "🌳",
+        title: "Advance druid line",
+        ids: [
+            "treeLover",
+            "druidsApproach",
+            "druidPact",
+            "druidWardens",
+            "druidGrove",
+            "forestUnrest",
+            "druidCurse",
+        ],
+    },
+];
+
+function debugAdvanceChain(typeIds, label) {
+    if (typeof gameState === "undefined" || !gameState) return;
+    if (gameState.pending) {
+        showToast("Resolve the current augury first.");
+        return;
+    }
+    if (typeof allCards === "undefined" || typeof isCardEligible !== "function") return;
+
+    const set = new Set(typeIds);
+    const next = allCards.find(c => set.has(c.typeId) && isCardEligible(c, gameState));
+    if (!next) {
+        showToast(`${label}: no eligible cards left.`);
+        return;
+    }
+
+    const instance = createCardInstance(next, { sliceMultiplier: 1 });
+    const segment = {
+        type: next.category,
+        multiplier: 1,
+        tonality: next.tonality || "neutral",
+    };
+    if (typeof showAuguryOverlay === "function") showAuguryOverlay();
+    if (next.category === "event"     && typeof presentEvent     === "function") presentEvent(instance, segment);
+    else if (next.category === "decision" && typeof presentDecision === "function") presentDecision(instance, segment);
 }
 
 document.addEventListener("DOMContentLoaded", addDebugAuguryButtons);
