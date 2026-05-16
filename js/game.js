@@ -680,6 +680,10 @@ function handleDecisionChoice(cardInstance, optionIndex) {
     // Apply flag mutations from the chosen option itself (sets/clears event flags, sets static flags).
     applyFlagMutations(option);
 
+    // The decision has been resolved. Mark the typeId played so isUnique
+    // narrative decisions (e.g., druidPact) can't fire twice.
+    playedCardTypes.add(cardInstance.typeId);
+
     gameState.pending = null;
     hideAuguryOverlay();
     renderProperties();

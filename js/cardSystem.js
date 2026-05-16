@@ -816,7 +816,12 @@ function applyEventInstance(instance, applyChange) {
         applyChange(instance.onActivate, `${instance.name} begins!`);
     }
     if (instance.duration || instance.perTurn) {
-        activateCard(instance);
+        activateCard(instance);   // also adds to playedCardTypes
+    } else {
+        // Instant event with no ongoing footprint — activateCard isn't called,
+        // so register the typeId manually. Without this, isUnique never trips
+        // for instant story-beat events and they re-fire on every draw.
+        playedCardTypes.add(instance.typeId);
     }
     applyFlagMutations(instance, { autoDerivedSets: true });
 }
