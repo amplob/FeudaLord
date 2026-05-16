@@ -30,17 +30,20 @@ let playedCardTypes = new Set();
 // =====================================================
 
 function initCardSystem() {
-    // Combine all card arrays
+    // Combine all card arrays. History/narrative cards live in their own
+    // files (cards-history-*.js) so a chain stays readable in isolation.
     allCards = [
         ...investmentCards,
         ...decisionCards,
-        ...eventCards
+        ...eventCards,
+        ...historyDruidsCards,
     ];
 
     console.log(`Card system initialized with ${allCards.length} cards`);
     console.log(`- Investments: ${investmentCards.length}`);
     console.log(`- Decisions: ${decisionCards.length}`);
     console.log(`- Events: ${eventCards.length}`);
+    console.log(`- History: druids ${historyDruidsCards.length}`);
 
     validateCards();
 }
