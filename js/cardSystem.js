@@ -94,14 +94,6 @@ function validateCards() {
     for (const c of allCards) {
         const tag = `${c.category}/${c.typeId}`;
 
-        // Cross-card refs
-        for (const dep of c.dependencies || []) {
-            if (!byId.has(dep)) log(`${tag}: dependency "${dep}" not found`);
-        }
-        for (const bk of c.blockedBy || []) {
-            if (!byId.has(bk)) log(`${tag}: blockedBy "${bk}" not found`);
-        }
-
         // Kingdom lock must reference a real kingdom.
         if (c.kingdom && validKingdoms && !validKingdoms.has(c.kingdom)) {
             log(`${tag}: kingdom "${c.kingdom}" — no such kingdom`);
@@ -298,26 +290,6 @@ function isCardEligible(card, state) {
             if (currentLevel >= card.maxInstances) return false;
         } else {
             if (countActiveInstances(card.typeId) >= card.maxInstances) return false;
-        }
-    }
-    
-    // Check dependencies (all must be satisfied)
-    if (card.dependencies && card.dependencies.length > 0) {
-        const hasAllDependencies = card.dependencies.every(depTypeId => 
-            hasActiveCard(depTypeId)
-        );
-        if (!hasAllDependencies) {
-            return false;
-        }
-    }
-    
-    // Check blockers (none must be active)
-    if (card.blockedBy && card.blockedBy.length > 0) {
-        const isBlocked = card.blockedBy.some(blockerTypeId => 
-            hasActiveCard(blockerTypeId)
-        );
-        if (isBlocked) {
-            return false;
         }
     }
     

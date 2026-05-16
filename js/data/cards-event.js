@@ -32,8 +32,6 @@ const eventCards = [
         icon: "🌾✨",
         tonality: "good",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 1,
@@ -55,8 +53,6 @@ const eventCards = [
         icon: "📈💰",
         tonality: "good",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 1,
         minTurn: 1,
@@ -79,8 +75,6 @@ const eventCards = [
         icon: "🛡️🚩",
         tonality: "good",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 2,
@@ -102,8 +96,6 @@ const eventCards = [
         icon: "🎉",
         tonality: "good",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 1,
         minTurn: 2,
@@ -128,8 +120,6 @@ const eventCards = [
         icon: "☀️🏜️",
         tonality: "bad",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 1,
         minTurn: 3,
@@ -152,8 +142,6 @@ const eventCards = [
         icon: "📜💸",
         tonality: "bad",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 3,
@@ -175,8 +163,6 @@ const eventCards = [
         icon: "☠️🤒",
         tonality: "bad",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 5,
@@ -198,8 +184,6 @@ const eventCards = [
         icon: "⚔️",
         tonality: "bad",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 1,
         minTurn: 3,
@@ -229,8 +213,6 @@ const eventCards = [
         tonality: "good",
         kingdom: "greenvale",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 2,
@@ -253,8 +235,6 @@ const eventCards = [
         tonality: "good",
         kingdom: "rivermark",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 1,
@@ -277,8 +257,6 @@ const eventCards = [
         tonality: "good",
         kingdom: "stonehold",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 2,
@@ -301,8 +279,6 @@ const eventCards = [
         tonality: "bad",
         kingdom: "wolfsedge",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 1,
@@ -332,8 +308,6 @@ const eventCards = [
         icon: "💸",
         tonality: "bad",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: true,
         maxInstances: 1,
         minTurn: 1,
@@ -355,8 +329,6 @@ const eventCards = [
         icon: "🥀",
         tonality: "bad",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: true,
         maxInstances: 1,
         minTurn: 1,
@@ -378,8 +350,6 @@ const eventCards = [
         icon: "🏚️",
         tonality: "bad",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: true,
         maxInstances: 1,
         minTurn: 1,

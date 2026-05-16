@@ -16,8 +16,6 @@ const investmentCards = [
         description: "A modest, steady catch from the river.",
         icon: "🎣",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: null,
@@ -37,8 +35,6 @@ const investmentCards = [
         description: "A coin from every cart that passes through.",
         icon: "🛤️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: null,
@@ -58,8 +54,6 @@ const investmentCards = [
         description: "Daily offerings keep the gods — and the people — content.",
         icon: "⛩️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: null,
@@ -79,8 +73,6 @@ const investmentCards = [
         description: "A small drill yard — feeds and shapes new hands.",
         icon: "🏋️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: null,
@@ -100,8 +92,6 @@ const investmentCards = [
         description: "Cheap saplings, patient yield.",
         icon: "🍎",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: { food: 0.5 },
@@ -121,8 +111,6 @@ const investmentCards = [
         description: "A handful of stalls — coin and grain change hands.",
         icon: "🏛️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: { gold: 0.5 },
@@ -142,8 +130,6 @@ const investmentCards = [
         description: "Coin, gossip, and goodwill flow over every cup.",
         icon: "🍺",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: { gold: 0.5 },
@@ -163,8 +149,6 @@ const investmentCards = [
         description: "A steady source of flour and bread for the realm.",
         icon: "🏞️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: { food: 1 },
@@ -184,8 +168,6 @@ const investmentCards = [
         description: "Hard labor, shiny reward.",
         icon: "⛏️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: { gold: 1 },
@@ -205,8 +187,6 @@ const investmentCards = [
         description: "A licensed marketplace — every stall pays its share.",
         icon: "🏪",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 2,
         requiresIncome: { gold: 1, favor: 0.5 },
@@ -226,8 +206,6 @@ const investmentCards = [
         description: "Game, pelts, and seasoned woodsmen.",
         icon: "🏹",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: { gold: 1, manpower: 0.5 },
@@ -247,8 +225,6 @@ const investmentCards = [
         description: "Pastures and fences — beef, milk, and leather.",
         icon: "🐄",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: { food: 1.5 },
@@ -268,8 +244,6 @@ const investmentCards = [
         description: "Monks tending the sick — health for the realm, favor for the crown.",
         icon: "🏥",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 2,
         requiresIncome: { gold: 1, favor: 0.5 },
@@ -289,8 +263,6 @@ const investmentCards = [
         description: "Eyes on the road — order kept, respect earned.",
         icon: "🗼",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: { gold: 1, manpower: 0.5 },
@@ -310,8 +282,6 @@ const investmentCards = [
         description: "A port for trade and tide — fish, freight, and dockhands.",
         icon: "⚓",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 2,
         requiresIncome: { food: 1.5 },
@@ -331,8 +301,6 @@ const investmentCards = [
         description: "Backbreaking work carves wealth from the mountain.",
         icon: "⛰️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 3,
         requiresIncome: { gold: 2 },
@@ -352,8 +320,6 @@ const investmentCards = [
         description: "A monument to piety — the faithful will revere you.",
         icon: "⛪",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: 2,
         requiresIncome: { gold: 2, favor: 1 },

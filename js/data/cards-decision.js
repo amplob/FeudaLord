@@ -36,8 +36,6 @@ const decisionCards = [
         description: "A band of displaced folk asks for shelter.",
         icon: "🚶",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 2,
@@ -61,8 +59,6 @@ const decisionCards = [
         description: "A wandering zealot offers to start a cult in your name. Devotion has its uses — and its dangers.",
         icon: "🕯️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 1,
@@ -90,8 +86,6 @@ const decisionCards = [
         description: "A wandering knight and his retinue seek a lord to serve.",
         icon: "⚔️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 2,
@@ -115,8 +109,6 @@ const decisionCards = [
         description: "Foreign traders want to establish a guild in your lands.",
         icon: "💼",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 3,
@@ -140,8 +132,6 @@ const decisionCards = [
         description: "Tensions rise. You must raise forces — quickly.",
         icon: "🏰",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 6,
@@ -165,8 +155,6 @@ const decisionCards = [
         description: "The farmers plead for help with the incoming harvest.",
         icon: "🏞️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 3,
@@ -190,8 +178,6 @@ const decisionCards = [
         description: "A minstrel offers to sing of your glory across the realm.",
         icon: "🎵",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 1,
@@ -215,8 +201,6 @@ const decisionCards = [
         description: "A band of sellswords offers their blades — for a price. Or maybe you can outsmart them.",
         icon: "🗡️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 3,
@@ -244,8 +228,6 @@ const decisionCards = [
         description: "The huntmaster proposes a grand expedition into the deep forest.",
         icon: "🏹",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 2,
@@ -269,8 +251,6 @@ const decisionCards = [
         description: "The steward asks how hard to squeeze this year's levy.",
         icon: "💰",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 1,
@@ -294,8 +274,6 @@ const decisionCards = [
         description: "A learned healer offers her trade. Healthy bodies put more hands to the plough — but where do you set her up?",
         icon: "🧪",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 3,
@@ -322,8 +300,6 @@ const decisionCards = [
         description: "Knights from across the realm come to test their mettle.",
         icon: "🤺",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 4,
@@ -347,8 +323,6 @@ const decisionCards = [
         description: "A messenger from the crown demands you spend your standing.",
         icon: "📜",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 3,
@@ -372,8 +346,6 @@ const decisionCards = [
         description: "The woodcutters ask where to put their backs.",
         icon: "🪓",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 2,
@@ -397,8 +369,6 @@ const decisionCards = [
         description: "The townsfolk gather lanterns and ask leave to hold the great festival.",
         icon: "🎆",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 3,
@@ -426,8 +396,6 @@ const decisionCards = [
         description: "A loyal veteran asks how you'll see him off.",
         icon: "🛡️",
 
-        dependencies: [],
-        blockedBy: [],
         isUnique: false,
         maxInstances: null,
         minTurn: 5,
